@@ -10,6 +10,9 @@
 <project name="SmartData" default="default" basedir=".">
     <description>Builds, tests, and runs the project SmartData.</description>
     <import file="nbproject/build-impl.xml"/>
+    <!-- Custom import of libraries. -->
+    <import file="build-import-libraries.xml" as="include-libraries" />
+    <target name="-post-compile" depends="include-libraries.copy-files" />
     <!--
 
     There exist several targets which are by default empty and which can be 

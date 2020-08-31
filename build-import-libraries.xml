@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!--
+      Custom import of libraries.
+      This is not done in Netbeans, because the dist folder is created at runtime.
+
+      To work correctly, disable the compile on save feature for your project.
+
+     Author: Christophe Weis
+-->
+<project name="IncludeLibrariesSmartMonitoring" default="default" basedir=".">
+    <description>Includes dependent libraries in projects using class-library projects.</description>
+    <dirname property="IncludeLibraries.basedir" file="${ant.file.IncludeLibraries}"/>
+    <target name="copy-files">
+        <!-- Set variable to the folder where to copy the files to -->
+        <condition property="libdestdir" value="${build.web.dir}/WEB-INF/lib" else="${dist.dir}/lib">
+            <isset property="build.web.dir"/>
+        </condition>
+        <echo message="Custom build step in file '${ant.file}': copying dependent libraries from included Netbeans projects to '${libdestdir}'" level="info"/>
+        <echo message="Please make sure that 'Copy Dependent Libraries' is enabled in Netbeans project options for each included project" level="info"/>
+        <copy-dependent-libs>
+            <propertyset id="properties-starting-with-project">
+                <propertyref prefix="project."/>
+            </propertyset>
+        </copy-dependent-libs>
+    </target> <!-- End custom import -->
+
+    <scriptdef name="copy-dependent-libs" language="javascript">
+        <element name="propertyset" type="propertyset"/>
+        <![CDATA[
+            // Ant uses the Rhino JavaScript implementation
+
+            propertySets = elements.get("propertyset");
+            // loop all nested property sets
+            for (i = 0; i < propertySets.size(); ++i) {
+                propertySet = propertySets.get(i);
+                properties = propertySet.getProperties();
+                for (var iterator = properties.entrySet().iterator(); iterator.hasNext();) {
+                    var entry = iterator.next();
+                    var key = entry.getKey();
+                    if ("project.licensePath".equals(key)) {
+                        continue;
+                    }
+                    var value = entry.getValue();
+
+                    // read the referenced project's property file
+                    var file = new java.io.File(project.getBaseDir(), value + "/nbproject/project.properties");
+                    var inputStream = new java.io.FileInputStream(file);
+                    var projectProperties = new java.util.Properties();
+                    projectProperties.load(inputStream);
+                    inputStream.close();
+                    var distFolder = projectProperties.getProperty("dist.dir");
+
+                    // check if 'Copy Dependent Libraries' is enabled
+                    var doNotCopyDependentLibraries = projectProperties.getProperty("mkdist.disabled");
+                    doNotCopyDependentLibraries = java.lang.Boolean.parseBoolean(doNotCopyDependentLibraries);
+                    if (doNotCopyDependentLibraries) {
+                        self.fail("Please enable 'Copy Dependent Libraries' in project properties for project " + projectProperties.getProperty("application.title", value));
+                    }
+
+                    t = project.createTask("copy-files-from-libfolder");
+                    // set the dist folder's lib directory
+                    t.setDynamicAttribute("fromdir", value + "/" + distFolder + "/lib");
+                    t.perform();
+                }
+            }
+        ]]>
+    </scriptdef>
+
+    <macrodef name="copy-files-from-libfolder">
+        <attribute name="fromdir" />
+        <sequential>
+            <echo message="Copying libraries from directory '@{fromdir}' to '${libdestdir}'" level="verbose" />
+            <mkdir dir="@{fromdir}"/>
+            <copy todir="${libdestdir}">
+                <fileset dir="@{fromdir}">
+                    <!-- Enable this if you wish
+                    <exclude name="servlet-api.jar"/>
+                    -->
+                </fileset>
+            </copy>
+        </sequential>
+    </macrodef>
+
+</project>
