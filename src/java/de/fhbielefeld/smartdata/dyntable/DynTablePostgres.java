@@ -99,7 +99,7 @@ public class DynTablePostgres extends DynTable {
             // Check if table does not exists when there is no column
             if (columns.isEmpty()) {
                 if (!this.exists()) {
-                    throw new DynException("Rable >" + this.name + "< does not exists.");
+                    throw new DynException("Table >" + this.name + "< does not exists.");
                 }
             }
         } catch (SQLException ex) {
