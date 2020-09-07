@@ -110,4 +110,13 @@ public abstract class DynBase {
      * @throws DynException 
      */
     public abstract List<Table> getTables(String schemaName) throws DynException;
+    
+    /**
+     * Deletes the given schema and all its contents
+     * 
+     * @param schemaName Name of the schema
+     * @return true if schema was existend and is deleted
+     * @throws DynException 
+     */
+    public abstract boolean deleteSchema(String schemaName) throws DynException;
 }

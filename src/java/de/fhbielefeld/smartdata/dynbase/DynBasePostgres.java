@@ -198,4 +198,24 @@ public class DynBasePostgres extends DynBase {
         return tables;
     }
 
+    @Override
+    public boolean deleteSchema(String schemaName) throws DynException {
+        boolean deleted = false;
+        // Check if schema exists
+        boolean schemaExists = this.schemaExists(schemaName);
+        if (schemaExists) {
+            try {
+                this.con.setAutoCommit(true);
+                Statement stmt = this.con.createStatement();
+                stmt.executeUpdate("DROP SCHEMA " + schemaName);
+                this.con.setAutoCommit(false);
+                deleted = true;
+            } catch (SQLException ex) {
+                Message msg = new Message("Could not delete schema >" + schemaName + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                msg.addException(ex);
+                Logger.addMessage(msg);
+            }
+        }
+        return deleted;
+    }
 }
