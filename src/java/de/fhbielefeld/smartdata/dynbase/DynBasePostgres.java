@@ -207,7 +207,7 @@ public class DynBasePostgres extends DynBase {
             try {
                 this.con.setAutoCommit(true);
                 Statement stmt = this.con.createStatement();
-                stmt.executeUpdate("DROP SCHEMA " + schemaName);
+                stmt.executeUpdate("DROP SCHEMA " + schemaName + " CASCADE");
                 this.con.setAutoCommit(false);
                 deleted = true;
             } catch (SQLException ex) {
