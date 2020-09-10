@@ -2,6 +2,8 @@ package de.fhbielefeld.smartdata.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
+import de.fhbielefeld.scl.logger.message.Message;
+import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.dynbase.DynBase;
 import de.fhbielefeld.smartdata.dynbase.DynBasePostgres;
@@ -85,6 +87,8 @@ public class BaseRessource {
 
         Connection con = this.getConnection(rob);
         if (con == null) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get database connection");
             return rob.toResponse();
         }
 
@@ -99,6 +103,13 @@ public class BaseRessource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving table names: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
         }
 
         return rob.toResponse();
@@ -133,6 +144,8 @@ public class BaseRessource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
         Connection con = this.getConnection(rob);
         if (con == null) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get database connection");
             return rob.toResponse();
         }
 
@@ -143,6 +156,13 @@ public class BaseRessource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving table names: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
         }
 
         rob.setStatus(Response.Status.OK);
@@ -183,6 +203,8 @@ public class BaseRessource {
 
         Connection con = this.getConnection(rob);
         if (con == null) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get database connection");
             return rob.toResponse();
         }
 
@@ -197,6 +219,13 @@ public class BaseRessource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving table names: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
         }
 
         return rob.toResponse();
