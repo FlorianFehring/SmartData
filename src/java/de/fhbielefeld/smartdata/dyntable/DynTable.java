@@ -1,6 +1,7 @@
 package de.fhbielefeld.smartdata.dyntable;
 
 import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Table;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.Connection;
 import java.util.List;
@@ -35,11 +36,11 @@ public abstract class DynTable {
     /**
      * Creates the table
      * 
-     * @param name Name of the table to create
-     * @param columns Definition of collumns to create
+     * @param table Table definition of the table to create
+     * @return True if table was created, false if table allready exists
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
-    public abstract void create(String name, List<Column> columns) throws DynException;
+    public abstract boolean create(Table table) throws DynException;
     
     /**
      * Gets all available columns for this table

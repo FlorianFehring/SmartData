@@ -1,6 +1,10 @@
 package de.fhbielefeld.smartdata.dyntable;
 
+import de.fhbielefeld.scl.logger.Logger;
+import de.fhbielefeld.scl.logger.message.Message;
+import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Table;
 import de.fhbielefeld.smartdata.dynbase.DynBase;
 import de.fhbielefeld.smartdata.dynbase.DynBasePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
@@ -53,8 +57,34 @@ public class DynTablePostgres extends DynTable {
     }
 
     @Override
-    public void create(String name, List<Column> columns) throws DynException {
-        throw new UnsupportedOperationException();
+    public boolean create(Table table) throws DynException {
+        boolean created = false;
+        // Check if schema exists
+        boolean schemaExists = this.exists();
+        if (!schemaExists) {
+            try {
+                String sql = "CREATE TABLE " + this.schema + "." + this.name + "(";
+                int i=0;
+                for(Column curCol : table.getColumns()) {
+                    sql += "\"" + curCol.getName() + "\" " + curCol.getType();
+                    i++;
+                    if(i < table.getColumns().size()) {
+                        sql += ",";
+                    }
+                }               
+                sql += ")";
+                this.con.setAutoCommit(true);
+                Statement stmt = this.con.createStatement();
+                stmt.executeUpdate(sql);
+                this.con.setAutoCommit(false);
+                created = true;
+            } catch (SQLException ex) {
+                Message msg = new Message("Could not create table >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                msg.addException(ex);
+                Logger.addMessage(msg);
+            }
+        }
+        return created;   
     }
 
     @Override
