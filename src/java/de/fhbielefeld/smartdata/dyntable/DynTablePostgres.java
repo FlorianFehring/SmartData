@@ -171,7 +171,7 @@ public class DynTablePostgres extends DynTable {
         try {
             Statement stmt = this.con.createStatement();
             ResultSet rs = stmt.executeQuery(
-                    "SELECT column_name, data_type, is_nullable, is_identity FROM information_schema.columns "
+                    "SELECT column_name, udt_name, is_nullable, is_identity FROM information_schema.columns "
                     + "WHERE table_schema = '" + this.schema + "' "
                     + "AND table_name='" + this.name + "' "
                     + "AND column_name = '" + name + "'");
