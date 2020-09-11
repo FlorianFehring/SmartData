@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -418,10 +419,21 @@ public class DynDataPostgres extends DynData {
         // Reset warnings for new create
         this.warnings = new ArrayList<>();
         JsonReader jsonReader = Json.createReader(new StringReader(json));
-        JsonObject jsonobject = jsonReader.readObject();
-        jsonReader.close();
+        // Single or array mode
+        if(json.startsWith("[")) {
+            JsonArray jsonarray = jsonReader.readArray();
+            jsonReader.close();
+            Long lastid = null;
+            for(int i=0; i < jsonarray.size(); i++) {
+                lastid = this.create(jsonarray.getJsonObject(i));
+            }
+            return lastid;
+        } else {
+            JsonObject jsonobject = jsonReader.readObject();
+            jsonReader.close();
 
         return this.create(jsonobject);
+        }
     }
 
     @Override
