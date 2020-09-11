@@ -64,13 +64,10 @@ public class DynTablePostgres extends DynTable {
         if (!schemaExists) {
             try {
                 String sql = "CREATE TABLE " + this.schema + "." + this.name + "(";
-                int i = 0;
+                // Add id column
+                sql += "id serial PRIMARY KEY";
                 for (Column curCol : table.getColumns()) {
-                    sql += "\"" + curCol.getName() + "\" " + curCol.getType();
-                    i++;
-                    if (i < table.getColumns().size()) {
-                        sql += ",";
-                    }
+                    sql += ", \"" + curCol.getName() + "\" " + curCol.getType();
                 }
                 sql += ")";
                 this.con.setAutoCommit(true);
