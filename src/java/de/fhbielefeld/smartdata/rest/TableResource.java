@@ -5,11 +5,13 @@ import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
+import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dbo.Table;
 import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import javax.annotation.Resource;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -175,17 +177,52 @@ public class TableResource {
                     example = "1"
             ))
     @APIResponse(
+            responseCode = "409",
+            description = "Column allready exists",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Column 'columname' allready exists. \"]}"))
+    @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
-    public void addColumns(
+    public Response addColumns(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
             @Parameter(description = "Schema name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
-            @Parameter(description = "Columns names", required = true, example = "value1,value2") @QueryParam("names") String names,
-            @Parameter(description = "Columns types", required = true, example = "integer,string") @QueryParam("types") String types) {
+            List<Column> columns) {
 
+        if (schema == null) {
+            schema = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        
+        // Get connection
+        Connection con = this.getConnection(rob);
+        
+        try {
+            // Init table access
+            DynTablePostgres dt = new DynTablePostgres(schema, table, con);
+            if(dt.addColumns(columns)) {
+                rob.setStatus(Response.Status.CREATED);
+            } else {
+                rob.setStatus(Response.Status.CONFLICT);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get column information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
+        }
+        
+        return rob.toResponse();
     }
 
     /**

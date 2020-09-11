@@ -64,14 +64,14 @@ public class DynTablePostgres extends DynTable {
         if (!schemaExists) {
             try {
                 String sql = "CREATE TABLE " + this.schema + "." + this.name + "(";
-                int i=0;
-                for(Column curCol : table.getColumns()) {
+                int i = 0;
+                for (Column curCol : table.getColumns()) {
                     sql += "\"" + curCol.getName() + "\" " + curCol.getType();
                     i++;
-                    if(i < table.getColumns().size()) {
+                    if (i < table.getColumns().size()) {
                         sql += ",";
                     }
-                }               
+                }
                 sql += ")";
                 this.con.setAutoCommit(true);
                 Statement stmt = this.con.createStatement();
@@ -84,7 +84,34 @@ public class DynTablePostgres extends DynTable {
                 Logger.addMessage(msg);
             }
         }
-        return created;   
+        return created;
+    }
+
+    @Override
+    public boolean addColumns(List<Column> columns) throws DynException {
+        boolean created = false;
+        String sql = "ALTER TABLE " + this.schema + "." + this.name;
+        int i = 0;
+        for (Column curCol : columns) {
+            if (i > 0) {
+                sql += ",";
+            }
+            sql += " ADD COLUMN \"" + curCol.getName() + "\" " + curCol.getType();
+            i++;
+        }
+        try {
+            this.con.setAutoCommit(true);
+            Statement stmt = this.con.createStatement();
+            stmt.executeUpdate(sql);
+            this.con.setAutoCommit(false);
+            created = true;
+        } catch (SQLException ex) {
+            Message msg = new Message("Could not add columns to >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+            msg.addException(ex);
+            Logger.addMessage(msg);
+        }
+
+        return created;
     }
 
     @Override

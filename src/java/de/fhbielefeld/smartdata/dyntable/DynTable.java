@@ -43,6 +43,15 @@ public abstract class DynTable {
     public abstract boolean create(Table table) throws DynException;
     
     /**
+     * Adds columns to the table.
+     * 
+     * @param columns Columns to add
+     * @return true if all columns are created, false if all columns already exists
+     * @throws DynException 
+     */
+    public abstract boolean addColumns(List<Column> columns) throws DynException;
+    
+    /**
      * Gets all available columns for this table
      * 
      * @return List of collumns
