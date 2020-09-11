@@ -70,7 +70,7 @@ public class TableResource {
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not create table: Because of ... \"]}"))
-    public Response getColumns(
+    public Response create(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
             @Parameter(description = "Schema name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
