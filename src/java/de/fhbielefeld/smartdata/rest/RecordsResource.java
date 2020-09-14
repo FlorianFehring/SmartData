@@ -278,7 +278,7 @@ public class RecordsResource {
             String json = dd.get(includes, filters, size, page, order, countonly, unique, deflatt);
             rob.add("records", json);
         } catch (DynException ex) {
-            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
