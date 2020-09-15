@@ -404,6 +404,12 @@ public class RecordsResource {
             InitialContext ctx = new InitialContext();
             DataSource ds = (DataSource) ctx.lookup("jdbc/smartdata");
             con = ds.getConnection();
+            // Optain a new connection if the recived one is closed
+            if(con.isClosed()) {
+                Message msg = new Message("RecordsResource", MessageLevel.WARNING, "Connection was closed try to get a new one.");
+                Logger.addDebugMessage(msg);
+                con = ds.getConnection();
+            }
         } catch (NamingException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not access connection pool: " + ex.getLocalizedMessage());

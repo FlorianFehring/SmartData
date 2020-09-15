@@ -42,23 +42,23 @@ public class EqualsFilter extends Filter {
             // Thrid element is the value that should be equal
             switch (col.getType()) {
                 case "text":
-                case "character varying":
+                case "varchar":
                     this.eqvalue = parts[2];
                     break;
                 case "boolean":
                     this.eqvalue = DataConverter.objectToBoolean(parts[2]);
                     break;
                 case "real":
-                case "double precision":
+                case "double":
                     this.eqvalue = DataConverter.objectToDouble(parts[2]);
                     break;
-                case "smallint":
+                case "int2":
                     this.eqvalue = DataConverter.objectToShort(parts[2]);
                     break;
-                case "integer":
+                case "int4":
                     this.eqvalue = DataConverter.objectToInteger(parts[2]);
                     break;
-                case "bigint":
+                case "int8":
                     this.eqvalue = DataConverter.objectToInteger(parts[2]);
                     break;
                 case "timestamp with timezone":
@@ -69,7 +69,7 @@ public class EqualsFilter extends Filter {
                             "EqualsFilter", MessageLevel.WARNING,
                             "Column type >" + col.getType() + "< is currently not supported. Try to use filter value in String form.");
                     Logger.addDebugMessage(msg);
-                    this.eqvalue = parts[3];
+                    this.eqvalue = parts[2];
             }
 
         } catch (DynException ex) {
