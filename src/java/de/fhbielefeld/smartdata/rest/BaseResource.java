@@ -30,12 +30,12 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
- * Ressource for accessing database informations
+ * Resource for accessing database informations
  *
  * @author Florian Fehring
  */
 @Path("base")
-public class BaseRessource {
+public class BaseResource {
 
     @Resource(lookup = "java:module/ModuleName")
     private String moduleName;
@@ -43,7 +43,7 @@ public class BaseRessource {
     /**
      * Creates a new instance of RootResource
      */
-    public BaseRessource() {
+    public BaseResource() {
         // Init logging
         try {
             Logger.getInstance("SmartData", this.moduleName);
