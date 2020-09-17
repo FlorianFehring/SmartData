@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -361,8 +362,8 @@ public class DynDataPostgres extends DynData {
             sqlbuilder.append(")");
 
             String sql = sqlbuilder.toString();
-            System.out.println("sql:");
-            System.out.println(sql);
+            Message msg = new Message("DynDataPostgres/getPreparedInsert",MessageLevel.INFO,sql);
+            Logger.addDebugMessage(msg);
 
             // Build up primary key query
             StringBuilder sqlbuilderid = new StringBuilder();
@@ -397,10 +398,8 @@ public class DynDataPostgres extends DynData {
                 PreparedStatement pstmt = this.con.prepareStatement(sql);
                 this.preparedStatements.put(pstmtid, pstmt);
                 this.preparedPlaceholders.put(pstmtid, placeholders);
-                System.out.println("fistid: " + firstidColumn);
                 if (firstidColumn != null) {
                     String idsql = sqlbuilderid.toString();
-                    System.out.println("idsql: " + idsql);
                     PreparedStatement idpstmt = this.con.prepareStatement(idsql);
                     this.preparedStatements.put("id_" + pstmtid, idpstmt);
                 }
@@ -431,8 +430,7 @@ public class DynDataPostgres extends DynData {
         } else {
             JsonObject jsonobject = jsonReader.readObject();
             jsonReader.close();
-
-        return this.create(jsonobject);
+            return this.create(jsonobject);
         }
     }
 
@@ -455,56 +453,15 @@ public class DynDataPostgres extends DynData {
 
             // Get column information
             Column curColumn = columns.get(jkey);
-            try {
-                switch (curColumn.getType()) {
-                    case "text":
-                    case "character varying":
-                        JsonString jstr = (JsonString) curEntry.getValue();
-                        pstmt.setString(pindex, jstr.getString());
-                        break;
-                    case "boolean":
-                        // Isn't there a better method to get the boolean value?
-                        boolean bool = Boolean.parseBoolean(curEntry.getValue().toString());
-                        pstmt.setBoolean(pindex, bool);
-                        break;
-                    case "real":
-                    case "double precision":
-                        JsonNumber jdoub = (JsonNumber) curEntry.getValue();
-                        pstmt.setDouble(pindex, jdoub.doubleValue());
-                        break;
-                    case "smallint":
-                    case "integer":
-                        JsonNumber jint = (JsonNumber) curEntry.getValue();
-                        pstmt.setInt(pindex, jint.intValue());
-                        break;
-                    case "bigint":
-                        JsonNumber jbint = (JsonNumber) curEntry.getValue();
-                        pstmt.setLong(pindex, jbint.longValue());
-                        break;
-                    case "timestamp with timezone":
-                        JsonString jts = (JsonString) curEntry.getValue();
-                        LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.toString());
-                        pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
-                        break;
-                    default:
-                        Message msg = new Message(
-                                "DynDataPostgres", MessageLevel.WARNING,
-                                "Write to database does not support type >" + curColumn.getType() + "<");
-                        Logger.addDebugMessage(msg);
-                }
-            } catch (SQLException ex) {
-                this.warnings.add("Could not save value for >" + curColumn.getName() + "<: " + ex.getLocalizedMessage());
-            }
+            this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
         }
         try {
             pstmt.executeUpdate();
             // Request primary key
             PreparedStatement idpstmt = this.preparedStatements.get("id_" + pstmtid);
             if (idpstmt != null) {
-                System.out.println("TEST 1");
                 ResultSet prs = idpstmt.executeQuery();
                 if (prs.next()) {
-                    System.out.println("TEST 2");
                     return prs.getLong(1);
                 }
             }
@@ -514,5 +471,218 @@ public class DynDataPostgres extends DynData {
             de.addSuppressed(ex);
             throw de;
         }
+    }
+    
+    @Override
+    public String getPreparedUpdate(JsonObject json, Long id) throws DynException {
+        String pstmtid = "update_" + String.join("_", json.keySet());
+
+        if (!this.preparedStatements.containsKey(pstmtid)) {
+            Map<String, Column> columns = this.dyntable.getColumns();
+            Map<String, Integer> placeholders = new HashMap<>();
+
+            // Build up insert statement
+            StringBuilder sqlbuilder = new StringBuilder();
+            sqlbuilder.append("UPDATE ");
+            sqlbuilder.append(this.schema);
+            sqlbuilder.append(".");
+            sqlbuilder.append(this.table);
+            sqlbuilder.append(" SET ");
+
+            int foundCols = 0;
+            String identitycol = null;
+            for (String curKey : json.keySet()) {
+                pstmtid += curKey;
+                // Check if table expects that data
+                if (!columns.containsKey(curKey)) {
+                    continue;
+                }
+                // Check if column is identity column                
+                if(columns.get(curKey).isIdentity()) {
+                    identitycol = curKey;
+                    continue;
+                }
+                if (foundCols > 0) {
+                    sqlbuilder.append(",");
+                }
+                sqlbuilder.append("\"");
+                sqlbuilder.append(curKey);
+                sqlbuilder.append("\" = ?");
+
+                // Note placeholder
+                foundCols++;
+                placeholders.put(curKey, foundCols);
+            }
+
+            if(identitycol == null && id != null) {
+                // Autodetect identity column
+                List<Column> idcolumns = this.dyntable.getIdentityColumns();
+                if(columns.isEmpty()) {
+                    throw new DynException("There is no identity column in table. Could not update datasets.");
+                }
+                identitycol = idcolumns.get(0).getName();
+            } else if(identitycol == null) {
+                throw new DynException("There was no identity column given to identify the set to update.");
+            }
+            sqlbuilder.append(" WHERE ");
+            sqlbuilder.append(identitycol);
+            sqlbuilder.append(" = ?");
+            foundCols++;
+            placeholders.put(identitycol,foundCols);
+            
+            String sql = sqlbuilder.toString();
+            Message msg = new Message("DynDataPostgres/getPreparedUpdate",MessageLevel.INFO,sql);
+            Logger.addDebugMessage(msg);
+            
+            try {
+                // Prepare statement
+                PreparedStatement pstmt = this.con.prepareStatement(sql);
+                this.preparedStatements.put(pstmtid, pstmt);
+                this.preparedPlaceholders.put(pstmtid, placeholders);
+            } catch (SQLException ex) {
+                DynException de = new DynException("Could not prepare statement >"
+                        + sql + "<: " + ex.getLocalizedMessage());
+                de.addSuppressed(ex);
+                throw de;
+            }
+        }
+        return pstmtid;
+    }
+    
+    @Override
+    public Long update(String json, Long id) throws DynException {
+        // Reset warnings for new create
+        this.warnings = new ArrayList<>();
+        JsonReader jsonReader = Json.createReader(new StringReader(json));
+        // Detect array content
+        JsonArray jsonarray;
+        if(json.startsWith("[")) {
+            jsonarray = jsonReader.readArray();
+            jsonReader.close();
+        } else if(json.contains("\"records\"")) {
+            JsonObject jsonobject = jsonReader.readObject();
+            jsonReader.close();
+            jsonarray = jsonobject.getJsonArray("records");
+        } else if(json.contains("\"list\"")) {
+            JsonObject jsonobject = jsonReader.readObject();
+            jsonReader.close();
+            jsonarray = jsonobject.getJsonArray("list");
+        } else {
+            JsonObject jsonobject = jsonReader.readObject();
+            jsonReader.close();            
+            return this.update(jsonobject,id);
+        }
+        
+        Long lastid = null;
+        for(int i=0; i < jsonarray.size(); i++) {
+            lastid = this.update(jsonarray.getJsonObject(i), null);
+        }
+        return lastid;
+    }
+    
+    @Override
+    public Long update(JsonObject json, Long id) throws DynException {
+        String pstmtid = this.getPreparedUpdate(json, id);
+        PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
+        Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
+        Map<String, Column> columns = this.dyntable.getColumns();
+    
+        int usedPlaceholders = 1;
+        for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
+            String jkey = curEntry.getKey();
+            // Check if table expects that data
+            if (!placeholders.containsKey(jkey)) {
+                this.warnings.add("Table >" + this.table + "< does not expect data for >" + jkey + "<");
+                continue;
+            }
+
+            int pindex = placeholders.get(jkey);
+
+            // Get column information
+            Column curColumn = columns.get(jkey);
+            this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
+            usedPlaceholders++;
+        }
+
+        // If there is a placeholder left it will be the id
+        if(usedPlaceholders <= placeholders.size()) {
+            try {
+                int nextId = usedPlaceholders++;
+                pstmt.setLong(nextId, id);
+            } catch(SQLException ex) {
+                DynException de = new DynException("Could set id to update statement: " + ex.getLocalizedMessage());
+                de.addSuppressed(ex);
+                throw de;
+            }
+        }
+        
+        try {
+            pstmt.executeUpdate();
+            // Request primary key
+            PreparedStatement idpstmt = this.preparedStatements.get("id_" + pstmtid);
+            if (idpstmt != null) {
+                ResultSet prs = idpstmt.executeQuery();
+                if (prs.next()) {
+                    return prs.getLong(1);
+                }
+            }
+            return null;
+        } catch (SQLException ex) {
+            DynException de = new DynException("Could not update dataset: " + ex.getLocalizedMessage());
+            de.addSuppressed(ex);
+            throw de;
+        }
+    }
+    
+    /**
+     * Set values to a placeholder
+     * 
+     * @param pstmt Prepared statement where to set the value
+     * @param pindex Index of the parameter to set
+     * @param col Parameters column
+     * @param value Parameters value
+     * @throws DynException 
+     */
+    private void setPlaceholder(PreparedStatement pstmt, int pindex, Column col, JsonValue value) throws DynException {
+        try {
+                switch (col.getType()) {
+                    case "text":
+                    case "character varying":
+                        JsonString jstr = (JsonString) value;
+                        pstmt.setString(pindex, jstr.getString());
+                        break;
+                    case "boolean":
+                        // Isn't there a better method to get the boolean value?
+                        boolean bool = Boolean.parseBoolean(value.toString());
+                        pstmt.setBoolean(pindex, bool);
+                        break;
+                    case "real":
+                    case "double precision":
+                        JsonNumber jdoub = (JsonNumber) value;
+                        pstmt.setDouble(pindex, jdoub.doubleValue());
+                        break;
+                    case "smallint":
+                    case "integer":
+                        JsonNumber jint = (JsonNumber) value;
+                        pstmt.setInt(pindex, jint.intValue());
+                        break;
+                    case "bigint":
+                        JsonNumber jbint = (JsonNumber) value;
+                        pstmt.setLong(pindex, jbint.longValue());
+                        break;
+                    case "timestamp with timezone":
+                        JsonString jts = (JsonString) value;
+                        LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.toString());
+                        pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                        break;
+                    default:
+                        Message msg = new Message(
+                                "DynDataPostgres", MessageLevel.WARNING,
+                                "Write to database does not support type >" + col.getType() + "<");
+                        Logger.addDebugMessage(msg);
+                }
+            } catch (SQLException ex) {
+                this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage());
+            }
     }
 }

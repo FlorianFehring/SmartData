@@ -296,7 +296,7 @@ public class RecordsResource {
     }
 
     @PUT
-    @Path("{table}/")
+    @Path("{table}/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Updates a dataset",
             description = "Updates an existing dataset. Does nothing if the dataset does not exists.")
@@ -329,11 +329,24 @@ public class RecordsResource {
         if (con == null) {
             return rob.toResponse();
         }
-
-        System.out.println("Recived id:");
-        System.out.println(id);
-        System.out.println("Recived jsondata:");
-        System.out.println(json);
+        
+        // Init data access
+        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
+        try {
+            dd.update(json, id);
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage(ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
+        }
 
         try {
             con.close();
@@ -341,11 +354,74 @@ public class RecordsResource {
             Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
             Logger.addMessage(msg);
         }
-
-        // TODO update data and deliver number of modi rows
-        throw new UnsupportedOperationException("create not implemented yet");
+        
+        rob.setStatus(Response.Status.OK);
+        return rob.toResponse();
     }
 
+    @PUT
+    @Path("{table}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Updates multiple datasets",
+            description = "Updates existing datasets. The identity column must be included in the json.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Number of updated datasets",
+            content = @Content(
+                    mediaType = "text/plain",
+                    example = "1"
+            ))
+    @APIResponse(
+            responseCode = "500",
+            description = "Error mesage",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
+    public Response update(
+            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Schema name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "json data",
+                    schema = @Schema(type = STRING, defaultValue = "public"))  String json) {
+
+        if (schema == null) {
+            schema = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        Connection con = this.getConnection(rob);
+        if (con == null) {
+            return rob.toResponse();
+        }
+        
+        // Init data access
+        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
+        try {
+            dd.update(json,null);
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage(ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
+        }
+
+        try {
+            con.close();
+        } catch (SQLException ex) {
+            Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+            Logger.addMessage(msg);
+        }
+        
+        rob.setStatus(Response.Status.OK);
+        return rob.toResponse();
+    }
+    
     @DELETE
     @Path("{table}/{id}")
     @Operation(summary = "Deletes a dataset",

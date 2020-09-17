@@ -126,4 +126,34 @@ public abstract class DynData {
      * @throws DynException
      */
     public abstract Long create(JsonObject json) throws DynException;
+    
+    /**
+     * GEt a prepared query for updateing datasets.
+     * 
+     * @param json Json object with data set up to date
+     * @param id Id of the dataset to update (can be null if id is stored in json)
+     * @return Id of the prepared statement
+     * @throws DynException 
+     */
+    public abstract String getPreparedUpdate(JsonObject json, Long id) throws DynException;
+    
+    /**
+     * Updates datasets with data given as a json string.
+     * 
+     * @param json Json string containing new values and indentity column values
+     * @param id Id of the dataset to update (can be null if id is stored in json)
+     * @return Number of updated datasets
+     * @throws DynException 
+     */
+    public abstract Long update(String json, Long id) throws DynException;
+    
+    /**
+     * Updates one dataset with the data given as json object
+     * 
+     * @param json Json Object containing data to update and identity column with value
+     * @param id Id of the dataset to update (can be null if id is stored in json)
+     * @return Number of updated datasets
+     * @throws DynException 
+     */
+    public abstract Long update(JsonObject json, Long id) throws DynException;
 }
