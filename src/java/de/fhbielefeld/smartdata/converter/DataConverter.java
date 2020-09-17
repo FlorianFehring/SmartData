@@ -209,8 +209,12 @@ public class DataConverter {
                 exs.add(pex);
             }
 
-            DynException ex = exs.get(exs.size()-1);
-            throw ex;
+            DynException nex = new DynException("Could not parse date");
+            for(Exception curEx : exs) {
+                nex.addSuppressed(curEx);
+                System.out.println(curEx.getLocalizedMessage());
+            }
+            throw nex;
         }
     }
 }

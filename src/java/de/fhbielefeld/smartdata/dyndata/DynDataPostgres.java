@@ -670,9 +670,10 @@ public class DynDataPostgres extends DynData {
                         JsonNumber jbint = (JsonNumber) value;
                         pstmt.setLong(pindex, jbint.longValue());
                         break;
-                    case "timestamp with timezone":
+                    case "timestamp with time zone":
+                    case "timestamp without time zone":
                         JsonString jts = (JsonString) value;
-                        LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.toString());
+                        LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
                         pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
                         break;
                     default:
@@ -680,6 +681,7 @@ public class DynDataPostgres extends DynData {
                                 "DynDataPostgres", MessageLevel.WARNING,
                                 "Write to database does not support type >" + col.getType() + "<");
                         Logger.addDebugMessage(msg);
+                        this.warnings.add("Could not save value for >" + col.getName() + "<: Datatype >" + col.getType() + "< is not supported.");
                 }
             } catch (SQLException ex) {
                 this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage());
