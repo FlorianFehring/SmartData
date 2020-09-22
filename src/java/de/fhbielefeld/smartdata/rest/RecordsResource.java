@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * REST Web Service for accessing the data, following the TreeQL standard with
@@ -48,6 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
  * @author Florian Fehring
  */
 @Path("records")
+@Tag(name = "Records", description = "Accessing, inserting, updateing and deleting datasets.")
 public class RecordsResource {
 
     @Resource(lookup = "java:module/ModuleName")
@@ -318,7 +320,7 @@ public class RecordsResource {
             @Parameter(description = "Schema name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
             @Parameter(description = "json data",
-                    schema = @Schema(type = STRING, defaultValue = "public"))  String json) {
+                    schema = @Schema(type = STRING, defaultValue = "public")) String json) {
 
         if (schema == null) {
             schema = "public";
@@ -329,7 +331,7 @@ public class RecordsResource {
         if (con == null) {
             return rob.toResponse();
         }
-        
+
         // Init data access
         DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
@@ -354,7 +356,7 @@ public class RecordsResource {
             Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
             Logger.addMessage(msg);
         }
-        
+
         rob.setStatus(Response.Status.OK);
         return rob.toResponse();
     }
@@ -381,7 +383,7 @@ public class RecordsResource {
             @Parameter(description = "Schema name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
             @Parameter(description = "json data",
-                    schema = @Schema(type = STRING, defaultValue = "public"))  String json) {
+                    schema = @Schema(type = STRING, defaultValue = "public")) String json) {
 
         if (schema == null) {
             schema = "public";
@@ -392,11 +394,11 @@ public class RecordsResource {
         if (con == null) {
             return rob.toResponse();
         }
-        
+
         // Init data access
         DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
-            dd.update(json,null);
+            dd.update(json, null);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage(ex.getLocalizedMessage());
@@ -411,17 +413,10 @@ public class RecordsResource {
             }
         }
 
-        try {
-            con.close();
-        } catch (SQLException ex) {
-            Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-            Logger.addMessage(msg);
-        }
-        
         rob.setStatus(Response.Status.OK);
         return rob.toResponse();
     }
-    
+
     @DELETE
     @Path("{table}/{id}")
     @Operation(summary = "Deletes a dataset",
@@ -442,7 +437,7 @@ public class RecordsResource {
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
             @Parameter(description = "Schema name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
-            @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") Long id) {
+            @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") String id) {
 
         if (schema == null) {
             schema = "public";
@@ -454,18 +449,26 @@ public class RecordsResource {
             return rob.toResponse();
         }
 
-        System.out.println("Recived id:");
-        System.out.println(id);
-
+        // Init data access
+        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
-            con.close();
-        } catch (SQLException ex) {
-            Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-            Logger.addMessage(msg);
+            dd.delete(id);
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage(ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
         }
-
-        // TODO update data and deliver number of modi rows
-        throw new UnsupportedOperationException("delete not implemented yet");
+        
+        rob.setStatus(Response.Status.OK);
+        return rob.toResponse();
     }
 
     /**
@@ -481,7 +484,7 @@ public class RecordsResource {
             DataSource ds = (DataSource) ctx.lookup("jdbc/smartdata");
             con = ds.getConnection();
             // Optain a new connection if the recived one is closed
-            if(con.isClosed()) {
+            if (con.isClosed()) {
                 Message msg = new Message("RecordsResource", MessageLevel.WARNING, "Connection was closed try to get a new one.");
                 Logger.addDebugMessage(msg);
                 con = ds.getConnection();

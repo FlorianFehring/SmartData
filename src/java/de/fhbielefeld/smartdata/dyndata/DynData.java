@@ -156,4 +156,13 @@ public abstract class DynData {
      * @throws DynException 
      */
     public abstract Long update(JsonObject json, Long id) throws DynException;
+    
+    /**
+     * Deletes an dataset
+     * 
+     * @param id Id of the dataset to delete
+     * @return Id 
+     * @throws DynException 
+     */
+    public abstract Long delete(String id) throws DynException;
 }
