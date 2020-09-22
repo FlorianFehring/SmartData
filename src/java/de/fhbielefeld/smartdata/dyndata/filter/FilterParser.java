@@ -46,6 +46,12 @@ public class FilterParser {
         } else if (filter.contains(",is,")) {
             Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter for >" + filter + "< is not implemented yet.");
             Logger.addMessage(msg);
+        } else if (filter.contains(",sir,")) {
+            f = new RadiusFilter(table);
+            f.parse(filter);
+        } else if (filter.contains(",sib,")) {
+            f = new BoundingBoxFilter(table);
+            f.parse(filter); 
         } else {
             Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter for >" + filter + "< is unkown.");
             Logger.addMessage(msg);
