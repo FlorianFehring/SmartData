@@ -89,6 +89,13 @@ public abstract class DynTable {
     public abstract void changeColumnName(String oldname, String newname) throws DynException;
     
     /**
+     * Changes the srid of a column (only on geometry columns)
+     * @param columns Column definitions with changed informations
+     * @throws DynException 
+     */
+    public abstract void changeColumns(List<Column> columns) throws DynException;
+    
+    /**
      * Deletes the table
      * 
      * @throws de.fhbielefeld.smartdata.exceptions.DynException

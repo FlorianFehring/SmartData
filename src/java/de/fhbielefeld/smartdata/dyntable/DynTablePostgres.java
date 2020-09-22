@@ -242,6 +242,23 @@ public class DynTablePostgres extends DynTable {
     }
 
     @Override
+    public void changeColumns(List<Column> columns) throws DynException {
+        System.out.println("test");
+        for (Column curCol : columns) {
+            try {
+                Statement stmt = this.con.createStatement();
+                stmt.executeQuery(
+                        "SELECT UpdateGeometrySRID('" + this.schema + "', '"
+                        + this.name + "','" + curCol.getName() + "'," + curCol.getSrid() + ")");
+            } catch (SQLException ex) {
+                DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
+                dex.addSuppressed(ex);
+                throw dex;
+            }
+        }
+    }
+
+    @Override
     public void delete() throws DynException {
         throw new UnsupportedOperationException();
     }

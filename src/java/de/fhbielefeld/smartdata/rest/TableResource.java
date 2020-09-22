@@ -141,7 +141,7 @@ public class TableResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        
+
         // Get connection
         Connection con = this.getConnection(rob);
 
@@ -199,14 +199,14 @@ public class TableResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        
+
         // Get connection
         Connection con = this.getConnection(rob);
-        
+
         try {
             // Init table access
             DynTablePostgres dt = new DynTablePostgres(schema, table, con);
-            if(dt.addColumns(columns)) {
+            if (dt.addColumns(columns)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
                 rob.setStatus(Response.Status.CONFLICT);
@@ -223,7 +223,61 @@ public class TableResource {
                 Logger.addMessage(msg);
             }
         }
-        
+
+        return rob.toResponse();
+    }
+
+    @PUT
+    @Path("{table}/changeColumn")
+    @Operation(summary = "Changes the srid of a column",
+            description = "Changes the srid of a column")
+    @APIResponse(
+            responseCode = "200",
+            description = "SRID changed succsessfull")
+    @APIResponse(
+            responseCode = "404",
+            description = "Column does not exists",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Column 'columname' does not exists. \"]}")
+    )
+    @APIResponse(
+            responseCode = "500",
+            description = "Error mesage",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Could not change SRID: Because of ... \"]}"))
+    public Response changeColumn(
+            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Schema name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            List<Column> columns) {
+
+        if (schema == null) {
+            schema = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        // Get connection
+        Connection con = this.getConnection(rob);
+
+        try {
+            // Init table access
+            DynTablePostgres dt = new DynTablePostgres(schema, table, con);
+            dt.changeColumns(columns);
+            rob.setStatus(Response.Status.OK);
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not change SRID: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
+                Logger.addMessage(msg);
+            }
+        }
+
         return rob.toResponse();
     }
 
