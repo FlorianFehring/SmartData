@@ -10,6 +10,7 @@ import de.fhbielefeld.smartdata.dyndata.filter.FilterException;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.io.StringReader;
 import java.sql.Connection;
+import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -686,5 +687,38 @@ public class DynDataPostgres extends DynData {
             } catch (SQLException ex) {
                 this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage());
             }
+    }
+    
+    @Override
+    public Long delete(String idstr) throws DynException {
+        String[] ids = idstr.split(",");
+        String sql = "DELETE FROM " + this.schema + "." + this.table + " WHERE ";
+        
+        // Get name of first id column
+        List<Column> columns = this.dyntable.getIdentityColumns();
+        if(columns.isEmpty()) {
+            throw new DynException("Could not delete from >" + this.schema + "." + this.table + " because there is no identity column.");
+        }
+        // Get first column
+        Column idcol = columns.get(0);
+        
+        sql += "\"" + idcol.getName() + "\" = ";
+        if(idcol.getType().equalsIgnoreCase("varchar")) {
+            sql += "\"";
+            sql += String.join("\" OR \"" + idcol.getName() + "\" = \"", ids);
+            sql += "\"";
+        } else {
+            sql += String.join(" OR \"" + idcol.getName() + "\" = ", ids);
+        }
+        
+        try {
+            Statement stmt = this.con.createStatement();
+            stmt.executeUpdate(sql);
+            return null;
+        } catch (SQLException ex) {
+            DynException de = new DynException("Could not update dataset: " + ex.getLocalizedMessage());
+            de.addSuppressed(ex);
+            throw de;
+        }
     }
 }
