@@ -28,6 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * Resource for accessing database informations
@@ -35,6 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
  * @author Florian Fehring
  */
 @Path("base")
+@Tag(name = "Base", description = "Manage schemata")
 public class BaseResource {
 
     @Resource(lookup = "java:module/ModuleName")

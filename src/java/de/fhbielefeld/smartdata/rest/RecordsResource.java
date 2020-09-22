@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * REST Web Service for accessing the data, following the TreeQL standard with
@@ -48,6 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
  * @author Florian Fehring
  */
 @Path("records")
+@Tag(name = "Records", description = "Accessing, inserting, updateing and deleting datasets.")
 public class RecordsResource {
 
     @Resource(lookup = "java:module/ModuleName")

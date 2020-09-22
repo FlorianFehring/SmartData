@@ -648,7 +648,7 @@ public class DynDataPostgres extends DynData {
         try {
                 switch (col.getType()) {
                     case "text":
-                    case "character varying":
+                    case "varchar":
                         JsonString jstr = (JsonString) value;
                         pstmt.setString(pindex, jstr.getString());
                         break;
@@ -657,22 +657,21 @@ public class DynDataPostgres extends DynData {
                         boolean bool = Boolean.parseBoolean(value.toString());
                         pstmt.setBoolean(pindex, bool);
                         break;
-                    case "real":
-                    case "double precision":
+                    case "float4":
+                    case "float8":
                         JsonNumber jdoub = (JsonNumber) value;
                         pstmt.setDouble(pindex, jdoub.doubleValue());
                         break;
-                    case "smallint":
-                    case "integer":
+                    case "int2":
+                    case "int4":
                         JsonNumber jint = (JsonNumber) value;
                         pstmt.setInt(pindex, jint.intValue());
                         break;
-                    case "bigint":
+                    case "int8":
                         JsonNumber jbint = (JsonNumber) value;
                         pstmt.setLong(pindex, jbint.longValue());
                         break;
-                    case "timestamp with time zone":
-                    case "timestamp without time zone":
+                    case "timestamp":
                         JsonString jts = (JsonString) value;
                         LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
                         pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));

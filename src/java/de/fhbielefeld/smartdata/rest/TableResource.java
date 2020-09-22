@@ -32,6 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * REST Web Service
@@ -39,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
  * @author Florian Fehring
  */
 @Path("table")
+@Tag(name = "Table", description = "Create and modify tables.")
 public class TableResource {
 
     @Resource(lookup = "java:module/ModuleName")
@@ -167,7 +169,7 @@ public class TableResource {
     @PUT
     @Path("{table}/addColumns")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Adds columsn to a table",
+    @Operation(summary = "Adds columns to a table",
             description = "Adds columns to a table.")
     @APIResponse(
             responseCode = "200",

@@ -12,6 +12,9 @@ public class Column {
     
     private String name;
     private String type;
+    private String subtype;
+    private Integer srid;
+    private Integer dimension;
     private boolean isNullable = true;
     private boolean isIdentity = false;
     
@@ -38,6 +41,30 @@ public class Column {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getSubtype() {
+        return subtype;
+    }
+
+    public void setSubtype(String subtype) {
+        this.subtype = subtype;
+    }
+
+    public Integer getSrid() {
+        return srid;
+    }
+
+    public void setSrid(Integer srid) {
+        this.srid = srid;
+    }
+
+    public Integer getDimension() {
+        return dimension;
+    }
+
+    public void setDimension(Integer dimension) {
+        this.dimension = dimension;
     }
 
     public boolean isNullable() {
