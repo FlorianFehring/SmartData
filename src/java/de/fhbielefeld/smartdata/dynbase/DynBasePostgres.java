@@ -4,9 +4,8 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.Table;
-import de.fhbielefeld.smartdata.dynbase.DynBase;
+import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -23,14 +22,12 @@ import java.util.Map;
  *
  * @author Florian Fehring
  */
-public class DynBasePostgres extends DynBase {
+public class DynBasePostgres extends DynPostgres implements DynBase {
 
-    private Connection con;
-
-    public DynBasePostgres(Connection con) {
-        this.con = con;
+    public DynBasePostgres() throws DynException {
+        this.connect();
     }
-
+    
     @Override
     public Collection<String> getAbilities() throws DynException {
         List<String> abilities = new ArrayList<>();
@@ -108,6 +105,17 @@ public class DynBasePostgres extends DynBase {
     }
 
     @Override
+    public boolean createAbilitiesIfNotExists(Collection<String> abilityNames) throws DynException {
+        boolean created = false;
+        for(String abilityName : abilityNames) {
+            if(this.createAbilityIfNotExists(abilityName)) {
+                created = true;
+            }
+        }
+        return created;
+    }
+    
+    @Override
     public boolean schemaExists(String schemaName) throws DynException {
         try {
             Statement stmtCheck = this.con.createStatement();
@@ -127,6 +135,17 @@ public class DynBasePostgres extends DynBase {
         return false;
     }
 
+    @Override
+    public boolean createSchemaIfNotExists(Collection<String> schemataNames) throws DynException {
+        boolean created = false;
+        for(String schemaName : schemataNames) {
+            if(this.createSchemaIfNotExists(schemaName)) {
+                created = true;
+            }
+        }
+        return created;
+    }
+    
     @Override
     public boolean createSchemaIfNotExists(String schemaName) throws DynException {
         boolean created = false;

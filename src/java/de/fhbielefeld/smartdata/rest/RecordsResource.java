@@ -2,8 +2,6 @@ package de.fhbielefeld.smartdata.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
-import de.fhbielefeld.scl.logger.message.Message;
-import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dyndata.DynDataPostgres;
@@ -13,14 +11,9 @@ import de.fhbielefeld.smartdata.dyndata.filter.FilterException;
 import de.fhbielefeld.smartdata.dyndata.filter.FilterParser;
 import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Resource;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.Produces;
@@ -100,32 +93,21 @@ public class RecordsResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        Connection con = this.getConnection(rob);
-        if (con == null) {
-            return rob.toResponse();
-        }
-
-        // Init data access
-        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
 
         try {
+            // Init data access
+            DynDataPostgres dd = new DynDataPostgres(schema, table);
             rob.add(dd.create(json));
             for (String curWarning : dd.getWarnings()) {
                 rob.addWarningMessage(curWarning);
             }
+            dd.disconnect();
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not create dataset: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            try {
-                con.close();
-            } catch (SQLException ex) {
-                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-                Logger.addMessage(msg);
-            }
         }
         return rob.toResponse();
     }
@@ -159,15 +141,11 @@ public class RecordsResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        Connection con = this.getConnection(rob);
-        if (con == null) {
-            return rob.toResponse();
-        }
 
         List<Filter> filters = new ArrayList<>();
         // Init table access
-        DynTablePostgres dt = new DynTablePostgres(schema, table, con);
         try {
+            DynTablePostgres dt = new DynTablePostgres(schema, table);
             List<Column> idcolumns = dt.getIdentityColumns();
             if (idcolumns.isEmpty()) {
                 rob.addErrorMessage("There is no identity column for table >" + table + "< could not get single dataset.");
@@ -194,23 +172,17 @@ public class RecordsResource {
             return rob.toResponse();
         }
 
-        // Init data access
-        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
+            // Init data access
+            DynDataPostgres dd = new DynDataPostgres(schema, table);
             String json = dd.get(includes, filters, 1, null, null, false, null, false);
             rob.add("records", json);
+            dd.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.BAD_REQUEST);
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            try {
-                con.close();
-            } catch (SQLException ex) {
-                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-                Logger.addMessage(msg);
-            }
         }
         rob.setStatus(Response.Status.OK);
 
@@ -252,17 +224,12 @@ public class RecordsResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        Connection con = this.getConnection(rob);
-        if (con == null) {
-            return rob.toResponse();
-        }
-
-        // Init table access
-        DynTablePostgres dt = new DynTablePostgres(schema, table, con);
 
         List<Filter> filters = new ArrayList<>();
         if (filter != null) {
             try {
+                // Init table access
+                DynTablePostgres dt = new DynTablePostgres(schema, table);
                 // Build filter objects
                 Filter filt = FilterParser.parse(filter, dt);
                 filters.add(filt);
@@ -271,12 +238,17 @@ public class RecordsResource {
                 rob.addErrorMessage("Could not parse filter rule >" + filter + "<: " + ex.getLocalizedMessage());
                 rob.addException(ex);
                 return rob.toResponse();
+            } catch (DynException ex) {
+                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+                rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+                rob.addException(ex);
+                return rob.toResponse();
             }
         }
 
-        // Init data access
-        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
+            // Init data access
+            DynDataPostgres dd = new DynDataPostgres(schema, table);
             String json = dd.get(includes, filters, size, page, order, countonly, unique, deflatt);
             rob.add("records", json);
         } catch (DynException ex) {
@@ -284,13 +256,6 @@ public class RecordsResource {
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            try {
-                con.close();
-            } catch (SQLException ex) {
-                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-                Logger.addMessage(msg);
-            }
         }
         rob.setStatus(Response.Status.OK);
 
@@ -327,34 +292,17 @@ public class RecordsResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        Connection con = this.getConnection(rob);
-        if (con == null) {
-            return rob.toResponse();
-        }
 
-        // Init data access
-        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
+            // Init data access
+            DynDataPostgres dd = new DynDataPostgres(schema, table);
             dd.update(json, id);
+            dd.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            try {
-                con.close();
-            } catch (SQLException ex) {
-                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-                Logger.addMessage(msg);
-            }
-        }
-
-        try {
-            con.close();
-        } catch (SQLException ex) {
-            Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-            Logger.addMessage(msg);
         }
 
         rob.setStatus(Response.Status.OK);
@@ -390,27 +338,17 @@ public class RecordsResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        Connection con = this.getConnection(rob);
-        if (con == null) {
-            return rob.toResponse();
-        }
 
-        // Init data access
-        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
+            // Init data access
+            DynDataPostgres dd = new DynDataPostgres(schema, table);
             dd.update(json, null);
+            dd.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            try {
-                con.close();
-            } catch (SQLException ex) {
-                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-                Logger.addMessage(msg);
-            }
         }
 
         rob.setStatus(Response.Status.OK);
@@ -444,60 +382,20 @@ public class RecordsResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        Connection con = this.getConnection(rob);
-        if (con == null) {
-            return rob.toResponse();
-        }
 
-        // Init data access
-        DynDataPostgres dd = new DynDataPostgres(schema, table, con);
         try {
+            // Init data access
+            DynDataPostgres dd = new DynDataPostgres(schema, table);
             dd.delete(id);
+            dd.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            try {
-                con.close();
-            } catch (SQLException ex) {
-                Message msg = new Message("RecordsResouce", MessageLevel.ERROR, "Could not close database connection.");
-                Logger.addMessage(msg);
-            }
         }
-        
+
         rob.setStatus(Response.Status.OK);
         return rob.toResponse();
-    }
-
-    /**
-     * Gets the db connection
-     *
-     * @param rob ResponseObjectBuilder to add errormessages
-     * @return Connection or null if could not get
-     */
-    private Connection getConnection(ResponseObjectBuilder rob) {
-        Connection con = null;
-        try {
-            InitialContext ctx = new InitialContext();
-            DataSource ds = (DataSource) ctx.lookup("jdbc/smartdata");
-            con = ds.getConnection();
-            // Optain a new connection if the recived one is closed
-            if (con.isClosed()) {
-                Message msg = new Message("RecordsResource", MessageLevel.WARNING, "Connection was closed try to get a new one.");
-                Logger.addDebugMessage(msg);
-                con = ds.getConnection();
-            }
-        } catch (NamingException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not access connection pool: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-        } catch (SQLException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not conntect to database: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-        }
-        return con;
     }
 }

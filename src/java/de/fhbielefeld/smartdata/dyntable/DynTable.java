@@ -2,8 +2,8 @@ package de.fhbielefeld.smartdata.dyntable;
 
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dyn.Dyn;
 import de.fhbielefeld.smartdata.exceptions.DynException;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
@@ -12,17 +12,7 @@ import java.util.Map;
  * 
  * @author Florian Fehring
  */
-public abstract class DynTable {
-    
-    protected String schema;
-    protected String name;
-    protected Connection con;
-    
-    public DynTable(String schema, String name, Connection con) {
-        this.schema = schema;
-        this.name = name;
-        this.con = con;
-    }
+public interface DynTable extends Dyn {
     
     /**
      * Checks if the specified table exists

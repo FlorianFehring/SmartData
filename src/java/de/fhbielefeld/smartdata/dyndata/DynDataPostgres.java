@@ -5,8 +5,11 @@ import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.dyndata.filter.Filter;
 import de.fhbielefeld.smartdata.dyndata.filter.FilterException;
+import de.fhbielefeld.smartdata.dyntable.DynTable;
+import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.io.StringReader;
 import java.sql.Connection;
@@ -35,10 +38,22 @@ import javax.json.JsonValue;
  *
  * @author Florian Fehring
  */
-public class DynDataPostgres extends DynData {
+public final class DynDataPostgres extends DynPostgres implements DynData {
 
-    public DynDataPostgres(String schema, String tablename, Connection con) {
-        super(schema, tablename, con);
+    protected String schema;
+    protected String table;
+
+    protected DynTable dyntable = null;
+    protected static final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
+    protected static final Map<String, Map<String, Integer>> preparedPlaceholders = new HashMap<>();
+
+    public DynDataPostgres(String schema, String table) throws DynException {
+        this.schema = schema;
+        this.table = table;
+
+        // Get available columns
+        this.dyntable = new DynTablePostgres(this.schema, this.table);
+        this.connect();
     }
 
     @Override
@@ -254,7 +269,7 @@ public class DynDataPostgres extends DynData {
     }
 
     @Override
-    protected PreparedStatement setQueryClauses(String stmtid, Collection<Filter> filters, int size, String page) throws DynException {
+    public PreparedStatement setQueryClauses(String stmtid, Collection<Filter> filters, int size, String page) throws DynException {
         PreparedStatement stmt = this.preparedStatements.get(stmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(stmtid);
 

@@ -1,16 +1,10 @@
 package de.fhbielefeld.smartdata.dyndata;
 
+import de.fhbielefeld.smartdata.dyn.Dyn;
 import de.fhbielefeld.smartdata.dyndata.filter.Filter;
-import de.fhbielefeld.smartdata.dyntable.DynTable;
-import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import javax.json.JsonObject;
 
 /**
@@ -18,34 +12,8 @@ import javax.json.JsonObject;
  *
  * @author Florian Fehring
  */
-public abstract class DynData {
+public interface DynData extends Dyn {
 
-    protected String schema;
-    protected String table;
-    protected Connection con;
-
-    protected List<String> warnings = new ArrayList<>();
-    protected DynTable dyntable = null;
-    protected static final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
-    protected static final Map<String, Map<String, Integer>> preparedPlaceholders = new HashMap<>();
-
-    public DynData(String schema, String table, Connection con) {
-        this.schema = schema;
-        this.table = table;
-        this.con = con;
-
-        // Get available columns
-        this.dyntable = new DynTablePostgres(this.schema, this.table, this.con);
-    }
-    
-    /**
-     * Get the warnings occured while processing
-     * 
-     * @return List of warning messages
-     */
-    public List<String> getWarnings() {
-        return warnings;
-    }
 
     /**
      * Builds up the sql statement requied for selecting the data.All prameters
@@ -76,7 +44,7 @@ public abstract class DynData {
      * @return NativeQuery with setted clauses
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
-    protected abstract PreparedStatement setQueryClauses(String stmtid, Collection<Filter> filters, int size, String page) throws DynException;
+    public abstract PreparedStatement setQueryClauses(String stmtid, Collection<Filter> filters, int size, String page) throws DynException;
 
     /**
      * Gets data from the database

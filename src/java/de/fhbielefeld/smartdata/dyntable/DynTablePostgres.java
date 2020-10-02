@@ -5,10 +5,10 @@ import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.dynbase.DynBase;
 import de.fhbielefeld.smartdata.dynbase.DynBasePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -22,10 +22,15 @@ import java.util.Map;
  *
  * @author Florian Fehring
  */
-public class DynTablePostgres extends DynTable {
+public final class DynTablePostgres extends DynPostgres implements DynTable {
 
-    public DynTablePostgres(String schema, String name, Connection con) {
-        super(schema, name, con);
+    protected String schema;
+    protected String name;
+    
+    public DynTablePostgres(String schema, String name) throws DynException {
+        this.schema = schema;
+        this.name = name;
+        this.connect();
     }
 
     @Override
@@ -46,7 +51,7 @@ public class DynTablePostgres extends DynTable {
 
         // If table does not exists, check if schema is present
         if (!texists) {
-            DynBase db = new DynBasePostgres(this.con);
+            DynBase db = new DynBasePostgres();
             if (!db.schemaExists(this.schema)) {
                 DynException dex = new DynException("Schema >" + this.schema + "< for table >" + this.name + "< does not exists.");
                 throw dex;

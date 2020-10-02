@@ -1,6 +1,7 @@
 package de.fhbielefeld.smartdata.dynbase;
 
 import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dyn.Dyn;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.Collection;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.Map;
  * 
  * @author Florian Fehring
  */
-public abstract class DynBase {
+public interface DynBase extends Dyn {
     
     /**
      * Gets a list of abilities that is supported by this DynBase implementation
@@ -20,7 +21,7 @@ public abstract class DynBase {
      * @return Names of the abilities.
      * @throws DynException 
      */
-    public abstract Collection<String> getAbilities() throws DynException;
+    public Collection<String> getAbilities() throws DynException;
     
     /**
      * Gets informations about an ability of the DynBase
@@ -29,7 +30,7 @@ public abstract class DynBase {
      * @return Key value pairs of information about the ability
      * @throws DynException Thrown on fetch error
      */
-    public abstract Map<String,Object> getAbility(String abilityName) throws DynException;
+    public Map<String,Object> getAbility(String abilityName) throws DynException;
     
     /**
      * Creates the ability indentified by the given name if possible.
@@ -38,7 +39,7 @@ public abstract class DynBase {
      * @return true if the ability was created, false if nothing was todo
      * @throws DynException Thrown on fetch error
      */
-    public abstract boolean createAbilityIfNotExists(String abilityName) throws DynException;
+    public boolean createAbilityIfNotExists(String abilityName) throws DynException;
     
     /**
      * Creates all abilities that do not exists and given in the collection
@@ -47,15 +48,7 @@ public abstract class DynBase {
      * @return true if at least one ability was created, false if nothing was todo
      * @throws DynException Thrown on ability creation error
      */
-    public boolean createAbilitiesIfNotExists(Collection<String> abilityNames) throws DynException {
-        boolean created = false;
-        for(String abilityName : abilityNames) {
-            if(this.createAbilityIfNotExists(abilityName)) {
-                created = true;
-            }
-        }
-        return created;
-    }
+    public boolean createAbilitiesIfNotExists(Collection<String> abilityNames) throws DynException;
     
     /**
      * Creates a schema if it is not existend
@@ -64,7 +57,7 @@ public abstract class DynBase {
      * @return true if schema was created, false if nothing was todo
      * @throws DynException Thrown on fetch error
      */
-    public abstract boolean createSchemaIfNotExists(String schemaName) throws DynException;
+    public boolean createSchemaIfNotExists(String schemaName) throws DynException;
     
     /**
      * Checks if a schema exists (and is accessible over the connection)
@@ -74,7 +67,7 @@ public abstract class DynBase {
      * 
      * @throws DynException 
      */
-    public abstract boolean schemaExists(String schemaName) throws DynException;
+    public boolean schemaExists(String schemaName) throws DynException;
     
     /**
      * Creates all schemata that do not exists and given in the collection
@@ -83,15 +76,7 @@ public abstract class DynBase {
      * @return true if at least one schema was created, false if nothing was todo
      * @throws DynException Thrown on creation error
      */
-    public boolean createSchemaIfNotExists(Collection<String> schemataNames) throws DynException {
-        boolean created = false;
-        for(String schemaName : schemataNames) {
-            if(this.createSchemaIfNotExists(schemaName)) {
-                created = true;
-            }
-        }
-        return created;
-    }
+    public boolean createSchemaIfNotExists(Collection<String> schemataNames) throws DynException;
     
     /**
      * Gets information about the schema with the given name
@@ -100,7 +85,7 @@ public abstract class DynBase {
      * @return Key-value pairs with information about the schema
      * @throws DynException Thrown on fetch error
      */
-    public abstract Map<String,Object> getSchema(String schemaName) throws DynException;
+    public Map<String,Object> getSchema(String schemaName) throws DynException;
     
     /**
      * Returns a list of available tables in the given schema
@@ -109,7 +94,7 @@ public abstract class DynBase {
      * @return List of table names
      * @throws DynException 
      */
-    public abstract List<Table> getTables(String schemaName) throws DynException;
+    public List<Table> getTables(String schemaName) throws DynException;
     
     /**
      * Deletes the given schema and all its contents
@@ -118,5 +103,5 @@ public abstract class DynBase {
      * @return true if schema was existend and is deleted
      * @throws DynException 
      */
-    public abstract boolean deleteSchema(String schemaName) throws DynException;
+    public boolean deleteSchema(String schemaName) throws DynException;
 }
