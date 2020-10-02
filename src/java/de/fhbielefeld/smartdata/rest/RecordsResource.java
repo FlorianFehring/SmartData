@@ -13,9 +13,7 @@ import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Resource;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
+import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -45,21 +43,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Records", description = "Accessing, inserting, updateing and deleting datasets.")
 public class RecordsResource {
 
-    @Resource(lookup = "java:module/ModuleName")
-    private String moduleName;
-
-    @Context
-    private UriInfo context;
-
     /**
      * Creates a new instance of RootResource
      */
     public RecordsResource() {
         // Init logging
         try {
-            Logger.getInstance("SmartData", this.moduleName);
+            String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
+            Logger.getInstance("SmartData", moduleName);
             Logger.setDebugMode(true);
-        } catch (LoggerException ex) {
+        } catch (LoggerException | NamingException ex) {
             System.err.println("Error init logger: " + ex.getLocalizedMessage());
         }
     }

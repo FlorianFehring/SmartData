@@ -8,7 +8,7 @@ import de.fhbielefeld.smartdata.dbo.Table;
 import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.List;
-import javax.annotation.Resource;
+import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -36,18 +36,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Table", description = "Create and modify tables.")
 public class TableResource {
 
-    @Resource(lookup = "java:module/ModuleName")
-    private String moduleName;
-
     /**
      * Creates a new instance of RootResource
      */
     public TableResource() {
         // Init logging
         try {
-            Logger.getInstance("SmartData", this.moduleName);
+            String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
+            Logger.getInstance("SmartData", moduleName);
             Logger.setDebugMode(true);
-        } catch (LoggerException ex) {
+        } catch (LoggerException | NamingException ex) {
             System.err.println("Error init logger: " + ex.getLocalizedMessage());
         }
     }

@@ -2,18 +2,11 @@ package de.fhbielefeld.smartdata.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
-import de.fhbielefeld.scl.logger.message.Message;
-import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.dynbase.DynBase;
 import de.fhbielefeld.smartdata.dynbase.DynBasePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import javax.annotation.Resource;
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.sql.DataSource;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -39,18 +32,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Base", description = "Manage schemata")
 public class BaseResource {
 
-    @Resource(lookup = "java:module/ModuleName")
-    private String moduleName;
-
     /**
      * Creates a new instance of RootResource
      */
-    public BaseResource() {
+    public BaseResource() {         	 
         // Init logging
         try {
-            Logger.getInstance("SmartData", this.moduleName);
+            String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
+            Logger.getInstance("SmartData", moduleName);
             Logger.setDebugMode(true);
-        } catch (LoggerException ex) {
+        } catch (LoggerException | NamingException ex) {
             System.err.println("Error init logger: " + ex.getLocalizedMessage());
         }
     }
