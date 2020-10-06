@@ -133,7 +133,7 @@ public final class DynTablePostgres extends DynPostgres implements DynTable {
             // Check if table does not exists when there is no column
             if (columns.isEmpty()) {
                 if (!this.exists()) {
-                    throw new DynException("Table >" + this.name + "< does not exists.");
+                    throw new DynException("Table >" + this.schema + "." + this.name + "< does not exists.");
                 }
             }
         } catch (SQLException ex) {
@@ -166,7 +166,7 @@ public final class DynTablePostgres extends DynPostgres implements DynTable {
         }
         // If the column was not found, check if the table is available
         if (column == null & !this.exists()) {
-            DynException dex = new DynException("Table >" + this.name + "< does not exists.");
+            DynException dex = new DynException("Table >" + this.schema + "." + this.name + "< does not exists.");
             throw dex;
         }
 
