@@ -12,7 +12,6 @@ import de.fhbielefeld.smartdata.dyntable.DynTable;
 import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.io.StringReader;
-import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
