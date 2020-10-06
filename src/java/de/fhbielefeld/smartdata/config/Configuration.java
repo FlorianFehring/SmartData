@@ -18,16 +18,20 @@ import javax.naming.NamingException;
  */
 public class Configuration {
 
+    private String moduleName;
+    private String fileName;
+    private boolean proploaded = false;
     private Properties prop;
 
     public Configuration() {
         this.prop = new Properties();
         try {
-            String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
-            String fileName = moduleName + "_config.properties";
+            this.moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
+            this.fileName = this.moduleName + "_config.properties";
             try ( InputStream inputStream = new FileInputStream(fileName)) {
                 // Loading the properties.
                 this.prop.load(inputStream);
+                this.proploaded = true;
             } catch (IOException ex) {
                 Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file >" + fileName + "<: " + ex.getLocalizedMessage());
                 Logger.addMessage(msg);
@@ -36,6 +40,26 @@ public class Configuration {
             Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file" + ex.getLocalizedMessage());
             Logger.addMessage(msg);
         }
+    }
+
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    public void setModuleName(String moduleName) {
+        this.moduleName = moduleName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public boolean isPropsloaded() {
+        return proploaded;
     }
 
     /**
