@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dynbase;
+package de.fhbielefeld.smartdata.dynstorage;
 
 import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.Dyn;
@@ -13,7 +13,7 @@ import java.util.Map;
  * 
  * @author Florian Fehring
  */
-public interface DynBase extends Dyn {
+public interface DynStorage extends Dyn {
     
     /**
      * Gets a list of abilities that is supported by this DynBase implementation

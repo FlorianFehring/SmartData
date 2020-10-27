@@ -1,9 +1,9 @@
-package de.fhbielefeld.smartdata.dyndata.filter;
+package de.fhbielefeld.smartdata.dynrecords.filter;
 
-import de.fhbielefeld.smartdata.dyntable.DynTable;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
+import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 
 /**
  * Represents one filter for a search
@@ -13,13 +13,13 @@ import java.util.List;
 public abstract class Filter {
 
     protected String filtercode;
-    protected DynTable table;
+    protected DynCollection table;
     protected String column;
     protected int firstPlaceholder;
     // Noteing warnings for calling methods
     protected List<String> warnings = new ArrayList<>();
 
-    public Filter(DynTable table) {
+    public Filter(DynCollection table) {
         this.table = table;
     }
 
@@ -76,7 +76,7 @@ public abstract class Filter {
      *
      * @param pstmt Prepared statemnt to set filter value to
      * @return Modified PreparedStatement
-     * @throws de.fhbielefeld.smartdata.dyndata.filter.FilterException
+     * @throws de.fhbielefeld.smartdata.dynrecords.filter.FilterException
      */
     public abstract PreparedStatement setFilterValue(PreparedStatement pstmt) throws FilterException;
 

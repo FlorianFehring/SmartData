@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dyntable;
+package de.fhbielefeld.smartdata.dyncollection;
 
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
@@ -12,12 +12,12 @@ import java.util.Map;
  *
  * @author Florian Fehring
  */
-public class DynTableMongo extends DynMongo implements DynTable {
+public class DynCollectionMongo extends DynMongo implements DynCollection {
 
     private String src;
     private String name;
 
-    public DynTableMongo(String src, String name) throws DynException {
+    public DynCollectionMongo(String src, String name) throws DynException {
         this.connect();
         this.src = src;
         this.name = name;

@@ -1,9 +1,9 @@
-package de.fhbielefeld.smartdata.dyndata.filter;
+package de.fhbielefeld.smartdata.dynrecords.filter;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
-import de.fhbielefeld.smartdata.dyntable.DynTable;
+import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 
 /**
  *
@@ -11,7 +11,7 @@ import de.fhbielefeld.smartdata.dyntable.DynTable;
  */
 public class FilterParser {
 
-    public static Filter parse(String filter, DynTable table) throws FilterException {
+    public static Filter parse(String filter, DynCollection table) throws FilterException {
         Filter f = null;
         if (filter.contains(",cs,")) {
             Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter for >" + filter + "< is not implemented yet.");

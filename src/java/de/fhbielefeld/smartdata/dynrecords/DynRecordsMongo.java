@@ -1,7 +1,7 @@
-package de.fhbielefeld.smartdata.dyndata;
+package de.fhbielefeld.smartdata.dynrecords;
 
 import de.fhbielefeld.smartdata.dyn.DynMongo;
-import de.fhbielefeld.smartdata.dyndata.filter.Filter;
+import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.util.Collection;
@@ -12,7 +12,7 @@ import javax.json.JsonObject;
  * 
  * @author Florian Fehring
  */
-public class DynDataMongo extends DynMongo implements DynData {
+public class DynRecordsMongo extends DynMongo implements DynRecords {
 
     @Override
     public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt) throws DynException {

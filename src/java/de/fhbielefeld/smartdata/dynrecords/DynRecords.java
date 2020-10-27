@@ -1,7 +1,7 @@
-package de.fhbielefeld.smartdata.dyndata;
+package de.fhbielefeld.smartdata.dynrecords;
 
 import de.fhbielefeld.smartdata.dyn.Dyn;
-import de.fhbielefeld.smartdata.dyndata.filter.Filter;
+import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.util.Collection;
@@ -12,7 +12,7 @@ import javax.json.JsonObject;
  *
  * @author Florian Fehring
  */
-public interface DynData extends Dyn {
+public interface DynRecords extends Dyn {
 
 
     /**

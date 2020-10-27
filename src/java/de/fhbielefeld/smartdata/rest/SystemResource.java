@@ -4,7 +4,7 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
-import de.fhbielefeld.smartdata.dyntable.DynCollectionPostgres;
+import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.Map.Entry;
 import javax.naming.NamingException;

@@ -1,14 +1,14 @@
-package de.fhbielefeld.smartdata.dyndata.filter;
+package de.fhbielefeld.smartdata.dynrecords.filter;
 
 import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.Column;
-import de.fhbielefeld.smartdata.dyntable.DynTable;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 
 /**
  * Filter class for bounding box filters
@@ -25,7 +25,7 @@ public class BoundingBoxFilter extends Filter {
     private Object srid;
     private Object table_srid;
 
-    public BoundingBoxFilter(DynTable table) {
+    public BoundingBoxFilter(DynCollection table) {
         super(table);
     }
     

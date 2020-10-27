@@ -1,17 +1,17 @@
-package de.fhbielefeld.smartdata.dyndata.filter;
+package de.fhbielefeld.smartdata.dynrecords.filter;
 
 import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.Column;
-import de.fhbielefeld.smartdata.dyntable.DynTable;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.Month;
+import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 
 /**
  * Filter class for equal filters
@@ -22,7 +22,7 @@ public class EqualsFilter extends Filter {
 
     private Object eqvalue;
 
-    public EqualsFilter(DynTable table) {
+    public EqualsFilter(DynCollection table) {
         super(table);
     }
 

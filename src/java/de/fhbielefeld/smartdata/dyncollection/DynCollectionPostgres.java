@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dyntable;
+package de.fhbielefeld.smartdata.dyncollection;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
@@ -6,8 +6,7 @@ import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
-import de.fhbielefeld.smartdata.dynbase.DynBase;
-import de.fhbielefeld.smartdata.dynbase.DynBasePostgres;
+import de.fhbielefeld.smartdata.dynstorage.DynStoragePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,13 +15,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import de.fhbielefeld.smartdata.dynstorage.DynStorage;
 
 /**
  * Class for manageing dynamic tables from postgres
  *
  * @author Florian Fehring
  */
-public final class DynCollectionPostgres extends DynPostgres implements DynTable {
+public final class DynCollectionPostgres extends DynPostgres implements DynCollection {
 
     protected String schema;
     protected String name;
@@ -51,7 +51,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynTable
 
         // If table does not exists, check if schema is present
         if (!texists) {
-            DynBase db = new DynBasePostgres();
+            DynStorage db = new DynStoragePostgres();
             if (!db.storageExists(this.schema)) {
                 DynException dex = new DynException("Schema >" + this.schema + "< for table >" + this.name + "< does not exists.");
                 throw dex;

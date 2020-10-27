@@ -4,12 +4,12 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.dbo.Column;
-import de.fhbielefeld.smartdata.dyndata.DynDataPostgres;
-import de.fhbielefeld.smartdata.dyndata.filter.EqualsFilter;
-import de.fhbielefeld.smartdata.dyndata.filter.Filter;
-import de.fhbielefeld.smartdata.dyndata.filter.FilterException;
-import de.fhbielefeld.smartdata.dyndata.filter.FilterParser;
-import de.fhbielefeld.smartdata.dyntable.DynCollectionPostgres;
+import de.fhbielefeld.smartdata.dynrecords.DynRecordsPostgres;
+import de.fhbielefeld.smartdata.dynrecords.filter.EqualsFilter;
+import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
+import de.fhbielefeld.smartdata.dynrecords.filter.FilterException;
+import de.fhbielefeld.smartdata.dynrecords.filter.FilterParser;
+import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,7 +89,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, collection);
+            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
             rob.add(dd.create(json));
             for (String curWarning : dd.getWarnings()) {
                 rob.addWarningMessage(curWarning);
@@ -167,7 +167,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, collection);
+            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
             String json = dd.get(includes, filters, 1, null, null, false, null, false);
             rob.add("records", json);
             dd.disconnect();
@@ -241,7 +241,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, collection);
+            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
             String json = dd.get(includes, filters, size, page, order, countonly, unique, deflatt);
             rob.add("records", json);
         } catch (DynException ex) {
@@ -288,7 +288,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, collection);
+            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
             dd.update(json, id);
             dd.disconnect();
         } catch (DynException ex) {
@@ -334,7 +334,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, collection);
+            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
             dd.update(json, null);
             dd.disconnect();
         } catch (DynException ex) {
@@ -378,7 +378,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, collection);
+            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
             dd.delete(id);
             dd.disconnect();
         } catch (DynException ex) {

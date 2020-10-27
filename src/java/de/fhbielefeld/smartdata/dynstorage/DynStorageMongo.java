@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dynbase;
+package de.fhbielefeld.smartdata.dynstorage;
 
 import com.mongodb.client.MongoDatabase;
 
@@ -15,9 +15,9 @@ import java.util.Map;
  * Manage functionalities for mongodb
  * @author Florian Fehring
  */
-public class DynBaseMongo extends DynMongo implements DynBase {
+public class DynStorageMongo extends DynMongo implements DynStorage {
 
-    public DynBaseMongo() throws DynException {
+    public DynStorageMongo() throws DynException {
         this.connect();
     }
     

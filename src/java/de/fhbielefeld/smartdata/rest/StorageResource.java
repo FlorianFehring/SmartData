@@ -3,8 +3,7 @@ package de.fhbielefeld.smartdata.rest;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
-import de.fhbielefeld.smartdata.dynbase.DynBase;
-import de.fhbielefeld.smartdata.dynbase.DynBasePostgres;
+import de.fhbielefeld.smartdata.dynstorage.DynStoragePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import javax.naming.NamingException;
 import javax.ws.rs.DELETE;
@@ -22,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import de.fhbielefeld.smartdata.dynstorage.DynStorage;
 
 /**
  * Resource for accessing database informations
@@ -79,7 +79,7 @@ public class StorageResource {
         }
 
         try {
-            DynBase db = new DynBasePostgres();
+            DynStorage db = new DynStoragePostgres();
             if (db.createStorageIfNotExists(name)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
@@ -124,7 +124,7 @@ public class StorageResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
-            DynBase db = new DynBasePostgres();
+            DynStorage db = new DynStoragePostgres();
             rob.add("list", db.getCollections(name));
             db.disconnect();
         } catch (DynException ex) {
@@ -170,7 +170,7 @@ public class StorageResource {
         }
 
         try {
-            DynBase db = new DynBasePostgres();
+            DynStorage db = new DynStoragePostgres();
             if (db.deleteStorage(name)) {
                 rob.setStatus(Response.Status.OK);
             } else {

@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dyndata.filter;
+package de.fhbielefeld.smartdata.dynrecords.filter;
 
 /**
  * Exception reporting errors with filters

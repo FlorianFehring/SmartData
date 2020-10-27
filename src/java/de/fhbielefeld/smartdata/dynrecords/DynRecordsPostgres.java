@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dyndata;
+package de.fhbielefeld.smartdata.dynrecords;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
@@ -6,10 +6,9 @@ import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
-import de.fhbielefeld.smartdata.dyndata.filter.Filter;
-import de.fhbielefeld.smartdata.dyndata.filter.FilterException;
-import de.fhbielefeld.smartdata.dyntable.DynTable;
-import de.fhbielefeld.smartdata.dyntable.DynCollectionPostgres;
+import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
+import de.fhbielefeld.smartdata.dynrecords.filter.FilterException;
+import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.io.StringReader;
 import java.sql.Statement;
@@ -31,22 +30,23 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 
 /**
  * Dynamic data access for postgres databases
  *
  * @author Florian Fehring
  */
-public final class DynDataPostgres extends DynPostgres implements DynData {
+public final class DynRecordsPostgres extends DynPostgres implements DynRecords {
 
     protected String schema;
     protected String table;
 
-    protected DynTable dyntable = null;
+    protected DynCollection dyntable = null;
     protected static final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
     protected static final Map<String, Map<String, Integer>> preparedPlaceholders = new HashMap<>();
 
-    public DynDataPostgres(String schema, String table) throws DynException {
+    public DynRecordsPostgres(String schema, String table) throws DynException {
         this.schema = schema;
         this.table = table;
 

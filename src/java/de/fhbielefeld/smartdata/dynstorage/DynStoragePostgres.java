@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dynbase;
+package de.fhbielefeld.smartdata.dynstorage;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
@@ -22,9 +22,9 @@ import java.util.Map;
  *
  * @author Florian Fehring
  */
-public class DynBasePostgres extends DynPostgres implements DynBase {
+public class DynStoragePostgres extends DynPostgres implements DynStorage {
 
-    public DynBasePostgres() throws DynException {
+    public DynStoragePostgres() throws DynException {
         this.connect();
     }
     

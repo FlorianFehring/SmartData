@@ -1,4 +1,4 @@
-package de.fhbielefeld.smartdata.dyntable;
+package de.fhbielefeld.smartdata.dyncollection;
 
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
@@ -12,7 +12,7 @@ import java.util.Map;
  * 
  * @author Florian Fehring
  */
-public interface DynTable extends Dyn {
+public interface DynCollection extends Dyn {
     
     /**
      * Checks if the specified table exists

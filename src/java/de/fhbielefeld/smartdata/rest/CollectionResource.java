@@ -5,7 +5,7 @@ import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.dbo.Column;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
-import de.fhbielefeld.smartdata.dyntable.DynCollectionPostgres;
+import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.List;
 import javax.naming.NamingException;
