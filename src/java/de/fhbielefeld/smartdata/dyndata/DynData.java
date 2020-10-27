@@ -76,7 +76,7 @@ public interface DynData extends Dyn {
     public abstract String getPreparedInsert(JsonObject json) throws DynException;
 
     /**
-     * Creates a dataset from the given json and inserts it into table
+     * Creates a dataset from the given json and inserts it into collection
      *
      * @param json JSON String with one-level hierarchy
      *
@@ -86,7 +86,7 @@ public interface DynData extends Dyn {
     public abstract Long create(String json) throws DynException;
 
     /**
-     * Creates a dataset from the given json and inserts it into table
+     * Creates a dataset from the given json and inserts it into collection
      *
      * @param json JSON String with one-level hierarchy
      *

@@ -4,8 +4,8 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.dbo.Column;
-import de.fhbielefeld.smartdata.dbo.Table;
-import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
+import de.fhbielefeld.smartdata.dbo.DataCollection;
+import de.fhbielefeld.smartdata.dyntable.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.List;
 import javax.naming.NamingException;
@@ -32,14 +32,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * @author Florian Fehring
  */
-@Path("table")
-@Tag(name = "Table", description = "Create and modify tables.")
-public class TableResource {
+@Path("collection")
+@Tag(name = "Collection", description = "Create and modify collections")
+public class CollectionResource {
 
     /**
      * Creates a new instance of RootResource
      */
-    public TableResource() {
+    public CollectionResource() {
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
@@ -51,26 +51,26 @@ public class TableResource {
     }
 
     @POST
-    @Path("{table}/create")
-    @Operation(summary = "Creates a table",
-            description = "Creates a table based on the table definitio given.")
+    @Path("{collection}/create")
+    @Operation(summary = "Creates a collection",
+            description = "Creates a collection based on the definition given.")
     @APIResponse(
             responseCode = "201",
-            description = "Table created")
+            description = "Collection created")
     @APIResponse(
             responseCode = "304",
-            description = "Table allready exists")
+            description = "Collection allready exists")
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \" Could not create table: Because of ... \"]}"))
+                    example = "{\"errors\" : [ \" Could not create collection: Because of ... \"]}"))
     public Response create(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("name") String name,
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
                     example = "myschema") @QueryParam("storage") String storage,
-            Table tabledef) {
+            DataCollection collectiondef) {
 
         if (storage == null) {
             storage = "public";
@@ -79,10 +79,10 @@ public class TableResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
-            // Init table access
-            DynTablePostgres dtp = new DynTablePostgres(storage, tabledef.getName());
+            // Init collection access
+            DynCollectionPostgres dtp = new DynCollectionPostgres(storage, collectiondef.getName());
             // Get columns
-            boolean created = dtp.create(tabledef);
+            boolean created = dtp.create(collectiondef);
             if (created) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
@@ -98,10 +98,10 @@ public class TableResource {
     }
 
     @GET
-    @Path("{table}/getColumns")
+    @Path("{collection}/getColumns")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Lists columns of a table",
-            description = "Lists all columns of a table and gives base information about them.")
+    @Operation(summary = "Lists columns of a collection",
+            description = "Lists all columns of a collection and gives base information about them.")
     @APIResponse(
             responseCode = "200",
             description = "Objects with column informations",
@@ -115,7 +115,7 @@ public class TableResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response getColumns(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
                     example = "mystorage") @QueryParam("storage") String storage) {
@@ -127,8 +127,8 @@ public class TableResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
-            // Init table access
-            DynTablePostgres dt = new DynTablePostgres(storage, table);
+            // Init collection access
+            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
             // Get columns
             rob.add("list", dt.getColumns().values());
             dt.disconnect();
@@ -142,10 +142,10 @@ public class TableResource {
     }
 
     @PUT
-    @Path("{table}/addColumns")
+    @Path("{collection}/addColumns")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Adds columns to a table",
-            description = "Adds columns to a table.")
+    @Operation(summary = "Adds columns to a collection",
+            description = "Adds columns to a collection.")
     @APIResponse(
             responseCode = "200",
             description = "Number of added columns",
@@ -164,7 +164,7 @@ public class TableResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response addColumns(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             List<Column> columns) {
@@ -176,8 +176,8 @@ public class TableResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
-            // Init table access
-            DynTablePostgres dt = new DynTablePostgres(storage, table);
+            // Init collection access
+            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
             if (dt.addColumns(columns)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
@@ -194,7 +194,7 @@ public class TableResource {
     }
 
     @PUT
-    @Path("{table}/changeColumn")
+    @Path("{collection}/changeColumn")
     @Operation(summary = "Changes the srid of a column",
             description = "Changes the srid of a column")
     @APIResponse(
@@ -212,7 +212,7 @@ public class TableResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not change SRID: Because of ... \"]}"))
     public Response changeColumn(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storge") String storage,
             List<Column> columns) {
@@ -224,8 +224,8 @@ public class TableResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
-            // Init table access
-            DynTablePostgres dt = new DynTablePostgres(storage, table);
+            // Init collection access
+            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
             dt.changeColumns(columns);
             dt.disconnect();
             rob.setStatus(Response.Status.OK);

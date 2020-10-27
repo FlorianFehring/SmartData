@@ -2,7 +2,7 @@ package de.fhbielefeld.smartdata.dynbase;
 
 import com.mongodb.client.MongoDatabase;
 
-import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.ArrayList;
@@ -84,13 +84,13 @@ public class DynBaseMongo extends DynMongo implements DynBase {
     }
 
     @Override
-    public List<Table> getTables(String name) throws DynException {
-        List<Table> tables = new ArrayList<>();
+    public List<DataCollection> getCollections(String name) throws DynException {
+        List<DataCollection> collections = new ArrayList<>();
         MongoDatabase mdb = this.client.getDatabase(name);
         for (String tname : mdb.listCollectionNames()) {
-            tables.add(new Table(tname));
+            collections.add(new DataCollection(tname));
         }
-        return tables;
+        return collections;
     }
 
     @Override

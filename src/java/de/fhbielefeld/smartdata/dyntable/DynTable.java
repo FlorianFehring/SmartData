@@ -1,7 +1,7 @@
 package de.fhbielefeld.smartdata.dyntable;
 
 import de.fhbielefeld.smartdata.dbo.Column;
-import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.Dyn;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.List;
@@ -30,7 +30,7 @@ public interface DynTable extends Dyn {
      * @return True if table was created, false if table allready exists
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
-    public abstract boolean create(Table table) throws DynException;
+    public abstract boolean create(DataCollection table) throws DynException;
     
     /**
      * Adds columns to the table.

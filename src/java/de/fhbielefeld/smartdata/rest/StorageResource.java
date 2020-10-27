@@ -88,7 +88,7 @@ public class StorageResource {
             db.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Error retriving table names: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
 
@@ -96,23 +96,23 @@ public class StorageResource {
     }
 
     @GET
-    @Path("getTables")
+    @Path("getCollections")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Lists all tables",
-            description = "Lists all tables of a storage")
+    @Operation(summary = "Lists all collections",
+            description = "Lists all collections of a storage")
     @APIResponse(
             responseCode = "200",
-            description = "List with table informations",
+            description = "List with collection informations",
             content = @Content(
                     mediaType = "application/json",
-                    example = "{ \"list\" : { \"name\" : \"table1\"}}"
+                    example = "{ \"list\" : { \"name\" : \"collection\"}}"
             ))
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
-    public Response getTables(
+    public Response getCollections(
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public")
             ) @QueryParam("name") String name) {
@@ -125,11 +125,11 @@ public class StorageResource {
 
         try {
             DynBase db = new DynBasePostgres();
-            rob.add("list", db.getTables(name));
+            rob.add("list", db.getCollections(name));
             db.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Error retriving table names: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
 
@@ -179,7 +179,7 @@ public class StorageResource {
             db.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Error retriving table names: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
 

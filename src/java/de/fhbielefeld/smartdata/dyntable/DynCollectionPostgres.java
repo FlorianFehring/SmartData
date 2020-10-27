@@ -4,7 +4,7 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.Column;
-import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.dynbase.DynBase;
 import de.fhbielefeld.smartdata.dynbase.DynBasePostgres;
@@ -22,12 +22,12 @@ import java.util.Map;
  *
  * @author Florian Fehring
  */
-public final class DynTablePostgres extends DynPostgres implements DynTable {
+public final class DynCollectionPostgres extends DynPostgres implements DynTable {
 
     protected String schema;
     protected String name;
     
-    public DynTablePostgres(String schema, String name) throws DynException {
+    public DynCollectionPostgres(String schema, String name) throws DynException {
         this.schema = schema;
         this.name = name;
         this.connect();
@@ -62,7 +62,7 @@ public final class DynTablePostgres extends DynPostgres implements DynTable {
     }
 
     @Override
-    public boolean create(Table table) throws DynException {
+    public boolean create(DataCollection table) throws DynException {
         boolean created = false;
         // Check if schema exists
         boolean schemaExists = this.exists();

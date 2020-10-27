@@ -1,29 +1,28 @@
 package de.fhbielefeld.smartdata.dbo;
 
 import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * Represents tables
+ * Represents collections
  * 
  * @author Florian Fehring
  */
 @XmlRootElement
-public class Table {
+public class DataCollection {
     
     private String name;
     @XmlElementWrapper(name = "columns")
     @XmlElement(name = "columns")
     private ArrayList<Column> columns;
     
-    public Table() {
+    public DataCollection() {
         
     }
     
-    public Table(String name) {
+    public DataCollection(String name) {
         this.name = name;
     }
     

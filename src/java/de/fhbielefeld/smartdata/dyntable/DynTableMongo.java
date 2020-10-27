@@ -1,7 +1,7 @@
 package de.fhbielefeld.smartdata.dyntable;
 
 import de.fhbielefeld.smartdata.dbo.Column;
-import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.List;
@@ -34,7 +34,7 @@ public class DynTableMongo extends DynMongo implements DynTable {
     }
 
     @Override
-    public boolean create(Table table) throws DynException {
+    public boolean create(DataCollection table) throws DynException {
         if(this.exists()) {
             return false;
         }

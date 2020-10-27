@@ -9,7 +9,7 @@ import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.dyndata.filter.Filter;
 import de.fhbielefeld.smartdata.dyndata.filter.FilterException;
 import de.fhbielefeld.smartdata.dyntable.DynTable;
-import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
+import de.fhbielefeld.smartdata.dyntable.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.io.StringReader;
 import java.sql.Statement;
@@ -51,7 +51,7 @@ public final class DynDataPostgres extends DynPostgres implements DynData {
         this.table = table;
 
         // Get available columns
-        this.dyntable = new DynTablePostgres(this.schema, this.table);
+        this.dyntable = new DynCollectionPostgres(this.schema, this.table);
         this.connect();
     }
 

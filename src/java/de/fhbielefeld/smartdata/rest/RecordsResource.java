@@ -9,7 +9,7 @@ import de.fhbielefeld.smartdata.dyndata.filter.EqualsFilter;
 import de.fhbielefeld.smartdata.dyndata.filter.Filter;
 import de.fhbielefeld.smartdata.dyndata.filter.FilterException;
 import de.fhbielefeld.smartdata.dyndata.filter.FilterParser;
-import de.fhbielefeld.smartdata.dyntable.DynTablePostgres;
+import de.fhbielefeld.smartdata.dyntable.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +58,7 @@ public class RecordsResource {
     }
 
     @POST
-    @Path("{table}/")
+    @Path("{collection}/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Creates a new dataset",
@@ -76,7 +76,7 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not create dataset: Because of ... \"]}"))
     public Response create(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Dataset in json format", required = true, example = "{\"value\" : 12.4}") String json) {
@@ -89,7 +89,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, collection);
             rob.add(dd.create(json));
             for (String curWarning : dd.getWarnings()) {
                 rob.addWarningMessage(curWarning);
@@ -106,7 +106,7 @@ public class RecordsResource {
     }
 
     @GET
-    @Path("{table}/{id}")
+    @Path("{collection}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Gets a dataset",
             description = "Delivers a dataset from database")
@@ -123,7 +123,7 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get dataset: Because of ... \"]}"))
     public Response get(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") Long id,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
@@ -136,12 +136,12 @@ public class RecordsResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         List<Filter> filters = new ArrayList<>();
-        // Init table access
+        // Init collection access
         try {
-            DynTablePostgres dt = new DynTablePostgres(storage, table);
+            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
             List<Column> idcolumns = dt.getIdentityColumns();
             if (idcolumns.isEmpty()) {
-                rob.addErrorMessage("There is no identity column for table >" + table + "< could not get single dataset.");
+                rob.addErrorMessage("There is no identity column for collection >" + collection + "< could not get single dataset.");
                 rob.setStatus(Response.Status.NOT_ACCEPTABLE);
                 return rob.toResponse();
             } else if (idcolumns.size() > 1) {
@@ -167,7 +167,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, collection);
             String json = dd.get(includes, filters, 1, null, null, false, null, false);
             rob.add("records", json);
             dd.disconnect();
@@ -183,7 +183,7 @@ public class RecordsResource {
     }
 
     @GET
-    @Path("{table}/")
+    @Path("{collection}/")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Lists datasets from database",
             description = "Lists datasets from database that are matching the parameters.")
@@ -200,7 +200,7 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response list(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Included Columns", example = "id,value") @QueryParam("includes") String includes,
@@ -221,8 +221,8 @@ public class RecordsResource {
         List<Filter> filters = new ArrayList<>();
         if (filter != null) {
             try {
-                // Init table access
-                DynTablePostgres dt = new DynTablePostgres(storage, table);
+                // Init collection access
+                DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
                 // Build filter objects
                 Filter filt = FilterParser.parse(filter, dt);
                 filters.add(filt);
@@ -241,7 +241,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, collection);
             String json = dd.get(includes, filters, size, page, order, countonly, unique, deflatt);
             rob.add("records", json);
         } catch (DynException ex) {
@@ -256,7 +256,7 @@ public class RecordsResource {
     }
 
     @PUT
-    @Path("{table}/{id}")
+    @Path("{collection}/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Updates a dataset",
             description = "Updates an existing dataset. Does nothing if the dataset does not exists.")
@@ -273,7 +273,7 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response update(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Datasets id", required = true, example = "1") @PathParam("id") Long id,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
@@ -288,7 +288,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, collection);
             dd.update(json, id);
             dd.disconnect();
         } catch (DynException ex) {
@@ -303,7 +303,7 @@ public class RecordsResource {
     }
 
     @PUT
-    @Path("{table}")
+    @Path("{collection}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Updates multiple datasets",
             description = "Updates existing datasets. The identity column must be included in the json.")
@@ -320,7 +320,7 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response update(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "json data",
@@ -334,7 +334,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, collection);
             dd.update(json, null);
             dd.disconnect();
         } catch (DynException ex) {
@@ -349,7 +349,7 @@ public class RecordsResource {
     }
 
     @DELETE
-    @Path("{table}/{id}")
+    @Path("{collection}/{id}")
     @Operation(summary = "Deletes a dataset",
             description = "Deletes a dataset from database.")
     @APIResponse(
@@ -365,7 +365,7 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response delete(
-            @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") String id) {
@@ -378,7 +378,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(storage, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, collection);
             dd.delete(id);
             dd.disconnect();
         } catch (DynException ex) {

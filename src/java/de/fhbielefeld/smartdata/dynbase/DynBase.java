@@ -1,6 +1,6 @@
 package de.fhbielefeld.smartdata.dynbase;
 
-import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.Dyn;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.Collection;
@@ -88,13 +88,13 @@ public interface DynBase extends Dyn {
     public Map<String,Object> getStorage(String name) throws DynException;
     
     /**
-     * Returns a list of available tables in the given storage
+     * Returns a list of available collections in the given storage
      * 
      * @param name Name of the storage
-     * @return List of table names
+     * @return List of collection names
      * @throws DynException 
      */
-    public List<Table> getTables(String name) throws DynException;
+    public List<DataCollection> getCollections(String name) throws DynException;
     
     /**
      * Deletes the given storage and all its contents

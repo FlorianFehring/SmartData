@@ -3,7 +3,7 @@ package de.fhbielefeld.smartdata.dynbase;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
-import de.fhbielefeld.smartdata.dbo.Table;
+import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.ResultSet;
@@ -194,15 +194,15 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
     }
 
     @Override
-    public List<Table> getTables(String name) throws DynException {
-        List<Table> tables = new ArrayList<>();
+    public List<DataCollection> getCollections(String name) throws DynException {
+        List<DataCollection> tables = new ArrayList<>();
 
         try {
             Statement stmt = this.con.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + name + "'");
             while (rs.next()) {
                 String tablename = rs.getString("table_name");
-                tables.add(new Table(tablename));
+                tables.add(new DataCollection(tablename));
             }
             // Check if storage exists, if there are no tables found
             if (tables.isEmpty() && !this.storageExists(name)) {
