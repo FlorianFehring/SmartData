@@ -51,57 +51,57 @@ public interface DynBase extends Dyn {
     public boolean createAbilitiesIfNotExists(Collection<String> abilityNames) throws DynException;
     
     /**
-     * Creates a schema if it is not existend
+     * Creates a storage if it is not existend
      *
-     * @param schemaName Name of the schema to create
-     * @return true if schema was created, false if nothing was todo
+     * @param name Name of the storage to create
+     * @return true if storage was created, false if nothing was todo
      * @throws DynException Thrown on fetch error
      */
-    public boolean createSchemaIfNotExists(String schemaName) throws DynException;
+    public boolean createStorageIfNotExists(String name) throws DynException;
     
     /**
-     * Checks if a schema exists (and is accessible over the connection)
+     * Checks if a storage exists (and is accessible over the connection)
      * 
-     * @param schemaName Name of the schema to search
-     * @return true if the schema exists, false otherwise
+     * @param name Name of the storage to search
+     * @return true if the storage exists, false otherwise
      * 
      * @throws DynException 
      */
-    public boolean schemaExists(String schemaName) throws DynException;
+    public boolean storageExists(String name) throws DynException;
     
     /**
-     * Creates all schemata that do not exists and given in the collection
+     * Creates all storages that do not exists and given in the collection
      * 
-     * @param schemataNames Collection of schema names
-     * @return true if at least one schema was created, false if nothing was todo
+     * @param storageNames Collection of storage names
+     * @return true if at least one storage was created, false if nothing was todo
      * @throws DynException Thrown on creation error
      */
-    public boolean createSchemaIfNotExists(Collection<String> schemataNames) throws DynException;
+    public boolean createStorageIfNotExists(Collection<String> storageNames) throws DynException;
     
     /**
-     * Gets information about the schema with the given name
+     * Gets information about the storage with the given name
      * 
-     * @param schemaName Name of the schema where informations are requested
-     * @return Key-value pairs with information about the schema
+     * @param name Name of the storage where informations are requested
+     * @return Key-value pairs with information about the storage
      * @throws DynException Thrown on fetch error
      */
-    public Map<String,Object> getSchema(String schemaName) throws DynException;
+    public Map<String,Object> getStorage(String name) throws DynException;
     
     /**
-     * Returns a list of available tables in the given schema
+     * Returns a list of available tables in the given storage
      * 
-     * @param schemaName Name of the schema
+     * @param name Name of the storage
      * @return List of table names
      * @throws DynException 
      */
-    public List<Table> getTables(String schemaName) throws DynException;
+    public List<Table> getTables(String name) throws DynException;
     
     /**
-     * Deletes the given schema and all its contents
+     * Deletes the given storage and all its contents
      * 
-     * @param schemaName Name of the schema
-     * @return true if schema was existend and is deleted
+     * @param name Name of the storage
+     * @return true if storage was existend and is deleted
      * @throws DynException 
      */
-    public boolean deleteSchema(String schemaName) throws DynException;
+    public boolean deleteStorage(String name) throws DynException;
 }

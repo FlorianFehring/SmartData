@@ -116,10 +116,10 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
     }
     
     @Override
-    public boolean schemaExists(String schemaName) throws DynException {
+    public boolean storageExists(String name) throws DynException {
         try {
             Statement stmtCheck = this.con.createStatement();
-            String sql = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '" + schemaName + "'";
+            String sql = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '" + name + "'";
             ResultSet rs = stmtCheck.executeQuery(sql);
             if (rs.next()) {
                 int count = rs.getInt("count");
@@ -128,7 +128,7 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
                 }
             }
         } catch (SQLException ex) {
-            Message msg = new Message("Could not check if schema >" + schemaName + "< exists: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+            Message msg = new Message("Could not check if schema >" + name + "< exists: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
             msg.addException(ex);
             Logger.addMessage(msg);
         }
@@ -136,10 +136,10 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
     }
 
     @Override
-    public boolean createSchemaIfNotExists(Collection<String> schemataNames) throws DynException {
+    public boolean createStorageIfNotExists(Collection<String> storageNames) throws DynException {
         boolean created = false;
-        for(String schemaName : schemataNames) {
-            if(this.createSchemaIfNotExists(schemaName)) {
+        for(String name : storageNames) {
+            if(this.createStorageIfNotExists(name)) {
                 created = true;
             }
         }
@@ -147,19 +147,19 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
     }
     
     @Override
-    public boolean createSchemaIfNotExists(String schemaName) throws DynException {
+    public boolean createStorageIfNotExists(String name) throws DynException {
         boolean created = false;
-        // Check if schema exists
-        boolean schemaExists = this.schemaExists(schemaName);
-        if (!schemaExists) {
+        // Check if storage exists
+        boolean storageExists = this.storageExists(name);
+        if (!storageExists) {
             try {
                 this.con.setAutoCommit(true);
                 Statement stmt = this.con.createStatement();
-                stmt.executeUpdate("CREATE SCHEMA " + schemaName);
+                stmt.executeUpdate("CREATE SCHEMA " + name);
                 this.con.setAutoCommit(false);
                 created = true;
             } catch (SQLException ex) {
-                Message msg = new Message("Could not create schema >" + schemaName + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                Message msg = new Message("Could not create schema >" + name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 msg.addException(ex);
                 Logger.addMessage(msg);
             }
@@ -168,18 +168,18 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
     }
 
     @Override
-    public Map<String, Object> getSchema(String schemaName) throws DynException {
+    public Map<String, Object> getStorage(String name) throws DynException {
         Map<String, Object> information = new HashMap<>();
-        information.put("name", schemaName);
+        information.put("name", name);
         try {
             Statement stmt = this.con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM information_schema.schemata WHERE schema_name = '" + schemaName + "'");
+            ResultSet rs = stmt.executeQuery("SELECT * FROM information_schema.schemata WHERE schema_name = '" + name + "'");
             ResultSetMetaData rsmd = rs.getMetaData();
             if (rs.next()) {
                 information.put("exists", true);
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                    String name = rsmd.getColumnName(i);
-                    information.put(name, rs.getObject(name));
+                    String colname = rsmd.getColumnName(i);
+                    information.put(colname, rs.getObject(colname));
                 }
             } else {
                 information.put("exists", false);
@@ -194,19 +194,19 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
     }
 
     @Override
-    public List<Table> getTables(String schemaName) throws DynException {
+    public List<Table> getTables(String name) throws DynException {
         List<Table> tables = new ArrayList<>();
 
         try {
             Statement stmt = this.con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + schemaName + "'");
+            ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + name + "'");
             while (rs.next()) {
                 String tablename = rs.getString("table_name");
                 tables.add(new Table(tablename));
             }
-            // Check if schema exists, if there are no tables found
-            if (tables.isEmpty() && !this.schemaExists(schemaName)) {
-                throw new DynException("Schema >" + schemaName + "< does not exist.");
+            // Check if storage exists, if there are no tables found
+            if (tables.isEmpty() && !this.storageExists(name)) {
+                throw new DynException("Schema >" + name + "< does not exist.");
             }
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not get tables information");
@@ -218,19 +218,19 @@ public class DynBasePostgres extends DynPostgres implements DynBase {
     }
 
     @Override
-    public boolean deleteSchema(String schemaName) throws DynException {
+    public boolean deleteStorage(String name) throws DynException {
         boolean deleted = false;
-        // Check if schema exists
-        boolean schemaExists = this.schemaExists(schemaName);
-        if (schemaExists) {
+        // Check if storage exists
+        boolean storageExists = this.storageExists(name);
+        if (storageExists) {
             try {
                 this.con.setAutoCommit(true);
                 Statement stmt = this.con.createStatement();
-                stmt.executeUpdate("DROP SCHEMA " + schemaName + " CASCADE");
+                stmt.executeUpdate("DROP SCHEMA " + name + " CASCADE");
                 this.con.setAutoCommit(false);
                 deleted = true;
             } catch (SQLException ex) {
-                Message msg = new Message("Could not delete schema >" + schemaName + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                Message msg = new Message("Could not delete schema >" + name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 msg.addException(ex);
                 Logger.addMessage(msg);
             }

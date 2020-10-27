@@ -77,19 +77,19 @@ public class RecordsResource {
                     example = "{\"errors\" : [ \" Could not create dataset: Because of ... \"]}"))
     public Response create(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Dataset in json format", required = true, example = "{\"value\" : 12.4}") String json) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(schema, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, table);
             rob.add(dd.create(json));
             for (String curWarning : dd.getWarnings()) {
                 rob.addWarningMessage(curWarning);
@@ -125,12 +125,12 @@ public class RecordsResource {
     public Response get(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
             @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") Long id,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Included Columns", example = "1") @QueryParam("includes") String includes) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
@@ -138,7 +138,7 @@ public class RecordsResource {
         List<Filter> filters = new ArrayList<>();
         // Init table access
         try {
-            DynTablePostgres dt = new DynTablePostgres(schema, table);
+            DynTablePostgres dt = new DynTablePostgres(storage, table);
             List<Column> idcolumns = dt.getIdentityColumns();
             if (idcolumns.isEmpty()) {
                 rob.addErrorMessage("There is no identity column for table >" + table + "< could not get single dataset.");
@@ -167,7 +167,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(schema, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, table);
             String json = dd.get(includes, filters, 1, null, null, false, null, false);
             rob.add("records", json);
             dd.disconnect();
@@ -201,8 +201,8 @@ public class RecordsResource {
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response list(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Included Columns", example = "id,value") @QueryParam("includes") String includes,
             @Parameter(description = "Filter definition", example = "id,eq,1") @QueryParam("filter") String filter,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
@@ -212,8 +212,8 @@ public class RecordsResource {
             @Parameter(description = "Column to get uniqe values for", example = "value") @QueryParam("unique") String unique,
             @Parameter(description = "Package values into datasets", example = "false") @QueryParam("deflatt") boolean deflatt) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
@@ -222,7 +222,7 @@ public class RecordsResource {
         if (filter != null) {
             try {
                 // Init table access
-                DynTablePostgres dt = new DynTablePostgres(schema, table);
+                DynTablePostgres dt = new DynTablePostgres(storage, table);
                 // Build filter objects
                 Filter filt = FilterParser.parse(filter, dt);
                 filters.add(filt);
@@ -241,7 +241,7 @@ public class RecordsResource {
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(schema, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, table);
             String json = dd.get(includes, filters, size, page, order, countonly, unique, deflatt);
             rob.add("records", json);
         } catch (DynException ex) {
@@ -275,20 +275,20 @@ public class RecordsResource {
     public Response update(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
             @Parameter(description = "Datasets id", required = true, example = "1") @PathParam("id") Long id,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "json data",
                     schema = @Schema(type = STRING, defaultValue = "public")) String json) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(schema, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, table);
             dd.update(json, id);
             dd.disconnect();
         } catch (DynException ex) {
@@ -321,20 +321,20 @@ public class RecordsResource {
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response update(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "json data",
                     schema = @Schema(type = STRING, defaultValue = "public")) String json) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(schema, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, table);
             dd.update(json, null);
             dd.disconnect();
         } catch (DynException ex) {
@@ -366,19 +366,19 @@ public class RecordsResource {
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response delete(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") String id) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init data access
-            DynDataPostgres dd = new DynDataPostgres(schema, table);
+            DynDataPostgres dd = new DynDataPostgres(storage, table);
             dd.delete(id);
             dd.disconnect();
         } catch (DynException ex) {

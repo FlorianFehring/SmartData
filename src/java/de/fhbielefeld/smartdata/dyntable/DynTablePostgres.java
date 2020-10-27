@@ -52,7 +52,7 @@ public final class DynTablePostgres extends DynPostgres implements DynTable {
         // If table does not exists, check if schema is present
         if (!texists) {
             DynBase db = new DynBasePostgres();
-            if (!db.schemaExists(this.schema)) {
+            if (!db.storageExists(this.schema)) {
                 DynException dex = new DynException("Schema >" + this.schema + "< for table >" + this.name + "< does not exists.");
                 throw dex;
             }

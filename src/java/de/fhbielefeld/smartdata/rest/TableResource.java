@@ -67,20 +67,20 @@ public class TableResource {
                     example = "{\"errors\" : [ \" Could not create table: Because of ... \"]}"))
     public Response create(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name", required = false,
+            @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
-                    example = "myschema") @QueryParam("schema") String schema,
+                    example = "myschema") @QueryParam("storage") String storage,
             Table tabledef) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init table access
-            DynTablePostgres dtp = new DynTablePostgres(schema, tabledef.getName());
+            DynTablePostgres dtp = new DynTablePostgres(storage, tabledef.getName());
             // Get columns
             boolean created = dtp.create(tabledef);
             if (created) {
@@ -116,19 +116,19 @@ public class TableResource {
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response getColumns(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name", required = false,
+            @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
-                    example = "myschema") @QueryParam("schema") String schema) {
+                    example = "mystorage") @QueryParam("storage") String storage) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init table access
-            DynTablePostgres dt = new DynTablePostgres(schema, table);
+            DynTablePostgres dt = new DynTablePostgres(storage, table);
             // Get columns
             rob.add("list", dt.getColumns().values());
             dt.disconnect();
@@ -165,19 +165,19 @@ public class TableResource {
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response addColumns(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             List<Column> columns) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init table access
-            DynTablePostgres dt = new DynTablePostgres(schema, table);
+            DynTablePostgres dt = new DynTablePostgres(storage, table);
             if (dt.addColumns(columns)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
@@ -213,19 +213,19 @@ public class TableResource {
                     example = "{\"errors\" : [ \" Could not change SRID: Because of ... \"]}"))
     public Response changeColumn(
             @Parameter(description = "Tables name", required = true, example = "mytable") @PathParam("table") String table,
-            @Parameter(description = "Schema name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("schema") String schema,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storge") String storage,
             List<Column> columns) {
 
-        if (schema == null) {
-            schema = "public";
+        if (storage == null) {
+            storage = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             // Init table access
-            DynTablePostgres dt = new DynTablePostgres(schema, table);
+            DynTablePostgres dt = new DynTablePostgres(storage, table);
             dt.changeColumns(columns);
             dt.disconnect();
             rob.setStatus(Response.Status.OK);

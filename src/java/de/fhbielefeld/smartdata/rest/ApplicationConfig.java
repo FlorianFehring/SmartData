@@ -31,8 +31,8 @@ public class ApplicationConfig extends Application {
     private void addRestResourceClasses(Set<Class<?>> resources) {
         resources.add(de.fhbielefeld.scl.rest.exceptions.handlers.GeneralExceptionMapper.class);
         resources.add(de.fhbielefeld.scl.rest.util.CORSFilter.class);
-        resources.add(de.fhbielefeld.smartdata.rest.BaseResource.class);
         resources.add(de.fhbielefeld.smartdata.rest.RecordsResource.class);
+        resources.add(de.fhbielefeld.smartdata.rest.StorageResource.class);
         resources.add(de.fhbielefeld.smartdata.rest.SystemResource.class);
         resources.add(de.fhbielefeld.smartdata.rest.TableResource.class);
     }

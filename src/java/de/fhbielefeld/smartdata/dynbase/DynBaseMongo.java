@@ -37,10 +37,10 @@ public class DynBaseMongo extends DynMongo implements DynBase {
     }
 
     @Override
-    public boolean createSchemaIfNotExists(Collection<String> schemataNames) throws DynException {
+    public boolean createStorageIfNotExists(Collection<String> storageNames) throws DynException {
         boolean created = false;
-        for (String schemaName : schemataNames) {
-            if (this.createSchemaIfNotExists(schemaName)) {
+        for (String storageName : storageNames) {
+            if (this.createStorageIfNotExists(storageName)) {
                 created = true;
             }
         }
@@ -48,9 +48,9 @@ public class DynBaseMongo extends DynMongo implements DynBase {
     }
 
     @Override
-    public boolean createSchemaIfNotExists(String schemaName) throws DynException {
-        if (!this.schemaExists(schemaName)) {
-            this.client.getDatabase(schemaName);
+    public boolean createStorageIfNotExists(String name) throws DynException {
+        if (!this.storageExists(name)) {
+            this.client.getDatabase(name);
             return true;
         }
         return false;
@@ -68,8 +68,8 @@ public class DynBaseMongo extends DynMongo implements DynBase {
     }
 
     @Override
-    public boolean schemaExists(String schemaName) throws DynException {
-        MongoDatabase md = this.client.getDatabase(schemaName);
+    public boolean storageExists(String name) throws DynException {
+        MongoDatabase md = this.client.getDatabase(name);
         if (md == null) {
             return false;
         }
@@ -77,16 +77,16 @@ public class DynBaseMongo extends DynMongo implements DynBase {
     }
 
     @Override
-    public Map<String, Object> getSchema(String schemaName) throws DynException {
+    public Map<String, Object> getStorage(String name) throws DynException {
         Map<String, Object> information = new HashMap<>();
-        information.put("name", schemaName);
+        information.put("name", name);
         return information;
     }
 
     @Override
-    public List<Table> getTables(String schemaName) throws DynException {
+    public List<Table> getTables(String name) throws DynException {
         List<Table> tables = new ArrayList<>();
-        MongoDatabase mdb = this.client.getDatabase(schemaName);
+        MongoDatabase mdb = this.client.getDatabase(name);
         for (String tname : mdb.listCollectionNames()) {
             tables.add(new Table(tname));
         }
@@ -94,9 +94,9 @@ public class DynBaseMongo extends DynMongo implements DynBase {
     }
 
     @Override
-    public boolean deleteSchema(String schemaName) throws DynException {
-        if (this.schemaExists(schemaName)) {
-            this.client.getDatabase(schemaName).drop();
+    public boolean deleteStorage(String name) throws DynException {
+        if (this.storageExists(name)) {
+            this.client.getDatabase(name).drop();
             return true;
         }
         return false;

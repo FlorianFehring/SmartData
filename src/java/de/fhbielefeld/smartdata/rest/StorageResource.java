@@ -28,14 +28,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * @author Florian Fehring
  */
-@Path("base")
-@Tag(name = "Base", description = "Manage schemata")
-public class BaseResource {
+@Path("storage")
+@Tag(name = "Storage", description = "Manage data storages")
+public class StorageResource {
 
     /**
      * Creates a new instance of RootResource
      */
-    public BaseResource() {         	 
+    public StorageResource() {         	 
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
@@ -47,40 +47,40 @@ public class BaseResource {
     }
 
     @POST
-    @Path("createSchema")
+    @Path("create")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Creates a new schema",
-            description = "Creates a new schema in database")
+    @Operation(summary = "Creates a new storage",
+            description = "Creates a new storage")
     @APIResponse(
             responseCode = "201",
-            description = "Schema was created")
+            description = "Storage was created")
     @APIResponse(
             responseCode = "304",
-            description = "Schema already exists")
+            description = "Storage already exists")
     @APIResponse(
             responseCode = "400",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \"No schema name given.\"]}"))
+                    example = "{\"errors\" : [ \"No storage name given.\"]}"))
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \" Could not create schema: Because of ... \"]}"))
-    public Response createSchema(@Parameter(description = "Schema name", required = true,
+                    example = "{\"errors\" : [ \" Could not create storage: Because of ... \"]}"))
+    public Response create(@Parameter(description = "Storage name", required = true,
             schema = @Schema(type = STRING, defaultValue = "public")
-    ) @QueryParam("schema") String schema) {
+    ) @QueryParam("name") String name) {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        if (schema == null) {
+        if (name == null) {
             rob.setStatus(Response.Status.BAD_REQUEST);
-            rob.addErrorMessage("No schema name given.");
+            rob.addErrorMessage("No storage name given.");
             return rob.toResponse();
         }
 
         try {
             DynBase db = new DynBasePostgres();
-            if (db.createSchemaIfNotExists(schema)) {
+            if (db.createStorageIfNotExists(name)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
                 rob.setStatus(Response.Status.NOT_MODIFIED);
@@ -99,7 +99,7 @@ public class BaseResource {
     @Path("getTables")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Lists all tables",
-            description = "Lists all tables of a schema")
+            description = "Lists all tables of a storage")
     @APIResponse(
             responseCode = "200",
             description = "List with table informations",
@@ -113,19 +113,19 @@ public class BaseResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response getTables(
-            @Parameter(description = "Schema name", required = false,
+            @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public")
-            ) @QueryParam("schema") String schema) {
+            ) @QueryParam("name") String name) {
 
-        if (schema == null) {
-            schema = "public";
+        if (name == null) {
+            name = "public";
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try {
             DynBase db = new DynBasePostgres();
-            rob.add("list", db.getTables(schema));
+            rob.add("list", db.getTables(name));
             db.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -138,40 +138,40 @@ public class BaseResource {
     }
 
     @DELETE
-    @Path("deleteSchema")
+    @Path("delete")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Deletes a schema",
-            description = "Deletes a schema and all its contents")
+    @Operation(summary = "Deletes a storage",
+            description = "Deletes a storage and all its contents")
     @APIResponse(
             responseCode = "200",
-            description = "Schema was deleted")
+            description = "Storage was deleted")
     @APIResponse(
             responseCode = "304",
-            description = "Schema was not existend")
+            description = "Storage was not existend")
     @APIResponse(
             responseCode = "400",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \"No schema name given.\"]}"))
+                    example = "{\"errors\" : [ \"No storage name given.\"]}"))
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \" Could not delete schema: Because of ... \"]}"))
-    public Response deleteSchema(@Parameter(description = "Schema name", required = true,
+                    example = "{\"errors\" : [ \" Could not delete storage: Because of ... \"]}"))
+    public Response delete(@Parameter(description = "Storage name", required = true,
             schema = @Schema(type = STRING, defaultValue = "public")
-    ) @QueryParam("schema") String schema) {
+    ) @QueryParam("name") String name) {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        if (schema == null) {
+        if (name == null) {
             rob.setStatus(Response.Status.BAD_REQUEST);
-            rob.addErrorMessage("No schema name given.");
+            rob.addErrorMessage("No storage name given.");
             return rob.toResponse();
         }
 
         try {
             DynBase db = new DynBasePostgres();
-            if (db.deleteSchema(schema)) {
+            if (db.deleteStorage(name)) {
                 rob.setStatus(Response.Status.OK);
             } else {
                 rob.setStatus(Response.Status.NOT_MODIFIED);
