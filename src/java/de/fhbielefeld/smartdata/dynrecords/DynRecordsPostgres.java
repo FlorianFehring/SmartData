@@ -4,7 +4,7 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.converter.DataConverter;
-import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.dynrecords.filter.FilterException;
@@ -81,11 +81,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
-            // Get available columns
-            Map<String, Column> columns = this.dyntable.getColumns();
+            // Get available attributes
+            Map<String, Attribute> attributes = this.dyntable.getAttributes();
 
             // If there is no fetchedData expected do not request
-            if (columns.isEmpty()) {
+            if (attributes.isEmpty()) {
                 throw new DynException("The table >" + this.schema + '/' + this.table + "< has no columns. So there is no data to get.");
             }
 
@@ -112,7 +112,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
                 // Build up list of columns if no ones given
                 if (includes == null || includes.isEmpty()) {
-                    for (String curColumn : columns.keySet()) {
+                    for (String curColumn : attributes.keySet()) {
                         includeColumns.add(curColumn);
                         if (orderby != null && curColumn.equals(orderby)) {
                             orderByAvailable = true;
@@ -125,7 +125,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     // Build list of columns
                     Collection<String> newColumnNames = new ArrayList<>();
 
-                    for (Column curColumn : columns.values()) {
+                    for (Attribute curColumn : attributes.values()) {
                         // Check and automatic add orderby column
                         if (orderby != null && curColumn.getName().equals(orderby)) {
                             newColumnNames.add(curColumn.getName());
@@ -340,7 +340,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = "insert_" + String.join("_", json.keySet());
 
         if (!this.preparedStatements.containsKey(pstmtid)) {
-            Map<String, Column> columns = this.dyntable.getColumns();
+            Map<String, Attribute> columns = this.dyntable.getAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
             // Build up insert statement
@@ -387,7 +387,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
             int foundIds = 0;
             String firstidColumn = null;
-            for (Column curColumn : columns.values()) {
+            for (Attribute curColumn : columns.values()) {
                 if (curColumn.isIdentity()) {
                     if (foundIds == 0) {
                         firstidColumn = curColumn.getName();
@@ -454,7 +454,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = this.getPreparedInsert(json);
         PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
-        Map<String, Column> columns = this.dyntable.getColumns();
+        Map<String, Attribute> columns = this.dyntable.getAttributes();
 
         for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
             String jkey = curEntry.getKey();
@@ -467,7 +467,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             int pindex = placeholders.get(jkey);
 
             // Get column information
-            Column curColumn = columns.get(jkey);
+            Attribute curColumn = columns.get(jkey);
             this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
         }
         try {
@@ -493,7 +493,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = "update_" + String.join("_", json.keySet());
 
         if (!this.preparedStatements.containsKey(pstmtid)) {
-            Map<String, Column> columns = this.dyntable.getColumns();
+            Map<String, Attribute> columns = this.dyntable.getAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
             // Build up insert statement
@@ -531,7 +531,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
             if(identitycol == null && id != null) {
                 // Autodetect identity column
-                List<Column> idcolumns = this.dyntable.getIdentityColumns();
+                List<Attribute> idcolumns = this.dyntable.getIdentityAttributes();
                 if(columns.isEmpty()) {
                     throw new DynException("There is no identity column in table. Could not update datasets.");
                 }
@@ -600,7 +600,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = this.getPreparedUpdate(json, id);
         PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
-        Map<String, Column> columns = this.dyntable.getColumns();
+        Map<String, Attribute> columns = this.dyntable.getAttributes();
     
         int usedPlaceholders = 1;
         for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
@@ -614,7 +614,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             int pindex = placeholders.get(jkey);
 
             // Get column information
-            Column curColumn = columns.get(jkey);
+            Attribute curColumn = columns.get(jkey);
             this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
             usedPlaceholders++;
         }
@@ -658,7 +658,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
      * @param value Parameters value
      * @throws DynException 
      */
-    private void setPlaceholder(PreparedStatement pstmt, int pindex, Column col, JsonValue value) throws DynException {
+    private void setPlaceholder(PreparedStatement pstmt, int pindex, Attribute col, JsonValue value) throws DynException {
         try {
                 switch (col.getType()) {
                     case "text":
@@ -708,12 +708,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String sql = "DELETE FROM " + this.schema + "." + this.table + " WHERE ";
         
         // Get name of first id column
-        List<Column> columns = this.dyntable.getIdentityColumns();
+        List<Attribute> columns = this.dyntable.getIdentityAttributes();
         if(columns.isEmpty()) {
             throw new DynException("Could not delete from >" + this.schema + "." + this.table + " because there is no identity column.");
         }
         // Get first column
-        Column idcol = columns.get(0);
+        Attribute idcol = columns.get(0);
         
         sql += "\"" + idcol.getName() + "\" = ";
         if(idcol.getType().equalsIgnoreCase("varchar")) {

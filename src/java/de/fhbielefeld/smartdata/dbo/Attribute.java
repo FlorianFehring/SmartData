@@ -3,12 +3,12 @@ package de.fhbielefeld.smartdata.dbo;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * Represemts column information
+ * Represemts attribute information
  * 
  * @author Florian Fehring
  */
 @XmlRootElement
-public class Column {
+public class Attribute {
     
     private String name;
     private String type;
@@ -18,11 +18,11 @@ public class Column {
     private boolean isNullable = true;
     private boolean isIdentity = false;
     
-    public Column() {
+    public Attribute() {
         
     }
     
-    public Column(String name, String type) {
+    public Attribute(String name, String type) {
         this.name = name;
         this.type = type;
     }

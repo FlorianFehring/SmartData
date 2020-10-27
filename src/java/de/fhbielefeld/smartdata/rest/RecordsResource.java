@@ -3,7 +3,7 @@ package de.fhbielefeld.smartdata.rest;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
-import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dynrecords.DynRecordsPostgres;
 import de.fhbielefeld.smartdata.dynrecords.filter.EqualsFilter;
 import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
@@ -127,7 +127,7 @@ public class RecordsResource {
             @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") Long id,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
-            @Parameter(description = "Included Columns", example = "1") @QueryParam("includes") String includes) {
+            @Parameter(description = "Included Attributess", example = "1") @QueryParam("includes") String includes) {
 
         if (storage == null) {
             storage = "public";
@@ -139,23 +139,23 @@ public class RecordsResource {
         // Init collection access
         try {
             DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-            List<Column> idcolumns = dt.getIdentityColumns();
-            if (idcolumns.isEmpty()) {
-                rob.addErrorMessage("There is no identity column for collection >" + collection + "< could not get single dataset.");
+            List<Attribute> idattrs = dt.getIdentityAttributes();
+            if (idattrs.isEmpty()) {
+                rob.addErrorMessage("There is no identity attribute for collection >" + collection + "< could not get single dataset.");
                 rob.setStatus(Response.Status.NOT_ACCEPTABLE);
                 return rob.toResponse();
-            } else if (idcolumns.size() > 1) {
-                rob.addWarningMessage("There are more than one identity columns, try to identify on >" + idcolumns.get(0).getName() + "<");
+            } else if (idattrs.size() > 1) {
+                rob.addWarningMessage("There are more than one identity attributes, try to identify on >" + idattrs.get(0).getName() + "<");
             }
 
-            Column idcolumn = idcolumns.get(0);
+            Attribute idattr = idattrs.get(0);
             Filter idfilter = new EqualsFilter(dt);
-            idfilter.parse(idcolumn.getName() + ",eq," + id);
+            idfilter.parse(idattr.getName() + ",eq," + id);
             filters.add(idfilter);
             // Create filter for id
         } catch (DynException ex) {
             rob.setStatus(Response.Status.NOT_ACCEPTABLE);
-            rob.addErrorMessage("Could not get identity columns");
+            rob.addErrorMessage("Could not get identity attributes");
             rob.addException(ex);
             return rob.toResponse();
         } catch (FilterException ex) {
@@ -203,13 +203,13 @@ public class RecordsResource {
             @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
-            @Parameter(description = "Included Columns", example = "id,value") @QueryParam("includes") String includes,
+            @Parameter(description = "Included attributes", example = "id,value") @QueryParam("includes") String includes,
             @Parameter(description = "Filter definition", example = "id,eq,1") @QueryParam("filter") String filter,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order", example = "DESC") @QueryParam("order") String order,
             @Parameter(description = "If datasets should only counted", example = "false") @QueryParam("countonly") boolean countonly,
-            @Parameter(description = "Column to get uniqe values for", example = "value") @QueryParam("unique") String unique,
+            @Parameter(description = "Attribute to get uniqe values for", example = "value") @QueryParam("unique") String unique,
             @Parameter(description = "Package values into datasets", example = "false") @QueryParam("deflatt") boolean deflatt) {
 
         if (storage == null) {
@@ -306,7 +306,7 @@ public class RecordsResource {
     @Path("{collection}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Updates multiple datasets",
-            description = "Updates existing datasets. The identity column must be included in the json.")
+            description = "Updates existing datasets. The identity attribute must be included in the json.")
     @APIResponse(
             responseCode = "200",
             description = "Number of updated datasets",

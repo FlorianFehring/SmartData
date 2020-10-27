@@ -69,7 +69,6 @@ public class SystemResource {
         // Init config
         Configuration conf = new Configuration();
 
-        // Get columns
         rob.add("modulname", conf.getModuleName());
         rob.add("filename", conf.getFileName());
         rob.add("propsloaded", conf.isPropsloaded());

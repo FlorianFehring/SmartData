@@ -3,7 +3,7 @@ package de.fhbielefeld.smartdata.rest;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
-import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
@@ -81,7 +81,7 @@ public class CollectionResource {
         try {
             // Init collection access
             DynCollectionPostgres dtp = new DynCollectionPostgres(storage, collectiondef.getName());
-            // Get columns
+            // Get attributes
             boolean created = dtp.create(collectiondef);
             if (created) {
                 rob.setStatus(Response.Status.CREATED);
@@ -91,30 +91,30 @@ public class CollectionResource {
             dtp.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get column information: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
         return rob.toResponse();
     }
 
     @GET
-    @Path("{collection}/getColumns")
+    @Path("{collection}/getAttributes")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Lists columns of a collection",
-            description = "Lists all columns of a collection and gives base information about them.")
+    @Operation(summary = "Lists attributes of a collection",
+            description = "Lists all attributes of a collection and gives base information about them.")
     @APIResponse(
             responseCode = "200",
-            description = "Objects with column informations",
+            description = "Objects with attribute informations",
             content = @Content(
                     mediaType = "application/json",
-                    example = "{\"list\" : [ { \"name\" : \"column1\", \"type\" : \"integer\"} ]}"
+                    example = "{\"list\" : [ { \"name\" : \"attribute1\", \"type\" : \"integer\"} ]}"
             ))
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
-    public Response getColumns(
+    public Response getAttributes(
             @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
@@ -129,45 +129,45 @@ public class CollectionResource {
         try {
             // Init collection access
             DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-            // Get columns
-            rob.add("list", dt.getColumns().values());
+            // Get attributes
+            rob.add("list", dt.getAttributes().values());
             dt.disconnect();
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get column information: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Could not get attributes information: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
         return rob.toResponse();
     }
 
     @PUT
-    @Path("{collection}/addColumns")
+    @Path("{collection}/addAttributes")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Adds columns to a collection",
-            description = "Adds columns to a collection.")
+    @Operation(summary = "Adds attributes",
+            description = "Adds attributes to a collection.")
     @APIResponse(
             responseCode = "200",
-            description = "Number of added columns",
+            description = "Number of added attributes",
             content = @Content(
                     mediaType = "text/plain",
                     example = "1"
             ))
     @APIResponse(
             responseCode = "409",
-            description = "Column allready exists",
+            description = "Attribute allready exists",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \" Column 'columname' allready exists. \"]}"))
+                    example = "{\"errors\" : [ \" Attribute 'attributename' allready exists. \"]}"))
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
-    public Response addColumns(
+    public Response addAttributes(
             @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
-            List<Column> columns) {
+            List<Attribute> attributes) {
 
         if (storage == null) {
             storage = "public";
@@ -178,7 +178,7 @@ public class CollectionResource {
         try {
             // Init collection access
             DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-            if (dt.addColumns(columns)) {
+            if (dt.addAttributes(attributes)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
                 rob.setStatus(Response.Status.CONFLICT);
@@ -186,7 +186,7 @@ public class CollectionResource {
             dt.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get column information: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
 
@@ -194,28 +194,28 @@ public class CollectionResource {
     }
 
     @PUT
-    @Path("{collection}/changeColumn")
-    @Operation(summary = "Changes the srid of a column",
-            description = "Changes the srid of a column")
+    @Path("{collection}/changeAttribute")
+    @Operation(summary = "Changes the srid of a attribute",
+            description = "Changes the srid of a attribute")
     @APIResponse(
             responseCode = "200",
             description = "SRID changed succsessfull")
     @APIResponse(
             responseCode = "404",
-            description = "Column does not exists",
+            description = "Attribute does not exists",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \" Column 'columname' does not exists. \"]}")
+                    example = "{\"errors\" : [ \" Attribute 'attributename' does not exists. \"]}")
     )
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not change SRID: Because of ... \"]}"))
-    public Response changeColumn(
+    public Response changeAttribute(
             @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storge") String storage,
-            List<Column> columns) {
+            List<Attribute> attributes) {
 
         if (storage == null) {
             storage = "public";
@@ -226,7 +226,7 @@ public class CollectionResource {
         try {
             // Init collection access
             DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-            dt.changeColumns(columns);
+            dt.changeAttributes(attributes);
             dt.disconnect();
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {

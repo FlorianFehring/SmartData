@@ -1,6 +1,6 @@
 package de.fhbielefeld.smartdata.dyncollection;
 
-import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.Dyn;
 import de.fhbielefeld.smartdata.exceptions.DynException;
@@ -33,57 +33,57 @@ public interface DynCollection extends Dyn {
     public abstract boolean create(DataCollection table) throws DynException;
     
     /**
-     * Adds columns to the table.
+     * Adds attributes to the collection.
      * 
-     * @param columns Columns to add
-     * @return true if all columns are created, false if all columns already exists
+     * @param attributes Attributes to add
+     * @return true if all attributes are created, false if all attributes already exists
      * @throws DynException 
      */
-    public abstract boolean addColumns(List<Column> columns) throws DynException;
+    public abstract boolean addAttributes(List<Attribute> attributes) throws DynException;
     
     /**
-     * Gets all available columns for this table
+     * Gets all available attributes for this table
      * 
      * @return List of collumns
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
-    public abstract Map<String,Column> getColumns() throws DynException;
+    public abstract Map<String,Attribute> getAttributes() throws DynException;
     
     /**
-     * Get informations about one column
+     * Get informations about one attribute
      * 
-     * @param name Name of the column
-     * @return Column information or null if column not found
+     * @param name Name of the attribute
+     * @return Attribute information or null if attribute not found
      * 
      * @throws DynException 
      */
-    public abstract Column getColumn(String name) throws DynException;
+    public abstract Attribute getAttribute(String name) throws DynException;
     
     /**
      * Gets the collumns that are uses for identity
      * 
-     * @return List of identifying columns
+     * @return List of identifying attributes
      * 
      * @throws DynException 
      */
-    public abstract List<Column> getIdentityColumns() throws DynException;
+    public abstract List<Attribute> getIdentityAttributes() throws DynException;
     
     /**
-     * Changes the name of a column
+     * Changes the name of a attributes
      * 
-     * @param oldname Old column name
-     * @param newname New columnname
+     * @param oldname Old attributes name
+     * @param newname New attributename
      * 
      * @throws DynException 
      */
-    public abstract void changeColumnName(String oldname, String newname) throws DynException;
+    public abstract void changeAttributeName(String oldname, String newname) throws DynException;
     
     /**
-     * Changes the srid of a column (only on geometry columns)
-     * @param columns Column definitions with changed informations
+     * Changes the srid of a attribute (only on geometry attributes)
+     * @param attributes Attribute definitions with changed informations
      * @throws DynException 
      */
-    public abstract void changeColumns(List<Column> columns) throws DynException;
+    public abstract void changeAttributes(List<Attribute> attributes) throws DynException;
     
     /**
      * Deletes the table

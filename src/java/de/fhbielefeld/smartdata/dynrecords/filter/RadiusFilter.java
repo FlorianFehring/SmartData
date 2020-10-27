@@ -4,7 +4,7 @@ import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
-import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -33,10 +33,10 @@ public class RadiusFilter extends Filter {
         this.filtercode = filtercode;
         try {
             String[] parts = filtercode.split(",");
-            // First element is the name of the column wanted to filter
-            this.column = parts[0];
-            // Check if the table contains such a column
-            Column col = this.table.getColumn(this.column);
+            // First element is the name of the attribute wanted to filter
+            this.attribute = parts[0];
+            // Check if the table contains such a attribute
+            Attribute col = this.table.getAttribute(this.attribute);
             
             for (int i = 2; i <= 5; i++){
                 if (checkIfNumeric(parts[i]) == false){
@@ -45,7 +45,7 @@ public class RadiusFilter extends Filter {
             }
 
             if (col == null) {
-                throw new FilterException("The Column >" + this.column + "< does not exists.");
+                throw new FilterException("The Column >" + this.attribute + "< does not exists.");
             }
             switch (col.getType()) {
                 case "geometry":
@@ -70,7 +70,7 @@ public class RadiusFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_DWithin(geography(ST_Transform("+ this.column +",4326)),geography(ST_Transform(ST_SetSRID(ST_MakePoint(?, ?), ?),4326)), ?)";
+        return "ST_DWithin(geography(ST_Transform("+ this.attribute +",4326)),geography(ST_Transform(ST_SetSRID(ST_MakePoint(?, ?), ?),4326)), ?)";
     }
 
     @Override

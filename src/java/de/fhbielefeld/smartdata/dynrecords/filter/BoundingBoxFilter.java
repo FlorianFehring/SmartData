@@ -4,7 +4,7 @@ import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
-import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -34,10 +34,10 @@ public class BoundingBoxFilter extends Filter {
         this.filtercode = filtercode;
         try {
             String[] parts = filtercode.split(",");
-            // First element is the name of the column wanted to filter
-            this.column = parts[0];
-            // Check if the table contains such a column
-            Column col = this.table.getColumn(this.column);
+            // First element is the name of the attribute wanted to filter
+            this.attribute = parts[0];
+            // Check if the table contains such a attribute
+            Attribute col = this.table.getAttribute(this.attribute);
             
             for (int i = 2; i <= 7; i++){
                 if (checkIfNumeric(parts[i]) == false){
@@ -46,7 +46,7 @@ public class BoundingBoxFilter extends Filter {
             }
 
             if (col == null) {
-                throw new FilterException("The Column >" + this.column + "< does not exists.");
+                throw new FilterException("The attribute >" + this.attribute + "< does not exists.");
             }
             switch (col.getType()) {
                 case "geometry":
@@ -60,7 +60,7 @@ public class BoundingBoxFilter extends Filter {
                 default:
                     Message msg = new Message(
                             "RadiusFilter", MessageLevel.ERROR,
-                            "Column type >" + col.getType() + "< is not supported. Please choose a Column with type geometry.");
+                            "Attribute type >" + col.getType() + "< is not supported. Please choose a attribute with type geometry.");
                     Logger.addDebugMessage(msg);
             }
 
@@ -73,7 +73,7 @@ public class BoundingBoxFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return this.column +"@ ST_Transform((ST_MakeEnvelope( ?, ?, ?, ?, ?)), ?)";
+        return this.attribute +"@ ST_Transform((ST_MakeEnvelope( ?, ?, ?, ?, ?)), ?)";
     }
 
     @Override

@@ -1,6 +1,6 @@
 package de.fhbielefeld.smartdata.dyncollection;
 
-import de.fhbielefeld.smartdata.dbo.Column;
+import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
@@ -43,32 +43,32 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
     }
 
     @Override
-    public boolean addColumns(List<Column> columns) throws DynException {
+    public boolean addAttributes(List<Attribute> attributes) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Map<String, Column> getColumns() throws DynException {
+    public Map<String, Attribute> getAttributes() throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Column getColumn(String name) throws DynException {
+    public Attribute getAttribute(String name) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public List<Column> getIdentityColumns() throws DynException {
+    public List<Attribute> getIdentityAttributes() throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void changeColumnName(String oldname, String newname) throws DynException {
+    public void changeAttributeName(String oldname, String newname) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void changeColumns(List<Column> columns) throws DynException {
+    public void changeAttributes(List<Attribute> attributes) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

@@ -14,7 +14,7 @@ public abstract class Filter {
 
     protected String filtercode;
     protected DynCollection table;
-    protected String column;
+    protected String attribute;
     protected int firstPlaceholder;
     // Noteing warnings for calling methods
     protected List<String> warnings = new ArrayList<>();
@@ -35,7 +35,7 @@ public abstract class Filter {
     /**
      * Parses the filtercode and creates the filter rule.
      *
-     * @param filtercode Filter expression (e.g. column,eq,2)
+     * @param filtercode Filter expression (e.g. attribute,eq,2)
      * @throws FilterException
      */
     public abstract void parse(String filtercode) throws FilterException;

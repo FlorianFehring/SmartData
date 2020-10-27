@@ -14,9 +14,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class DataCollection {
     
     private String name;
-    @XmlElementWrapper(name = "columns")
-    @XmlElement(name = "columns")
-    private ArrayList<Column> columns;
+    @XmlElementWrapper(name = "attributes")
+    @XmlElement(name = "attributes")
+    private ArrayList<Attribute> attributes;
     
     public DataCollection() {
         
@@ -34,15 +34,15 @@ public class DataCollection {
         return this.name;
     }
 
-    public ArrayList<Column> getColumns() {
-        return columns;
+    public ArrayList<Attribute> getAttributes() {
+        return attributes;
     }
 
-    public void setColumns(ArrayList<Column> columns) {
-        this.columns = columns;
+    public void setAttributes(ArrayList<Attribute> attributes) {
+        this.attributes = attributes;
     }
     
-    public void addColumn(Column column) {
-        this.columns.add(column);
+    public void addAttribute(Attribute attribute) {
+        this.attributes.add(attribute);
     }
 }

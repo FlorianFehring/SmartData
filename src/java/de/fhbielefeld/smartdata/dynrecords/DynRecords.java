@@ -19,13 +19,13 @@ public interface DynRecords extends Dyn {
      * Builds up the sql statement requied for selecting the data.All prameters
      * are optional.
      *
-     * @param includes Commata separated list of names of columns to include
+     * @param includes Commata separated list of names of attributes to include
      * @param filters Filter objects applicable
      * @param size Maximum number of datasets
      * @param page Page to fetch from database (pageno[,pagesize])
-     * @param order Order to order after (column[,[ASC|DESC]])
+     * @param order Order to order after (attribute[,[ASC|DESC]])
      * @param countOnly If true ounly deliver count of sets
-     * @param unique Column tahts contents should be returned unique
+     * @param unique Attribute tahts contents should be returned unique
      * @param deflatt If true a single dataset should be deflatted into multiple
      * datasets
      * @return Id of the generated statement and placeholdermap
@@ -49,14 +49,14 @@ public interface DynRecords extends Dyn {
     /**
      * Gets data from the database
      *
-     * @param includes Name of the columns that should be included, if not given
-     * all available columns are delivered
+     * @param includes Name of the attributes that should be included, if not given
+     * all available attributes are delivered
      * @param filters Filters to apply
      * @param size Maximum number of datasets
      * @param page Page to fetch from database (pageno[,pagesize])
-     * @param order Order to order after (column[,[ASC|DESC]])
+     * @param order Order to order after (attribute[,[ASC|DESC]])
      * @param countOnly If true ounly deliver count of sets
-     * @param unique Column tahts contents should be returned unique
+     * @param unique Attribute tahts contents should be returned unique
      * @param deflatt If true a single dataset should be deflatted into multiple
      * datasets
      *
@@ -108,7 +108,7 @@ public interface DynRecords extends Dyn {
     /**
      * Updates datasets with data given as a json string.
      * 
-     * @param json Json string containing new values and indentity column values
+     * @param json Json string containing new values and indentity attribute values
      * @param id Id of the dataset to update (can be null if id is stored in json)
      * @return Number of updated datasets
      * @throws DynException 
@@ -118,7 +118,7 @@ public interface DynRecords extends Dyn {
     /**
      * Updates one dataset with the data given as json object
      * 
-     * @param json Json Object containing data to update and identity column with value
+     * @param json Json Object containing data to update and identity attribute with value
      * @param id Id of the dataset to update (can be null if id is stored in json)
      * @return Number of updated datasets
      * @throws DynException 
