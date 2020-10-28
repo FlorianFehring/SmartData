@@ -123,11 +123,11 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get dataset: Because of ... \"]}"))
     public Response get(
-            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
-            @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") Long id,
-            @Parameter(description = "Storage name",
+            @Parameter(description = "Name of the collection to get data from (Tablename, Documentspace)", required = true, example = "mycollection") @PathParam("collection") String collection,
+            @Parameter(description = "Datasets id", required = true, example = "1") @PathParam("id") Long id,
+            @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
-            @Parameter(description = "Included Attributess", example = "1") @QueryParam("includes") String includes) {
+            @Parameter(description = "Attributes to include, comata separated", example = "1") @QueryParam("includes") String includes) {
 
         if (storage == null) {
             storage = "public";
@@ -200,17 +200,17 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response list(
-            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
-            @Parameter(description = "Storage name",
+            @Parameter(description = "Name of the collection to get data from (Tablename, Documentspace)", required = true, example = "mycollection") @PathParam("collection") String collection,
+            @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
-            @Parameter(description = "Included attributes", example = "id,value") @QueryParam("includes") String includes,
-            @Parameter(description = "Filter definition", example = "id,eq,1") @QueryParam("filter") String filter,
+            @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
+            @Parameter(description = "Definition of an filter (e.g. where id equals 1)", example = "id,eq,1") @QueryParam("filter") String filter,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order", example = "DESC") @QueryParam("order") String order,
-            @Parameter(description = "If datasets should only counted", example = "false") @QueryParam("countonly") boolean countonly,
-            @Parameter(description = "Attribute to get uniqe values for", example = "value") @QueryParam("unique") String unique,
-            @Parameter(description = "Package values into datasets", example = "false") @QueryParam("deflatt") boolean deflatt) {
+            @Parameter(description = "If datasets should only be counted (untested)", example = "false") @QueryParam("countonly") boolean countonly,
+            @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
+            @Parameter(description = "Package values into datasets (untested)", example = "false") @QueryParam("deflatt") boolean deflatt) {
 
         if (storage == null) {
             storage = "public";
