@@ -28,7 +28,7 @@ public class DynPostgres implements Dyn {
         Configuration conf = new Configuration();
         String jndi = conf.getProperty("postgres.jndi");
         if(jndi == null)
-            jndi = "jdbc/smartdata";
+            jndi = "jdbc/SmartData";
         
         try {
             InitialContext ctx = new InitialContext();
