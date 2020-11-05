@@ -318,7 +318,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         Configuration conf = new Configuration();
         String hardLimitStr = conf.getProperty("hardLimit");
         if(hardLimitStr != null) {
-            size = Integer.parseInt(hardLimitStr);
+            int hardLimit = Integer.parseInt(hardLimitStr);
+            if(size == 0 || size > hardLimit)
+                size = hardLimit;
+            // Add warning message
+            if(size > hardLimit) {
+                this.warnings.add("The given limit of >" + size + "< exeeds the maximum of >" + hardLimit + "<. You will recive a maximum of >" + hardLimit + "< datasets.");
+            }
         }
         
         try {
