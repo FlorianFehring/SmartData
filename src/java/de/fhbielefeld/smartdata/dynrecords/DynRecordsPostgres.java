@@ -3,6 +3,7 @@ package de.fhbielefeld.smartdata.dynrecords;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
+import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
@@ -314,6 +315,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         // Reset warnings for new get
         this.warnings = new ArrayList<>();
 
+        Configuration conf = new Configuration();
+        String hardLimitStr = conf.getProperty("hardLimit");
+        if(hardLimitStr != null) {
+            size = Integer.parseInt(hardLimitStr);
+        }
+        
         try {
             // Prepare query or get allready prepeared one
             String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt);
