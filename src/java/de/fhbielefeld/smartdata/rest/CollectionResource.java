@@ -214,7 +214,7 @@ public class CollectionResource {
     public Response changeAttribute(
             @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
-                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storge") String storage,
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             List<Attribute> attributes) {
 
         if (storage == null) {
