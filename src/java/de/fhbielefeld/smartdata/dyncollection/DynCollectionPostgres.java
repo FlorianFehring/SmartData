@@ -248,7 +248,6 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public void changeAttributes(List<Attribute> columns) throws DynException {
-        System.out.println("test");
         for (Attribute curCol : columns) {
             try {
                 Statement stmt = this.con.createStatement();
