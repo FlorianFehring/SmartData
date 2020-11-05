@@ -24,7 +24,7 @@ public class DynMongo implements Dyn {
     }
 
     @Override
-    public void disconnect() throws DynException {
+    public void disconnect() {
         // nothing todo here
     }
     

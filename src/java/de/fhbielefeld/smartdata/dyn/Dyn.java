@@ -19,9 +19,8 @@ public interface Dyn {
     
     /**
      * Closes a connection to the database
-     * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
-    public void disconnect() throws DynException;
+    public void disconnect();
     
     /**
      * Get warning that occured while processing
