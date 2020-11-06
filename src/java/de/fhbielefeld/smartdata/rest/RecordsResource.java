@@ -220,7 +220,7 @@ public class RecordsResource {
         }
         rob.setStatus(Response.Status.OK);
 
-        return rob.toResponse();
+        return rob.toResponseStream();
     }
 
     @GET
@@ -305,9 +305,6 @@ public class RecordsResource {
             String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt);
             rob.add("records", json);
         } catch (DynException ex) {
-            System.out.println("exceptio getting data:");
-            System.out.println(ex.getLocalizedMessage());
-            ex.printStackTrace();
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
@@ -317,7 +314,7 @@ public class RecordsResource {
         }
         rob.setStatus(Response.Status.OK);
 
-        return rob.toResponse();
+        return rob.toResponseStream();
     }
 
     @PUT
