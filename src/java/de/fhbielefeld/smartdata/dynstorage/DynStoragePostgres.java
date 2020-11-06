@@ -28,62 +28,40 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
     public DynStoragePostgres() throws DynException {
         this.connect();
     }
-    
+
     public DynStoragePostgres(Connection con) {
         this.con = con;
     }
-    
-    @Override
-    public Collection<String> getAbilities() throws DynException {
-        List<String> abilities = new ArrayList<>();
-        abilities.add("gis");
-        return abilities;
-    }
 
     @Override
-    public Map<String, Object> getAbility(String abilityName) throws DynException {
-        Map<String, Object> information = new HashMap<>();
-        if (abilityName.equalsIgnoreCase("gis")) {
-            try {
-                Statement stmt = this.con.createStatement();
-                ResultSet rs = stmt.executeQuery("select * from pg_proc where proname = 'postgis_full_version'");
-                if (!rs.next()) {
-                    return information;
-                }
-                rs.close();
-            } catch (SQLException ex) {
-                DynException dex = new DynException(
-                        "Could not get ability information: " + ex.getLocalizedMessage());
-                dex.addSuppressed(ex);
-                throw dex;
-            }
-            try {
-                Statement stmt = this.con.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT PostGIS_full_version() AS version");
+    public Map<String, String> getAbilities() throws DynException {
+        Map<String, String> abilities = new HashMap<>();
+        // Check if gis is available
+        try {
+            Statement stmt = this.con.createStatement();
+            try ( ResultSet rs = stmt.executeQuery("SELECT PostGIS_full_version() AS version")) {
                 rs.next();
-                information.put("exists", true);
-                information.put("vendor", "postgis");
-                information.put("version", rs.getString("version"));
-                rs.close();
-            } catch (SQLException ex) {
-                DynException dex = new DynException(
-                        "Could not get ability information: " + ex.getLocalizedMessage());
-                dex.addSuppressed(ex);
-                throw dex;
+                String info = rs.getString("version");
+                System.out.println(info);
+                info = info.replaceAll("\"", "'");
+                System.out.println(info);
+                abilities.put("gis", "PostGIS " + info);
             }
-        } else {
-            throw new DynException("Ability >" + abilityName + "< is not supported by "
-                    + this.getClass().getSimpleName());
+        } catch (SQLException ex) {
+            DynException dex = new DynException(
+                    "Could not get ability information: " + ex.getLocalizedMessage());
+            dex.addSuppressed(ex);
+            throw dex;
         }
-        return information;
+
+        return abilities;
     }
 
     @Override
     public boolean createAbilityIfNotExists(String abilityName) throws DynException {
         boolean created = false;
         // Check if ability exists
-        Map<String, Object> abilityInfo = this.getAbility(abilityName);
-        if (!abilityInfo.containsKey("exists")) {
+        if (!this.getAbilities().containsKey(abilityName)) {
             if (abilityName.equalsIgnoreCase("gis")) {
                 throw new DynException("You must install postgis support as "
                         + "superuser useing the following commands:\n\r"
@@ -114,20 +92,20 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
     @Override
     public boolean createAbilitiesIfNotExists(Collection<String> abilityNames) throws DynException {
         boolean created = false;
-        for(String abilityName : abilityNames) {
-            if(this.createAbilityIfNotExists(abilityName)) {
+        for (String abilityName : abilityNames) {
+            if (this.createAbilityIfNotExists(abilityName)) {
                 created = true;
             }
         }
         return created;
     }
-    
+
     @Override
     public boolean storageExists(String name) throws DynException {
         try {
             Statement stmtCheck = this.con.createStatement();
             String sql = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '" + name + "'";
-            try (ResultSet rs = stmtCheck.executeQuery(sql)) {
+            try ( ResultSet rs = stmtCheck.executeQuery(sql)) {
                 if (rs.next()) {
                     int count = rs.getInt("count");
                     if (count == 1) {
@@ -146,14 +124,14 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
     @Override
     public boolean createStorageIfNotExists(Collection<String> storageNames) throws DynException {
         boolean created = false;
-        for(String name : storageNames) {
-            if(this.createStorageIfNotExists(name)) {
+        for (String name : storageNames) {
+            if (this.createStorageIfNotExists(name)) {
                 created = true;
             }
         }
         return created;
     }
-    
+
     @Override
     public boolean createStorageIfNotExists(String name) throws DynException {
         boolean created = false;

@@ -113,6 +113,63 @@ public class StorageResource {
     }
 
     @GET
+    @Path("getAbilities")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Lists all abilities",
+            description = "Lists all abilities of a storage")
+    @APIResponse(
+            responseCode = "200",
+            description = "List with ability informations",
+            content = @Content(
+                    mediaType = "application/json",
+                    example = "{ \"list\" : { \"ability_name\" : \"ability_version\"}}"
+            ))
+    @APIResponse(
+            responseCode = "500",
+            description = "Error mesage",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Could not get abilities: Because of ... \"]}"))
+    public Response getAbilities(
+            @Parameter(description = "Storage name", required = false,
+                    schema = @Schema(type = STRING, defaultValue = "public")
+            ) @QueryParam("name") String name) {
+
+        if (name == null) {
+            name = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        DynStorage dyns;
+        Configuration conf = new Configuration();
+        try {
+            if (conf.getProperty("mongo.url") != null) {
+                dyns = new DynStorageMongo();
+            } else {
+                dyns = new DynStoragePostgres();
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            rob.add("list", dyns.getAbilities());
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+        } finally {
+            dyns.disconnect();
+        }
+
+        rob.setStatus(Response.Status.OK);
+        return rob.toResponse();
+    }
+    
+    @GET
     @Path("getCollections")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Lists all collections",
@@ -128,7 +185,7 @@ public class StorageResource {
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
-                    example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
+                    example = "{\"errors\" : [ \" Could not get collections: Because of ... \"]}"))
     public Response getCollections(
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public")

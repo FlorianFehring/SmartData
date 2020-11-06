@@ -22,18 +22,19 @@ public class DynStorageMongo extends DynMongo implements DynStorage {
     }
     
     @Override
-    public Collection<String> getAbilities() throws DynException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Map<String, Object> getAbility(String abilityName) throws DynException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Map<String,String> getAbilities() throws DynException {
+        Map<String, String> abilities = new HashMap<>();
+        abilities.put("gis", "MongoDB geospatial features");
+        return abilities;
     }
 
     @Override
     public boolean createAbilityIfNotExists(String abilityName) throws DynException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        boolean created = false;
+        if(abilityName.equalsIgnoreCase("gis")) {
+            // geospatial features are integrated in Mongo no need to install
+        }
+        return created;
     }
 
     @Override

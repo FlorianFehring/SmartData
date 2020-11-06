@@ -21,16 +21,7 @@ public interface DynStorage extends Dyn {
      * @return Names of the abilities.
      * @throws DynException 
      */
-    public Collection<String> getAbilities() throws DynException;
-    
-    /**
-     * Gets informations about an ability of the DynBase
-     * 
-     * @param abilityName Name of the ability to get information for
-     * @return Key value pairs of information about the ability
-     * @throws DynException Thrown on fetch error
-     */
-    public Map<String,Object> getAbility(String abilityName) throws DynException;
+    public Map<String,String> getAbilities() throws DynException;
     
     /**
      * Creates the ability indentified by the given name if possible.
