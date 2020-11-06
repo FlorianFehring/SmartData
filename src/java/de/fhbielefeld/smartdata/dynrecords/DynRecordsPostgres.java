@@ -43,17 +43,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     protected String schema;
     protected String table;
 
-    protected DynCollection dyntable = null;
+    protected DynCollection dyncollection = null;
     protected static final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
     protected static final Map<String, Map<String, Integer>> preparedPlaceholders = new HashMap<>();
 
     public DynRecordsPostgres(String schema, String table) throws DynException {
         this.schema = schema;
         this.table = table;
-
-        // Get available columns
-        this.dyntable = new DynCollectionPostgres(this.schema, this.table);
         this.connect();
+        
+        // Get available columns
+        this.dyncollection = new DynCollectionPostgres(this.schema, this.table, this.con);
     }
 
     @Override
@@ -83,7 +83,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
             // Get available attributes
-            Map<String, Attribute> attributes = this.dyntable.getAttributes();
+            Map<String, Attribute> attributes = this.dyncollection.getAttributes();
 
             // If there is no fetchedData expected do not request
             if (attributes.isEmpty()) {
@@ -319,7 +319,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String hardLimitStr = conf.getProperty("hardLimit");
         if(hardLimitStr != null) {
             int hardLimit = Integer.parseInt(hardLimitStr);
-            if(size == 0 || size > hardLimit)
+            if(size <= 0 || size > hardLimit)
                 size = hardLimit;
             // Add warning message
             if(size > hardLimit) {
@@ -340,6 +340,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     json = dbjson;
                 }
             }
+            rs.close();
             return json;
         } catch (SQLException ex) {
             DynException de = new DynException("Exception fetching data: " + ex.getLocalizedMessage());
@@ -353,7 +354,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = "insert_" + String.join("_", json.keySet());
 
         if (!this.preparedStatements.containsKey(pstmtid)) {
-            Map<String, Attribute> columns = this.dyntable.getAttributes();
+            Map<String, Attribute> columns = this.dyncollection.getAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
             // Build up insert statement
@@ -467,7 +468,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = this.getPreparedInsert(json);
         PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
-        Map<String, Attribute> columns = this.dyntable.getAttributes();
+        Map<String, Attribute> columns = this.dyncollection.getAttributes();
 
         for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
             String jkey = curEntry.getKey();
@@ -492,6 +493,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 if (prs.next()) {
                     return prs.getLong(1);
                 }
+                prs.close();
             }
             return null;
         } catch (SQLException ex) {
@@ -506,7 +508,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = "update_" + String.join("_", json.keySet());
 
         if (!this.preparedStatements.containsKey(pstmtid)) {
-            Map<String, Attribute> columns = this.dyntable.getAttributes();
+            Map<String, Attribute> columns = this.dyncollection.getAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
             // Build up insert statement
@@ -544,7 +546,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
             if(identitycol == null && id != null) {
                 // Autodetect identity column
-                List<Attribute> idcolumns = this.dyntable.getIdentityAttributes();
+                List<Attribute> idcolumns = this.dyncollection.getIdentityAttributes();
                 if(columns.isEmpty()) {
                     throw new DynException("There is no identity column in table. Could not update datasets.");
                 }
@@ -613,7 +615,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = this.getPreparedUpdate(json, id);
         PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
-        Map<String, Attribute> columns = this.dyntable.getAttributes();
+        Map<String, Attribute> columns = this.dyncollection.getAttributes();
     
         int usedPlaceholders = 1;
         for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
@@ -653,6 +655,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 if (prs.next()) {
                     return prs.getLong(1);
                 }
+                prs.close();
             }
             return null;
         } catch (SQLException ex) {
@@ -721,7 +724,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String sql = "DELETE FROM " + this.schema + "." + this.table + " WHERE ";
         
         // Get name of first id column
-        List<Attribute> columns = this.dyntable.getIdentityAttributes();
+        List<Attribute> columns = this.dyncollection.getIdentityAttributes();
         if(columns.isEmpty()) {
             throw new DynException("Could not delete from >" + this.schema + "." + this.table + " because there is no identity column.");
         }
