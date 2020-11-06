@@ -3,6 +3,7 @@ package de.fhbielefeld.smartdata.rest;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
+import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dynstorage.DynStoragePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import javax.naming.NamingException;
@@ -22,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import de.fhbielefeld.smartdata.dynstorage.DynStorage;
+import de.fhbielefeld.smartdata.dynstorage.DynStorageMongo;
 
 /**
  * Resource for accessing database informations
@@ -35,7 +37,7 @@ public class StorageResource {
     /**
      * Creates a new instance of RootResource
      */
-    public StorageResource() {         	 
+    public StorageResource() {
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
@@ -78,18 +80,33 @@ public class StorageResource {
             return rob.toResponse();
         }
 
+        DynStorage dyns;
+        Configuration conf = new Configuration();
         try {
-            DynStorage db = new DynStoragePostgres();
-            if (db.createStorageIfNotExists(name)) {
+            if (conf.getProperty("mongo.url") != null) {
+                dyns = new DynStorageMongo();
+            } else {
+                dyns = new DynStoragePostgres();
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            if (dyns.createStorageIfNotExists(name)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
                 rob.setStatus(Response.Status.NOT_MODIFIED);
             }
-            db.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            dyns.disconnect();
         }
 
         return rob.toResponse();
@@ -123,14 +140,29 @@ public class StorageResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        DynStorage dyns;
+        Configuration conf = new Configuration();
         try {
-            DynStorage db = new DynStoragePostgres();
-            rob.add("list", db.getCollections(name));
-            db.disconnect();
+            if (conf.getProperty("mongo.url") != null) {
+                dyns = new DynStorageMongo();
+            } else {
+                dyns = new DynStoragePostgres();
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            rob.add("list", dyns.getCollections(name));
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            dyns.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
@@ -169,18 +201,33 @@ public class StorageResource {
             return rob.toResponse();
         }
 
+        DynStorage dyns;
+        Configuration conf = new Configuration();
         try {
-            DynStorage db = new DynStoragePostgres();
-            if (db.deleteStorage(name)) {
+            if (conf.getProperty("mongo.url") != null) {
+                dyns = new DynStorageMongo();
+            } else {
+                dyns = new DynStoragePostgres();
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            if (dyns.deleteStorage(name)) {
                 rob.setStatus(Response.Status.OK);
             } else {
                 rob.setStatus(Response.Status.NOT_MODIFIED);
             }
-            db.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            dyns.disconnect();
         }
 
         return rob.toResponse();

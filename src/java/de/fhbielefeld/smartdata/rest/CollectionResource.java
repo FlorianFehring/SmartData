@@ -3,8 +3,11 @@ package de.fhbielefeld.smartdata.rest;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
+import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
+import de.fhbielefeld.smartdata.dyncollection.DynCollection;
+import de.fhbielefeld.smartdata.dyncollection.DynCollectionMongo;
 import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.List;
@@ -78,21 +81,35 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        DynCollection dync;
+        Configuration conf = new Configuration();
         try {
-            // Init collection access
-            DynCollectionPostgres dtp = new DynCollectionPostgres(storage, collectiondef.getName());
+            if (conf.getProperty("mongo.url") != null) {
+                dync = new DynCollectionMongo(storage, collectiondef.getName());
+            } else {
+                dync = new DynCollectionPostgres(storage, collectiondef.getName());
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
             // Get attributes
-            boolean created = dtp.create(collectiondef);
+            boolean created = dync.create(collectiondef);
             if (created) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
                 rob.setStatus(Response.Status.NOT_MODIFIED);
             }
-            dtp.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            dync.disconnect();
         }
         return rob.toResponse();
     }
@@ -126,17 +143,31 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        DynCollection dync;
+        Configuration conf = new Configuration();
         try {
-            // Init collection access
-            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
+            if (conf.getProperty("mongo.url") != null) {
+                dync = new DynCollectionMongo(storage, collection);
+            } else {
+                dync = new DynCollectionPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
             // Get attributes
-            rob.add("list", dt.getAttributes().values());
-            dt.disconnect();
+            rob.add("list", dync.getAttributes().values());
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get attributes information: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            dync.disconnect();
         }
         return rob.toResponse();
     }
@@ -175,19 +206,33 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        DynCollection dync;
+        Configuration conf = new Configuration();
         try {
-            // Init collection access
-            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-            if (dt.addAttributes(attributes)) {
+            if (conf.getProperty("mongo.url") != null) {
+                dync = new DynCollectionMongo(storage, collection);
+            } else {
+                dync = new DynCollectionPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            if (dync.addAttributes(attributes)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
                 rob.setStatus(Response.Status.CONFLICT);
             }
-            dt.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            dync.disconnect();
         }
 
         return rob.toResponse();
@@ -223,16 +268,30 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        DynCollection dync;
+        Configuration conf = new Configuration();
         try {
-            // Init collection access
-            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-            dt.changeAttributes(attributes);
-            dt.disconnect();
+            if (conf.getProperty("mongo.url") != null) {
+                dync = new DynCollectionMongo(storage, collection);
+            } else {
+                dync = new DynCollectionPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            dync.changeAttributes(attributes);
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not change SRID: " + ex.getLocalizedMessage());
             rob.addException(ex);
+        } finally {
+            dync.disconnect();
         }
 
         return rob.toResponse();

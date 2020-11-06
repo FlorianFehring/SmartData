@@ -3,13 +3,18 @@ package de.fhbielefeld.smartdata.rest;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
+import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dbo.Attribute;
+import de.fhbielefeld.smartdata.dyncollection.DynCollection;
+import de.fhbielefeld.smartdata.dyncollection.DynCollectionMongo;
 import de.fhbielefeld.smartdata.dynrecords.DynRecordsPostgres;
 import de.fhbielefeld.smartdata.dynrecords.filter.EqualsFilter;
 import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.dynrecords.filter.FilterException;
 import de.fhbielefeld.smartdata.dynrecords.filter.FilterParser;
 import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
+import de.fhbielefeld.smartdata.dynrecords.DynRecords;
+import de.fhbielefeld.smartdata.dynrecords.DynRecordsMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,20 +92,35 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        // Init access
+        DynRecords dynr;
+        Configuration conf = new Configuration();
         try {
-            // Init data access
-            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
-            rob.add(dd.create(json));
-            for (String curWarning : dd.getWarnings()) {
+            if (conf.getProperty("mongo.url") != null) {
+                dynr = new DynRecordsMongo();
+            } else {
+                dynr = new DynRecordsPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            rob.add(dynr.create(json));
+            for (String curWarning : dynr.getWarnings()) {
                 rob.addWarningMessage(curWarning);
             }
-            dd.disconnect();
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not create dataset: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
+        } finally {
+            dynr.disconnect();
         }
         return rob.toResponse();
     }
@@ -135,11 +155,29 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        // Init access
+        DynCollection dync;
+        DynRecords dynr;
+        Configuration conf = new Configuration();
+        try {
+            if (conf.getProperty("mongo.url") != null) {
+                dync = new DynCollectionMongo(storage, collection);
+                dynr = new DynRecordsMongo();
+            } else {
+                dync = new DynCollectionPostgres(storage, collection);
+                dynr = new DynRecordsPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
         List<Filter> filters = new ArrayList<>();
         // Init collection access
         try {
-            DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-            List<Attribute> idattrs = dt.getIdentityAttributes();
+            List<Attribute> idattrs = dync.getIdentityAttributes();
             if (idattrs.isEmpty()) {
                 rob.addErrorMessage("There is no identity attribute for collection >" + collection + "< could not get single dataset.");
                 rob.setStatus(Response.Status.NOT_ACCEPTABLE);
@@ -149,33 +187,36 @@ public class RecordsResource {
             }
 
             Attribute idattr = idattrs.get(0);
-            Filter idfilter = new EqualsFilter(dt);
+            Filter idfilter = new EqualsFilter(dync);
             idfilter.parse(idattr.getName() + ",eq," + id);
             filters.add(idfilter);
             // Create filter for id
         } catch (DynException ex) {
+            dynr.disconnect();
             rob.setStatus(Response.Status.NOT_ACCEPTABLE);
             rob.addErrorMessage("Could not get identity attributes");
             rob.addException(ex);
             return rob.toResponse();
         } catch (FilterException ex) {
+            dynr.disconnect();
             rob.setStatus(Response.Status.NOT_ACCEPTABLE);
             rob.addErrorMessage("Could not create filter for id");
             rob.addException(ex);
             return rob.toResponse();
+        } finally {
+            dync.disconnect();
         }
 
         try {
-            // Init data access
-            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
-            String json = dd.get(includes, filters, 1, null, null, false, null, false);
+            String json = dynr.get(includes, filters, 1, null, null, false, null, false);
             rob.add("records", json);
-            dd.disconnect();
         } catch (DynException ex) {
             rob.setStatus(Response.Status.BAD_REQUEST);
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
+        } finally {
+            dynr.disconnect();
         }
         rob.setStatus(Response.Status.OK);
 
@@ -216,39 +257,63 @@ public class RecordsResource {
             storage = "public";
         }
 
-        ResponseObjectBuilder rob = new ResponseObjectBuilder();
-
-        List<Filter> filters = new ArrayList<>();
-        if (filter != null) {
-            try {
-                // Init collection access
-                DynCollectionPostgres dt = new DynCollectionPostgres(storage, collection);
-                // Build filter objects
-                Filter filt = FilterParser.parse(filter, dt);
-                filters.add(filt);
-            } catch (FilterException ex) {
-                rob.setStatus(Response.Status.BAD_REQUEST);
-                rob.addErrorMessage("Could not parse filter rule >" + filter + "<: " + ex.getLocalizedMessage());
-                rob.addException(ex);
-                return rob.toResponse();
-            } catch (DynException ex) {
-                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-                rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-                rob.addException(ex);
-                return rob.toResponse();
-            }
+        // Catch negative limits
+        if (size < 0) {
+            size = 0;
         }
 
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        // Init access
+        DynCollection dync;
+        DynRecords dynr;
+        Configuration conf = new Configuration();
         try {
-            // Init data access
-            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
-            String json = dd.get(includes, filters, size, page, order, countonly, unique, deflatt);
-            rob.add("records", json);
+            if (conf.getProperty("mongo.url") != null) {
+                dync = new DynCollectionMongo(storage, collection);
+                dynr = new DynRecordsMongo();
+            } else {
+                dync = new DynCollectionPostgres(storage, collection);
+                dynr = new DynRecordsPostgres(storage, collection);
+            }
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
+        }
+
+        List<Filter> filters = new ArrayList<>();
+
+        try {
+            if (filter != null) {
+                // Build filter objects
+                Filter filt = FilterParser.parse(filter, dync);
+                filters.add(filt);
+            }
+        } catch (FilterException ex) {
+            dynr.disconnect();
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("Could not parse filter rule >" + filter + "<: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        } finally {
+            dync.disconnect();
+        }
+
+        try {
+            String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt);
+            rob.add("records", json);
+        } catch (DynException ex) {
+            System.out.println("exceptio getting data:");
+            System.out.println(ex.getLocalizedMessage());
+            ex.printStackTrace();
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        } finally {
+            dynr.disconnect();
         }
         rob.setStatus(Response.Status.OK);
 
@@ -286,16 +351,31 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        // Init access
+        DynRecords dynr;
+        Configuration conf = new Configuration();
         try {
-            // Init data access
-            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
-            dd.update(json, id);
-            dd.disconnect();
+            if (conf.getProperty("mongo.url") != null) {
+                dynr = new DynRecordsMongo();
+            } else {
+                dynr = new DynRecordsPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            dynr.update(json, id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
+        } finally {
+            dynr.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
@@ -332,16 +412,31 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        // Init access
+        DynRecords dynr;
+        Configuration conf = new Configuration();
         try {
-            // Init data access
-            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
-            dd.update(json, null);
-            dd.disconnect();
+            if (conf.getProperty("mongo.url") != null) {
+                dynr = new DynRecordsMongo();
+            } else {
+                dynr = new DynRecordsPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            dynr.update(json, null);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
+        } finally {
+            dynr.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
@@ -376,16 +471,31 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        // Init access
+        DynRecords dynr;
+        Configuration conf = new Configuration();
         try {
-            // Init data access
-            DynRecordsPostgres dd = new DynRecordsPostgres(storage, collection);
-            dd.delete(id);
-            dd.disconnect();
+            if (conf.getProperty("mongo.url") != null) {
+                dynr = new DynRecordsMongo();
+            } else {
+                dynr = new DynRecordsPostgres(storage, collection);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            dynr.delete(id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
+        } finally {
+            dynr.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
