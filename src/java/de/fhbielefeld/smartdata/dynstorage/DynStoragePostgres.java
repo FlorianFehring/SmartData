@@ -6,6 +6,7 @@ import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -28,6 +29,10 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
         this.connect();
     }
     
+    public DynStoragePostgres(Connection con) {
+        this.con = con;
+    }
+    
     @Override
     public Collection<String> getAbilities() throws DynException {
         List<String> abilities = new ArrayList<>();
@@ -45,6 +50,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
                 if (!rs.next()) {
                     return information;
                 }
+                rs.close();
             } catch (SQLException ex) {
                 DynException dex = new DynException(
                         "Could not get ability information: " + ex.getLocalizedMessage());
@@ -58,6 +64,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
                 information.put("exists", true);
                 information.put("vendor", "postgis");
                 information.put("version", rs.getString("version"));
+                rs.close();
             } catch (SQLException ex) {
                 DynException dex = new DynException(
                         "Could not get ability information: " + ex.getLocalizedMessage());
@@ -120,11 +127,12 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
         try {
             Statement stmtCheck = this.con.createStatement();
             String sql = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '" + name + "'";
-            ResultSet rs = stmtCheck.executeQuery(sql);
-            if (rs.next()) {
-                int count = rs.getInt("count");
-                if (count == 1) {
-                    return true;
+            try (ResultSet rs = stmtCheck.executeQuery(sql)) {
+                if (rs.next()) {
+                    int count = rs.getInt("count");
+                    if (count == 1) {
+                        return true;
+                    }
                 }
             }
         } catch (SQLException ex) {
@@ -184,6 +192,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
             } else {
                 information.put("exists", false);
             }
+            rs.close();
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not get schema information");
             dex.addSuppressed(ex);
@@ -204,6 +213,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
                 String tablename = rs.getString("table_name");
                 tables.add(new DataCollection(tablename));
             }
+            rs.close();
             // Check if storage exists, if there are no tables found
             if (tables.isEmpty() && !this.storageExists(name)) {
                 throw new DynException("Schema >" + name + "< does not exist.");
