@@ -8,6 +8,7 @@ import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
 import de.fhbielefeld.smartdata.dynstorage.DynStoragePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -26,11 +27,25 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     protected String schema;
     protected String name;
-    
+
     public DynCollectionPostgres(String schema, String name) throws DynException {
         this.schema = schema;
         this.name = name;
         this.connect();
+    }
+
+    /**
+     * Create access for collections with reusing existing connection
+     * 
+     * @param schema
+     * @param name
+     * @param con
+     * @throws DynException 
+     */
+    public DynCollectionPostgres(String schema, String name, Connection con) throws DynException {
+        this.schema = schema;
+        this.name = name;
+        this.con = con;
     }
 
     @Override
@@ -38,11 +53,12 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         boolean texists = false;
         try {
             Statement stmt = this.con.createStatement();
-            ResultSet rs = stmt.executeQuery(
+            try ( ResultSet rs = stmt.executeQuery(
                     "SELECT * FROM information_schema.tables "
                     + "WHERE table_schema = '" + this.schema + "' "
-                    + "AND table_name='" + this.name + "'");
-            texists = rs.next();
+                    + "AND table_name='" + this.name + "'")) {
+                texists = rs.next();
+            }
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
@@ -51,7 +67,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
         // If table does not exists, check if schema is present
         if (!texists) {
-            DynStorage db = new DynStoragePostgres();
+            DynStorage db = new DynStoragePostgres(this.con);
             if (!db.storageExists(this.schema)) {
                 DynException dex = new DynException("Schema >" + this.schema + "< for table >" + this.name + "< does not exists.");
                 throw dex;
@@ -130,6 +146,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 Attribute curCol = this.getColumnObject(rs);
                 columns.put(curCol.getName(), curCol);
             }
+            rs.close();
             // Check if table does not exists when there is no column
             if (columns.isEmpty()) {
                 if (!this.exists()) {
@@ -159,6 +176,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             while (rs.next()) {
                 column = this.getColumnObject(rs);
             }
+            rs.close();
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
@@ -205,6 +223,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 if (pkrs.next()) {
                     curCol.setIsIdentity(true);
                 }
+                pkrs.close();
             }
             // Get enhanced data for geometry columns
             if (curCol.getType().equalsIgnoreCase("geometry")) {
@@ -220,6 +239,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     curCol.setSrid(sridrs.getInt("srid"));
                     curCol.setDimension(sridrs.getInt("coord_dimension"));
                 }
+                sridrs.close();
             }
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
