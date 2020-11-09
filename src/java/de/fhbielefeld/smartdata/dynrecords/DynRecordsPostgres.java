@@ -217,7 +217,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
             // Adding offset if given
             if (page != null) {
-                size = 20;
+                if(size < 1)
+                    size = 20;
                 sqlbuilder.append(" OFFSET ?");
                 placeholders.put("offset", placeholderNo++);
             }
@@ -290,7 +291,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Adding offset if given
             if (page != null) {
                 int pageno = 1;
-                size = 20;
+                if(size < 1)
+                    size = 20;
                 if (page.contains(",")) {
                     pageno = Integer.parseInt(page.split(",")[0]);
                     size = Integer.parseInt(page.split(",")[1]);
@@ -349,6 +351,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         } catch (SQLException ex) {
             DynException de = new DynException("Exception fetching data: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
+            ex.printStackTrace();
             throw de;
         }
     }
