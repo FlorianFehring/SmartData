@@ -42,10 +42,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
     protected String schema;
     protected String table;
+    protected String lastStmtId = null;
 
     protected DynCollection dyncollection = null;
     protected static final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
     protected static final Map<String, Map<String, Integer>> preparedPlaceholders = new HashMap<>();
+    protected static final Map<String, List<String>> preparedWarnings = new HashMap<>();
 
     public DynRecordsPostgres(String schema, String table) throws DynException {
         this.schema = schema;
@@ -79,9 +81,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
 
         stmtId += countOnly;
+        this.lastStmtId = stmtId;
 
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
+            this.preparedWarnings.put(stmtId, new ArrayList<>());
             // Get available attributes
             Map<String, Attribute> attributes = this.dyncollection.getAttributes();
 
@@ -156,7 +160,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                                     + curColumnName + "< is not available.";
                             Message msg = new Message(msgstr, MessageLevel.WARNING);
                             Logger.addDebugMessage(msg);
-                            this.warnings.add(msgstr);
+                            this.preparedWarnings.get(stmtId).add(msgstr);
                         }
                     }
 
@@ -207,7 +211,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                             + " order. Data will be unordered.";
                     Message msg = new Message(warningtxt, MessageLevel.WARNING);
                     Logger.addDebugMessage(msg);
-                    this.warnings.add(warningtxt);
+                    this.preparedWarnings.get(stmtId).add(warningtxt);
                 }
             }
 
@@ -352,8 +356,10 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     @Override
     public String getPreparedInsert(JsonObject json) throws DynException {
         String pstmtid = "insert_" + String.join("_", json.keySet());
-
+        this.lastStmtId = pstmtid;
+        
         if (!this.preparedStatements.containsKey(pstmtid)) {
+            this.preparedWarnings.put(pstmtid, new ArrayList<>());
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
@@ -506,8 +512,10 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     @Override
     public String getPreparedUpdate(JsonObject json, Long id) throws DynException {
         String pstmtid = "update_" + String.join("_", json.keySet());
-
+        this.lastStmtId = pstmtid;
+        
         if (!this.preparedStatements.containsKey(pstmtid)) {
+            this.preparedWarnings.put(pstmtid, new ArrayList<>());
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
@@ -749,5 +757,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             de.addSuppressed(ex);
             throw de;
         }
+    }
+    
+    @Override
+    public List<String> getWarnings() {
+        List<String> allwarns = this.preparedWarnings.get(this.lastStmtId);
+        allwarns.addAll(this.warnings);
+        return allwarns;
     }
 }

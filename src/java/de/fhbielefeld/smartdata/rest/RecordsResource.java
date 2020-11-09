@@ -248,7 +248,7 @@ public class RecordsResource {
             @Parameter(description = "Definition of an filter (e.g. where id equals 1)", example = "id,eq,1") @QueryParam("filter") String filter,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
-            @Parameter(description = "Datasets order", example = "DESC") @QueryParam("order") String order,
+            @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
             @Parameter(description = "If datasets should only be counted (untested)", example = "false") @QueryParam("countonly") boolean countonly,
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
             @Parameter(description = "Package values into datasets (untested)", example = "false") @QueryParam("deflatt") boolean deflatt) {
@@ -304,6 +304,9 @@ public class RecordsResource {
         try {
             String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt);
             rob.add("records", json);
+            for(String curWarn: dynr.getWarnings()) {
+                rob.addWarningMessage(curWarn);
+            }
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
