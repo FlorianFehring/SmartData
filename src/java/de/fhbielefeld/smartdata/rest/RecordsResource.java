@@ -210,6 +210,9 @@ public class RecordsResource {
         try {
             String json = dynr.get(includes, filters, 1, null, null, false, null, false);
             rob.add("records", json);
+            for(String curWarn: dynr.getWarnings()) {
+                rob.addWarningMessage(curWarn);
+            }
         } catch (DynException ex) {
             rob.setStatus(Response.Status.BAD_REQUEST);
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
@@ -303,6 +306,9 @@ public class RecordsResource {
 
         try {
             String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt);
+            if(json.equals("{}")) {
+                json = "[]";
+            }
             rob.add("records", json);
             for(String curWarn: dynr.getWarnings()) {
                 rob.addWarningMessage(curWarn);
