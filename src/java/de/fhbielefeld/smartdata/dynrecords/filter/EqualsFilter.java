@@ -39,6 +39,11 @@ public class EqualsFilter extends Filter {
             if (col == null) {
                 throw new FilterException("The Column >" + this.attribute + "< does not exists.");
             }
+            // Second element is the name of the filter
+            // Check if the filter is negative
+            if (parts[1].startsWith("n")) {
+                this.negative = true;
+            }
             // Thrid element is the value that should be equal
             switch (col.getType()) {
                 case "text":
@@ -81,7 +86,11 @@ public class EqualsFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return this.attribute + " = ?";
+        if (this.negative) {
+            return this.attribute + " != ?";
+        } else {
+            return this.attribute + " = ?";
+        }
     }
 
     @Override
