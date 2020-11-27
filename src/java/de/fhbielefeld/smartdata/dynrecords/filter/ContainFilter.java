@@ -63,9 +63,9 @@ public class ContainFilter extends Filter {
     @Override
     public String getPrepareCode() {
         if (this.negative) {
-            return this.attribute + " NOT LIKE %?%";
+            return this.attribute + " NOT LIKE '%' || ? || '%' ";
         } else {
-            return this.attribute + " LIKE %?%";
+            return this.attribute + " LIKE '%' || ? || '%' ";
         }
     }
 
