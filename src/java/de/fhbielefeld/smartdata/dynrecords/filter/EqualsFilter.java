@@ -45,7 +45,8 @@ public class EqualsFilter extends Filter {
                 case "varchar":
                     this.eqvalue = parts[2];
                     break;
-                case "boolean":
+                case "bool":
+                    System.out.println("type!");
                     this.eqvalue = DataConverter.objectToBoolean(parts[2]);
                     break;
                 case "real":
