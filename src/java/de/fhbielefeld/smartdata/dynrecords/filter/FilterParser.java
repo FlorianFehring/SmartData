@@ -41,6 +41,11 @@ public class FilterParser {
                 f = new LowerThanFilter(table);
 		f.parse(filter);
                 break;
+            case "le":
+            case "nle":
+                f = new LowerOrEqualFilter(table);
+		f.parse(filter);
+                break;
             case "sir":
                 f = new RadiusFilter(table);
 		f.parse(filter);
