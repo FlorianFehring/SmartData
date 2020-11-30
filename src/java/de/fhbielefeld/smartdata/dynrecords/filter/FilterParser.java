@@ -56,6 +56,11 @@ public class FilterParser {
                 f = new GreaterThanFilter(table);
 		f.parse(filter);
                 break;
+            case "bt":
+            case "nbt":
+                f = new BetweenFilter(table);
+		f.parse(filter);
+                break;
             case "sir":
                 f = new RadiusFilter(table);
 		f.parse(filter);
