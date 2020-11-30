@@ -119,8 +119,6 @@ public class RecordsResource {
             rob.addErrorMessage("Could not create dataset: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dynr.disconnect();
         }
         return rob.toResponse();
     }
@@ -192,19 +190,15 @@ public class RecordsResource {
             filters.add(idfilter);
             // Create filter for id
         } catch (DynException ex) {
-            dynr.disconnect();
             rob.setStatus(Response.Status.NOT_ACCEPTABLE);
             rob.addErrorMessage("Could not get identity attributes");
             rob.addException(ex);
             return rob.toResponse();
         } catch (FilterException ex) {
-            dynr.disconnect();
             rob.setStatus(Response.Status.NOT_ACCEPTABLE);
             rob.addErrorMessage("Could not create filter for id");
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dync.disconnect();
         }
 
         try {
@@ -218,8 +212,6 @@ public class RecordsResource {
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dynr.disconnect();
         }
         rob.setStatus(Response.Status.OK);
 
@@ -295,13 +287,10 @@ public class RecordsResource {
                 filters.add(filt);
             }
         } catch (FilterException ex) {
-            dynr.disconnect();
             rob.setStatus(Response.Status.BAD_REQUEST);
             rob.addErrorMessage("Could not parse filter rule >" + filter + "<: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dync.disconnect();
         }
 
         try {
@@ -318,8 +307,6 @@ public class RecordsResource {
             rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dynr.disconnect();
         }
         rob.setStatus(Response.Status.OK);
 
@@ -380,8 +367,6 @@ public class RecordsResource {
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dynr.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
@@ -441,8 +426,6 @@ public class RecordsResource {
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dynr.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
@@ -500,8 +483,6 @@ public class RecordsResource {
             rob.addErrorMessage(ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
-        } finally {
-            dynr.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
