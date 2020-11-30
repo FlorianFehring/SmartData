@@ -55,6 +55,8 @@ public class EqualsFilter extends Filter {
                     break;
                 case "real":
                 case "double":
+                case "float4":
+                case "float8":
                     this.eqvalue = DataConverter.objectToDouble(parts[2]);
                     break;
                 case "int2":
