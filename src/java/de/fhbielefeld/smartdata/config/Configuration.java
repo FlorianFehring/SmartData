@@ -33,8 +33,9 @@ public class Configuration {
                 this.prop.load(inputStream);
                 this.proploaded = true;
             } catch (IOException ex) {
-                Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file >" + fileName + "<: " + ex.getLocalizedMessage());
-                Logger.addMessage(msg);
+                // Do not report every not found
+//                Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file >" + fileName + "<: " + ex.getLocalizedMessage());
+//                Logger.addMessage(msg);
             }
         } catch (NamingException ex) {
             Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file" + ex.getLocalizedMessage());
