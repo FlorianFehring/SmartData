@@ -16,6 +16,7 @@ public abstract class Filter {
     protected DynCollection table;
     protected String attribute;
     protected int firstPlaceholder;
+    protected boolean negative;
     // Noteing warnings for calling methods
     protected List<String> warnings = new ArrayList<>();
 
