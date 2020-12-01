@@ -46,11 +46,12 @@ public class EqualsFilter extends Filter {
                     this.eqvalue = parts[2];
                     break;
                 case "bool":
-                    System.out.println("type!");
                     this.eqvalue = DataConverter.objectToBoolean(parts[2]);
                     break;
                 case "real":
                 case "double":
+                case "float4":
+                case "float8":
                     this.eqvalue = DataConverter.objectToDouble(parts[2]);
                     break;
                 case "int2":
