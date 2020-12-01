@@ -80,7 +80,7 @@ public class FilterParser {
 		f.parse(filter);
                 break;
             default:
-                Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter for >" + filter + "< is unkown.");
+                Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter >"+ filtername +"< for >" + filter + "< is unkown.");
 		Logger.addMessage(msg);
             }
         return f;
