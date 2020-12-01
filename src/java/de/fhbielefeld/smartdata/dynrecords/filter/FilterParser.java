@@ -61,6 +61,11 @@ public class FilterParser {
                 f = new BetweenFilter(table);
 		f.parse(filter);
                 break;
+            case "in":
+            case "nin":
+                f = new InFilter(table);
+		f.parse(filter);
+                break;
             case "sir":
                 f = new RadiusFilter(table);
 		f.parse(filter);
