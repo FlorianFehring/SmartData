@@ -66,6 +66,11 @@ public class FilterParser {
                 f = new InFilter(table);
 		f.parse(filter);
                 break;
+            case "is":
+            case "nis":
+                f = new IsNullFilter(table);
+		f.parse(filter);
+                break;
             case "sir":
                 f = new RadiusFilter(table);
 		f.parse(filter);
