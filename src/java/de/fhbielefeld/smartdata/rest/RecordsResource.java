@@ -16,6 +16,7 @@ import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.dynrecords.DynRecords;
 import de.fhbielefeld.smartdata.dynrecords.DynRecordsMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.naming.NamingException;
@@ -203,7 +204,9 @@ public class RecordsResource {
 
         try {
             String json = dynr.get(includes, filters, 1, null, null, false, null, false);
-            rob.add("records", json);
+            // Convert to utf8
+            byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
+            rob.add("records", new String(u8));
             for(String curWarn: dynr.getWarnings()) {
                 rob.addWarningMessage(curWarn);
             }
@@ -298,7 +301,9 @@ public class RecordsResource {
             if(json.equals("{}")) {
                 json = "[]";
             }
-            rob.add("records", json);
+            // Convert to utf8
+            byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
+            rob.add("records", new String(u8));
             for(String curWarn: dynr.getWarnings()) {
                 rob.addWarningMessage(curWarn);
             }
