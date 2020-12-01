@@ -83,6 +83,20 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         stmtId += countOnly;
         this.lastStmtId = stmtId;
 
+        // Check if prepared statement is valid
+        if (this.preparedStatements.containsKey(stmtId)) {
+            PreparedStatement smt = this.preparedStatements.get(stmtId);
+            try {
+                if(smt.getConnection().isClosed()) {
+                    this.preparedStatements.remove(stmtId);
+                }
+            } catch (SQLException ex) {
+                DynException de = new DynException(ex.getLocalizedMessage());
+                de.addSuppressed(ex);
+                throw de;
+            }
+        }
+        
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
             this.preparedWarnings.put(stmtId, new ArrayList<>());
@@ -693,7 +707,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         JsonString jstr = (JsonString) value;
                         pstmt.setString(pindex, jstr.getString());
                         break;
-                    case "boolean":
+                    case "bool":
                         // Isn't there a better method to get the boolean value?
                         boolean bool = Boolean.parseBoolean(value.toString());
                         pstmt.setBoolean(pindex, bool);

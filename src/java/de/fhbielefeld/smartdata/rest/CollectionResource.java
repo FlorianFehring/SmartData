@@ -108,8 +108,6 @@ public class CollectionResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dync.disconnect();
         }
         return rob.toResponse();
     }
@@ -166,8 +164,6 @@ public class CollectionResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get attributes information: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dync.disconnect();
         }
         return rob.toResponse();
     }
@@ -231,8 +227,6 @@ public class CollectionResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dync.disconnect();
         }
 
         return rob.toResponse();
@@ -290,8 +284,6 @@ public class CollectionResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not change SRID: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dync.disconnect();
         }
 
         return rob.toResponse();

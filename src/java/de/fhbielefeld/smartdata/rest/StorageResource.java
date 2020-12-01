@@ -105,8 +105,6 @@ public class StorageResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dyns.disconnect();
         }
 
         return rob.toResponse();
@@ -161,8 +159,6 @@ public class StorageResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dyns.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
@@ -218,8 +214,6 @@ public class StorageResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dyns.disconnect();
         }
 
         rob.setStatus(Response.Status.OK);
@@ -283,8 +277,6 @@ public class StorageResource {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());
             rob.addException(ex);
-        } finally {
-            dyns.disconnect();
         }
 
         return rob.toResponse();

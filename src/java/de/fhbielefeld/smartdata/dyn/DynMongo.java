@@ -22,11 +22,6 @@ public class DynMongo implements Dyn {
         String mongourl = conf.getProperty("mongo.url");        
         this.client = MongoClients.create(mongourl);
     }
-
-    @Override
-    public void disconnect() {
-        // nothing todo here
-    }
     
     @Override
     public List<String> getWarnings() {

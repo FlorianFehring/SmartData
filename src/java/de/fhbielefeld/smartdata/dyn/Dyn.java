@@ -18,11 +18,6 @@ public interface Dyn {
     public void connect() throws DynException;
     
     /**
-     * Closes a connection to the database
-     */
-    public void disconnect();
-    
-    /**
      * Get warning that occured while processing
      * 
      * @return List of warning messages
