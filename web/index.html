@@ -1,16 +1,28 @@
 <!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
 <html>
     <head>
-        <title>TODO supply a title</title>
+        <title>SmartData</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="/SWAC/css/global.css">
+        <link rel="stylesheet" type="text/css" href="/SWAC/css/index.css">
+        <link rel="stylesheet" type="text/css" href="/SWAC/libs/uikit/css/uikit.min.css">
+
+        <script src="/SWAC/libs/uikit/js/uikit.min.js"></script>
+        <script src="/SWAC/swac/swac.js"></script>
     </head>
     <body>
-        <div>TODO write content</div>
+        <h1>SmartData</h1>
+        <p>This is the information page about this SmartData instance.</p>
+        <h2>Documentations for useing the REST interface</h2>
+        <dl class="uk-list">
+            <dt>swagger REST documentation</dt>
+            <dd><a href="/swagger">Documentation with live tryout</a></dd>
+            <dt>Full documentation</dt>
+            <dd><a href="http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/home">Full specification behavior and testcases</a></dd>
+        </dl>
+        <h2>Configuration</h2>
+        <p>This SmartData instance is runing with the following configuration:</p>
+        <div id="smartdata_config" swa="Present FROM system/config"></div>
     </body>
 </html>
