@@ -304,7 +304,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         try {
             // Adding offset if given
             if (page != null) {
-                int pageno = 1;
+                int pageno;
                 if(size < 1)
                     size = 20;
                 if (page.contains(",")) {
@@ -314,7 +314,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     pageno = Integer.parseInt(page);
                 }
                 int offsetpos = placeholders.get("offset");
-                stmt.setInt(offsetpos, size * pageno - 1);
+                stmt.setInt(offsetpos, size * pageno - size);
             }
 
             if (size > 0) {
