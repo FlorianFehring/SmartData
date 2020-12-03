@@ -39,9 +39,7 @@ SWAC_config.onlinereactions = [];
 
 // Backend connection settings
 SWAC_config.datasources = [];
-/*SWAC_config.datasources[0] = "/SWAC/data/[fromName]";
-SWAC_config.datasources[1] = "/SmartMonitoringBackend/[fromName]";*/
-SWAC_config.datasources[0] = "/SmartData/smartdata/[fromName]";
+SWAC_config.datasources[0] = SWAC_config.app_root + "/smartdata/[fromName]";
 
 SWAC_config.interfaces = {};
 SWAC_config.interfaces.get = 'get';
