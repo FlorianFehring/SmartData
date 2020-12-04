@@ -9,6 +9,9 @@ import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.Month;
 
 /**
  * Filter class for greater or equal filters
@@ -58,6 +61,10 @@ public class GreaterOrEqualFilter extends Filter {
                 case "int8":
                     this.gevalue = DataConverter.objectToInteger(parts[2]);
                     break;
+                case "timestamp with timezone":
+                case "timestamp":
+                    this.gevalue = DataConverter.objectToLocalDateTime(parts[2]);
+                    break;
                 default:
                     Message msg = new Message(
                             "GreaterOrEqualFilter", MessageLevel.WARNING,
@@ -89,7 +96,28 @@ public class GreaterOrEqualFilter extends Filter {
                 pstmt.setInt(pos, (Integer) this.gevalue);
             } else if (this.gevalue.getClass().equals(Double.class)) {
                 pstmt.setDouble(pos, (Double) this.gevalue);
-            } 
+            } else if (this.gevalue.getClass().equals(LocalDateTime.class)) {
+                LocalDateTime ldt = (LocalDateTime) this.gevalue;
+                // Check startdate and enddate on min and max supported values
+                LocalDateTime minDateTime = LocalDateTime.of(-4713, Month.JANUARY, 1, 0, 0);
+                LocalDateTime maxDateTime = LocalDateTime.of(294276, Month.DECEMBER, 31, 0, 0);
+                LocalDateTime ewDateTime = LocalDateTime.of(0, Month.JANUARY, 1, 0, 0);
+
+                // Check if starttime is not to far BC or in future
+                if (ldt.isBefore(minDateTime)) {
+                    ldt = minDateTime;
+                    this.warnings.add("The DB only supports Julian Time. StartDate will is set to 01-01-4713BC");
+                } else if (ldt.isAfter(maxDateTime)) {
+                    ldt = maxDateTime;
+                    this.warnings.add("The DB only supports Julian Time. StartDate will is set to 31-12-294276AD");
+                }
+                if (ldt.isBefore(ewDateTime)) {
+                    ldt = ldt.plusYears(1);
+                }
+
+                Timestamp ts = Timestamp.valueOf(ldt);
+                pstmt.setTimestamp(pos, ts);
+            }
         } catch (SQLException ex) {
             FilterException fex = new FilterException("Could not set value");
             fex.addSuppressed(ex);
