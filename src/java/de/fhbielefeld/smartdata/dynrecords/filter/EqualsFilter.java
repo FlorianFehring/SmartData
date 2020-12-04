@@ -69,6 +69,7 @@ public class EqualsFilter extends Filter {
                     this.eqvalue = DataConverter.objectToInteger(parts[2]);
                     break;
                 case "timestamp with timezone":
+                case "timestamp":
                     this.eqvalue = DataConverter.objectToLocalDateTime(parts[2]);
                     break;
                 default:
