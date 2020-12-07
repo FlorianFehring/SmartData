@@ -17,6 +17,7 @@ public class Attribute {
     private Integer dimension;
     private boolean isNullable = true;
     private boolean isIdentity = false;
+    private String defaultvalue = null;
     
     public Attribute() {
         
@@ -81,5 +82,13 @@ public class Attribute {
 
     public void setIsIdentity(boolean isIdentity) {
         this.isIdentity = isIdentity;
-    }   
+    }
+
+    public String getDefaultvalue() {
+        return defaultvalue;
+    }
+
+    public void setDefaultvalue(String defaultvalue) {
+        this.defaultvalue = defaultvalue;
+    }
 }

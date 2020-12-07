@@ -138,7 +138,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         try {
             Statement stmt = this.con.createStatement();
             ResultSet rs = stmt.executeQuery(
-                    "SELECT column_name, udt_name, is_nullable, is_identity FROM information_schema.columns "
+                    "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
                     + "WHERE table_schema = '" + this.schema + "' "
                     + "AND table_name='" + this.name + "'");
             // Walk trough columns
@@ -168,7 +168,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         try {
             Statement stmt = this.con.createStatement();
             ResultSet rs = stmt.executeQuery(
-                    "SELECT column_name, udt_name, is_nullable, is_identity FROM information_schema.columns "
+                    "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
                     + "WHERE table_schema = '" + this.schema + "' "
                     + "AND table_name='" + this.name + "' "
                     + "AND column_name = '" + name + "'");
@@ -223,8 +223,11 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 if (pkrs.next()) {
                     curCol.setIsIdentity(true);
                 }
-                pkrs.close();
+                pkrs.close();                
             }
+            // Get if column is autoincrement
+            curCol.setDefaultvalue(rs.getString("column_default"));
+            
             // Get enhanced data for geometry columns
             if (curCol.getType().equalsIgnoreCase("geometry")) {
                 // Get subtype
