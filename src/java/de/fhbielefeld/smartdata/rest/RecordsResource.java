@@ -243,7 +243,7 @@ public class RecordsResource {
             @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
-            @Parameter(description = "Definition of an filter (e.g. where id equals 1)", example = "id,eq,1") @QueryParam("filter") String filter,
+            @Parameter(description = "Definition of an filter <a href=\"http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/Funktionen/Uebersicht\" target=\"_new\">See filter documentation</a>", example = "id,eq,1") @QueryParam("filter") String filter,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
