@@ -18,6 +18,7 @@ public class Attribute {
     private boolean isNullable = true;
     private boolean isIdentity = false;
     private String defaultvalue = null;
+    private boolean isAutoIncrement = false;
     
     public Attribute() {
         
@@ -90,5 +91,13 @@ public class Attribute {
 
     public void setDefaultvalue(String defaultvalue) {
         this.defaultvalue = defaultvalue;
+    }
+
+    public boolean isIsAutoIncrement() {
+        return isAutoIncrement;
+    }
+
+    public void setIsAutoIncrement(boolean isAutoIncrement) {
+        this.isAutoIncrement = isAutoIncrement;
     }
 }

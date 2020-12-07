@@ -226,7 +226,11 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 pkrs.close();                
             }
             // Get if column is autoincrement
-            curCol.setDefaultvalue(rs.getString("column_default"));
+            String defaultvalue = rs.getString("column_default");
+            curCol.setDefaultvalue(defaultvalue);
+            if(defaultvalue != null && defaultvalue.startsWith("nextval(")) {
+                curCol.setIsAutoIncrement(true);
+            }
             
             // Get enhanced data for geometry columns
             if (curCol.getType().equalsIgnoreCase("geometry")) {
