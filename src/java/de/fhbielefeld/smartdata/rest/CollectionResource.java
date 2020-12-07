@@ -69,7 +69,7 @@ public class CollectionResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not create collection: Because of ... \"]}"))
     public Response create(
-            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("name") String name,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String name,
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
                     example = "myschema") @QueryParam("storage") String storage,
@@ -79,6 +79,9 @@ public class CollectionResource {
             storage = "public";
         }
 
+        // Set collections name from path param (do not use evtl. given name in json)
+        collectiondef.setName(name);
+        
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         DynCollection dync;
