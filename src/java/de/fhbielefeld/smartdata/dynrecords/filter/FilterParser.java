@@ -14,6 +14,9 @@ public class FilterParser {
     public static Filter parse(String filter, DynCollection table) throws FilterException {
         Filter f = null;
         String[] parts = filter.split(",");
+        if(parts.length < 2) {
+            throw new FilterException("Filter is not valid.");
+        }
         String filtername = parts[1];
         switch (filtername) {
             case "cs":

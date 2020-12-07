@@ -207,7 +207,7 @@ public class RecordsResource {
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
             rob.add("records", new String(u8));
-            for(String curWarn: dynr.getWarnings()) {
+            for (String curWarn : dynr.getWarnings()) {
                 rob.addWarningMessage(curWarn);
             }
         } catch (DynException ex) {
@@ -287,7 +287,9 @@ public class RecordsResource {
             if (filter != null) {
                 // Build filter objects
                 Filter filt = FilterParser.parse(filter, dync);
-                filters.add(filt);
+                if (filt != null) {
+                    filters.add(filt);
+                }
             }
         } catch (FilterException ex) {
             rob.setStatus(Response.Status.BAD_REQUEST);
@@ -298,13 +300,13 @@ public class RecordsResource {
 
         try {
             String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt);
-            if(json.equals("{}")) {
+            if (json.equals("{}")) {
                 json = "[]";
             }
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
             rob.add("records", new String(u8));
-            for(String curWarn: dynr.getWarnings()) {
+            for (String curWarn : dynr.getWarnings()) {
                 rob.addWarningMessage(curWarn);
             }
         } catch (DynException ex) {
