@@ -45,4 +45,18 @@ public class DataCollection {
     public void addAttribute(Attribute attribute) {
         this.attributes.add(attribute);
     }
+    
+    /**
+     * Returns the identity column of this collection
+     * 
+     * @return identity collumn or null if not exists
+     */
+    public Attribute getIdentityColum() {
+        for(Attribute curAttr : this.attributes) {
+            if(curAttr.isIdentity()) {
+                return curAttr;
+            }
+        }
+        return null;
+    }
 }
