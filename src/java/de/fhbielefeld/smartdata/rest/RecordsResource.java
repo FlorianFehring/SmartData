@@ -110,16 +110,35 @@ public class RecordsResource {
         }
 
         try {
-            rob.add(dynr.create(json));
-            for (String curWarning : dynr.getWarnings()) {
-                rob.addWarningMessage(curWarning);
+            Long setid = dynr.create(json);
+            // Use TreeQL specification extension
+            if (conf.getProperty("spec.version") != null
+                    && conf.getProperty("spec.version").equals("2020fhbi")) {
+                DynCollection dync;
+                if (conf.getProperty("mongo.url") != null) {
+                    dync = new DynCollectionMongo(storage, collection);
+                } else {
+                    dync = new DynCollectionPostgres(storage, collection);
+                }
+                Attribute pkattr = dync.getIdentityAttributes().get(0);
+                rob.add(pkattr.getName(), dynr.create(json));
+                for (String curWarning : dynr.getWarnings()) {
+                    rob.addWarningMessage(curWarning);
+                }
+                rob.setStatus(Response.Status.OK);
+            } else {
+                Response.ResponseBuilder rb = Response.status(Response.Status.OK);
+                rb.entity(setid);
+                return rb.build();
             }
-            rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            if (ex.getLocalizedMessage().contains("Unique-Constraint")) {
+                rob.setStatus(Response.Status.CONFLICT);
+            } else {
+                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            }
             rob.addErrorMessage("Could not create dataset: " + ex.getLocalizedMessage());
             rob.addException(ex);
-            return rob.toResponse();
         }
         return rob.toResponse();
     }
