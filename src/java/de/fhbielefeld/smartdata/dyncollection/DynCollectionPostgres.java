@@ -36,11 +36,11 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     /**
      * Create access for collections with reusing existing connection
-     * 
+     *
      * @param schema
      * @param name
      * @param con
-     * @throws DynException 
+     * @throws DynException
      */
     public DynCollectionPostgres(String schema, String name, Connection con) throws DynException {
         this.schema = schema;
@@ -85,10 +85,23 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         if (!schemaExists) {
             try {
                 String sql = "CREATE TABLE " + this.schema + "." + this.name + "(";
-                // Add id attribute
-                sql += "id serial PRIMARY KEY";
+                // Add identity attribute
+                Attribute idcol = table.getIdentityColum();
+                if (idcol != null) {
+                    sql += idcol.getName();
+                    if (idcol.isIsAutoIncrement()) {
+                        // Create autoincrement id column
+                        sql += " serial PRIMARY KEY";
+                    } else {
+                        sql += " " + idcol.getType() + " PRIMARY KEY";
+                    }
+                } else {
+                    sql += "id serial PRIMARY KEY";
+                }
                 for (Attribute curCol : table.getAttributes()) {
-                    sql += ", \"" + curCol.getName() + "\" " + curCol.getType();
+                    if (!curCol.isIdentity()) {
+                        sql += ", \"" + curCol.getName() + "\" " + curCol.getType();
+                    }
                 }
                 sql += ")";
                 this.con.setAutoCommit(true);
@@ -223,15 +236,15 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 if (pkrs.next()) {
                     curCol.setIsIdentity(true);
                 }
-                pkrs.close();                
+                pkrs.close();
             }
             // Get if column is autoincrement
             String defaultvalue = rs.getString("column_default");
             curCol.setDefaultvalue(defaultvalue);
-            if(defaultvalue != null && defaultvalue.startsWith("nextval(")) {
+            if (defaultvalue != null && defaultvalue.startsWith("nextval(")) {
                 curCol.setIsAutoIncrement(true);
             }
-            
+
             // Get enhanced data for geometry columns
             if (curCol.getType().equalsIgnoreCase("geometry")) {
                 // Get subtype
