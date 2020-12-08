@@ -466,24 +466,24 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public Long create(String json) throws DynException {
+    public List<Long> create(String json) throws DynException {
         // Reset warnings for new create
         this.warnings = new ArrayList<>();
         JsonReader jsonReader = Json.createReader(new StringReader(json));
+        List<Long> ids = new ArrayList<>();
         // Single or array mode
         if(json.startsWith("[")) {
             JsonArray jsonarray = jsonReader.readArray();
             jsonReader.close();
-            Long lastid = null;
             for(int i=0; i < jsonarray.size(); i++) {
-                lastid = this.create(jsonarray.getJsonObject(i));
+                ids.add(this.create(jsonarray.getJsonObject(i)));
             }
-            return lastid;
         } else {
             JsonObject jsonobject = jsonReader.readObject();
             jsonReader.close();
-            return this.create(jsonobject);
+            ids.add(this.create(jsonobject));
         }
+        return ids;
     }
 
     @Override

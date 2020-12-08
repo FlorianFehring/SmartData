@@ -5,6 +5,7 @@ import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.util.Collection;
+import java.util.List;
 import javax.json.JsonObject;
 
 /**
@@ -35,7 +36,7 @@ public class DynRecordsMongo extends DynMongo implements DynRecords {
     }
 
     @Override
-    public Long create(String json) throws DynException {
+    public List<Long> create(String json) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

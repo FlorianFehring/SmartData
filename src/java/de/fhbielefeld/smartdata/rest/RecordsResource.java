@@ -110,7 +110,7 @@ public class RecordsResource {
         }
 
         try {
-            Long setid = dynr.create(json);
+            List<Long> ids = dynr.create(json);
             // Use TreeQL specification extension
             if (conf.getProperty("spec.version") != null
                     && conf.getProperty("spec.version").equals("2020fhbi")) {
@@ -128,7 +128,8 @@ public class RecordsResource {
                 rob.setStatus(Response.Status.OK);
             } else {
                 Response.ResponseBuilder rb = Response.status(Response.Status.OK);
-                rb.entity(setid);
+                String idstr = ids.toString().replace("[", "").replace("]", "").replace(" ", "");
+                rb.entity(idstr);
                 return rb.build();
             }
         } catch (DynException ex) {

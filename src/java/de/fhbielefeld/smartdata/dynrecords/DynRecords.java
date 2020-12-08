@@ -5,6 +5,7 @@ import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import java.sql.PreparedStatement;
 import java.util.Collection;
+import java.util.List;
 import javax.json.JsonObject;
 
 /**
@@ -80,17 +81,17 @@ public interface DynRecords extends Dyn {
      *
      * @param json JSON String with one-level hierarchy
      *
-     * @return Id of the new created dataset
+     * @return Ids of the new created datasets
      * @throws DynException
      */
-    public abstract Long create(String json) throws DynException;
+    public abstract List<Long> create(String json) throws DynException;
 
     /**
      * Creates a dataset from the given json and inserts it into collection
      *
      * @param json JSON String with one-level hierarchy
      *
-     * @return Id of the new created dataset
+     * @return Id of the new created datasets
      * @throws DynException
      */
     public abstract Long create(JsonObject json) throws DynException;
