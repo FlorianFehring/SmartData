@@ -509,17 +509,24 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         try {
             pstmt.executeUpdate();
+            pstmt.close();
             // Request primary key
             PreparedStatement idpstmt = this.preparedStatements.get("id_" + pstmtid);
             if (idpstmt != null) {
-                ResultSet prs = idpstmt.executeQuery();
-                if (prs.next()) {
-                    return prs.getLong(1);
+                try (ResultSet prs = idpstmt.executeQuery()) {
+                    if (prs.next()) {
+                        return prs.getLong(1);
+                    }
                 }
-                prs.close();
             }
             return null;
         } catch (SQLException ex) {
+            try {
+                pstmt.close();
+                this.con.close();
+            } catch(SQLException ex1) {
+                System.err.println("Could not close statement: " + ex1.getLocalizedMessage());
+            }
             DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
             throw de;
