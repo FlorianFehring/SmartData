@@ -471,12 +471,27 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         this.warnings = new ArrayList<>();
         JsonReader jsonReader = Json.createReader(new StringReader(json));
         List<Long> ids = new ArrayList<>();
-        // Single or array mode
-        if(json.startsWith("[")) {
+        // Records, array or Single mode
+        if(json.startsWith("{\"records\":")) {
+            JsonObject jsonobject = jsonReader.readObject();
+            jsonReader.close();
+            JsonArray jsonarray = jsonobject.getJsonArray("records");
+            for(int i=0; i < jsonarray.size(); i++) {
+                try {
+                    ids.add(this.create(jsonarray.getJsonObject(i)));
+                } catch(DynException ex) {
+                    this.warnings.add(ex.getLocalizedMessage());
+                }
+            }
+        } else if(json.startsWith("[")) {
             JsonArray jsonarray = jsonReader.readArray();
             jsonReader.close();
             for(int i=0; i < jsonarray.size(); i++) {
-                ids.add(this.create(jsonarray.getJsonObject(i)));
+                try {
+                    ids.add(this.create(jsonarray.getJsonObject(i)));
+                } catch(DynException ex) {
+                    this.warnings.add(ex.getLocalizedMessage());
+                }
             }
         } else {
             JsonObject jsonobject = jsonReader.readObject();
