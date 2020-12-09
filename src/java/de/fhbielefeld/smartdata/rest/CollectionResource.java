@@ -64,6 +64,9 @@ public class CollectionResource {
             responseCode = "304",
             description = "Collection allready exists")
     @APIResponse(
+            responseCode = "400",
+            description = "Collection definition is missing attributes")
+    @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
@@ -83,6 +86,12 @@ public class CollectionResource {
         collectiondef.setName(name);
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        if (collectiondef.getAttributes() == null || collectiondef.getAttributes().isEmpty()) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("The collection definition does not contain attributes.");
+            return rob.toResponse();
+        }
 
         DynCollection dync;
         Configuration conf = new Configuration();
@@ -125,7 +134,7 @@ public class CollectionResource {
             description = "Objects with attribute informations",
             content = @Content(
                     mediaType = "application/json",
-                    example = "{\"list\" : [ { \"name\" : \"attribute1\", \"type\" : \"integer\"} ]}"
+                    example = "{\"attributes\" : [ { \"name\" : \"attribute1\", \"type\" : \"integer\"} ]}"
             ))
     @APIResponse(
             responseCode = "400",
@@ -168,7 +177,7 @@ public class CollectionResource {
 
         try {
             // Get attributes
-            rob.add("list", dync.getAttributes().values());
+            rob.add("attributes", dync.getAttributes().values());
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             System.out.println(ex.getLocalizedMessage());
