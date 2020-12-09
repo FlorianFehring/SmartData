@@ -508,8 +508,10 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
         }
         try {
+            this.con.setAutoCommit(false);
             pstmt.executeUpdate();
             pstmt.close();
+            this.con.commit();
             // Request primary key
             PreparedStatement idpstmt = this.preparedStatements.get("id_" + pstmtid);
             if (idpstmt != null) {
@@ -522,14 +524,21 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             return null;
         } catch (SQLException ex) {
             try {
+                System.out.println("SQLEXCEPTION: " + ex.getLocalizedMessage());
                 pstmt.close();
-                this.con.close();
+                this.con.rollback();
             } catch(SQLException ex1) {
                 System.err.println("Could not close statement: " + ex1.getLocalizedMessage());
             }
             DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
             throw de;
+        } finally {
+            try {
+           this.con.setAutoCommit(true);
+            } catch(SQLException ex) {
+            System.err.println("ERROR: Could not set autocommit mode!");
+            }
         }
     }
     
