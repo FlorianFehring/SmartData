@@ -81,7 +81,7 @@ public class CollectionResource {
 
         // Set collections name from path param (do not use evtl. given name in json)
         collectiondef.setName(name);
-        
+
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         DynCollection dync;
@@ -128,6 +128,13 @@ public class CollectionResource {
                     example = "{\"list\" : [ { \"name\" : \"attribute1\", \"type\" : \"integer\"} ]}"
             ))
     @APIResponse(
+            responseCode = "400",
+            description = "Table does not exists, or the whole schema does not exists.",
+            content = @Content(
+                    mediaType = "application/json",
+                    example = "{\"errors\" : [ { \"Table or schema does not exists\"]}"
+            ))
+    @APIResponse(
             responseCode = "500",
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
@@ -164,7 +171,14 @@ public class CollectionResource {
             rob.add("list", dync.getAttributes().values());
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            System.out.println(ex.getLocalizedMessage());
+            if (ex.getLocalizedMessage().contains("does not exists")) {
+                rob.setStatus(Response.Status.NOT_FOUND);
+                System.out.println("FOUND!");
+            } else {
+                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+                System.out.println("NOT!");
+            }
             rob.addErrorMessage("Could not get attributes information: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
