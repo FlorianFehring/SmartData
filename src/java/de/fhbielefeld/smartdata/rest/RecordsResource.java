@@ -166,7 +166,9 @@ public class RecordsResource {
             @Parameter(description = "Datasets id", required = true, example = "1") @PathParam("id") Long id,
             @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
-            @Parameter(description = "Attributes to include, comata separated", example = "1") @QueryParam("includes") String includes) {
+            @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
+            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format (untested)",
+                    schema = @Schema(type = STRING)) @QueryParam("geojsonattr") String geojsonattr) {
 
         if (storage == null) {
             storage = "public";
@@ -204,12 +206,12 @@ public class RecordsResource {
             } else if (idattrs.size() > 1) {
                 rob.addWarningMessage("There are more than one identity attributes, try to identify on >" + idattrs.get(0).getName() + "<");
             }
-
+            // Create filter for id
             Attribute idattr = idattrs.get(0);
             Filter idfilter = new EqualsFilter(dync);
             idfilter.parse(idattr.getName() + ",eq," + id);
             filters.add(idfilter);
-            // Create filter for id
+
         } catch (DynException ex) {
             rob.setStatus(Response.Status.NOT_ACCEPTABLE);
             rob.addErrorMessage("Could not get identity attributes");
@@ -223,10 +225,16 @@ public class RecordsResource {
         }
 
         try {
-            String json = dynr.get(includes, filters, 1, null, null, false, null, false);
+            String json = dynr.get(includes, filters, 1, null, null, false, null, false, geojsonattr);
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
-            rob.add("records", new String(u8));
+            if (geojsonattr != null) {
+                Response.ResponseBuilder rb = Response.status(Response.Status.OK);
+                rb.entity(json);
+                return rb.build();
+            } else {
+                rob.add("records", new String(u8));
+            }
             for (String curWarn : dynr.getWarnings()) {
                 rob.addWarningMessage(curWarn);
             }
@@ -267,9 +275,10 @@ public class RecordsResource {
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
-            @Parameter(description = "If datasets should only be counted (untested)", example = "false") @QueryParam("countonly") boolean countonly,
+            @Parameter(description = "If datasets should only be counted (untested)") @QueryParam("countonly") boolean countonly,
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
-            @Parameter(description = "Package values into datasets (untested)", example = "false") @QueryParam("deflatt") boolean deflatt) {
+            @Parameter(description = "Package values into datasets (untested)") @QueryParam("deflatt") boolean deflatt,
+            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format (untested)") @QueryParam("geojsonattr") String geojsonattr) {
 
         if (storage == null) {
             storage = "public";
@@ -319,13 +328,19 @@ public class RecordsResource {
         }
 
         try {
-            String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt);
+            String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt, geojsonattr);
             if (json.equals("{}")) {
                 json = "[]";
             }
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
-            rob.add("records", new String(u8));
+            if (geojsonattr != null) {
+                Response.ResponseBuilder rb = Response.status(Response.Status.OK);
+                rb.entity(json);
+                return rb.build();
+            } else {
+                rob.add("records", new String(u8));
+            }
             for (String curWarn : dynr.getWarnings()) {
                 rob.addWarningMessage(curWarn);
             }

@@ -59,7 +59,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt) throws DynException {
+    public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr) throws DynException {
         // Build statement id string
         String stmtId = "";
         stmtId += this.schema + '_' + this.table;
@@ -69,6 +69,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         if (filters != null) {
             //TODO pruefen ob das hier reiht oder nicht jedes mal ein neues Ergebnis gibt
             stmtId += filters.hashCode();
+            System.out.println("=== FiltersHash;");
+            System.out.println(stmtId);
+            // => GEHT NICHT! EINZELNE FILTER PRÜFEN!
         }
         if (order != null) {
             stmtId += order;
@@ -78,6 +81,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         if (page != null) {
             stmtId += page;
+        }
+        if(geojsonattr != null) {
+            stmtId += "_geo" + geojsonattr;
         }
 
         stmtId += countOnly;
@@ -181,6 +187,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     includeColumns = newColumnNames;
                 }
 
+                // Exclude geo attribute, if geojson should be returned
+                if(geojsonattr != null) {
+                    includeColumns.remove(geojsonattr);
+                }
+                
                 String mnamesstr = String.join("\",\"", includeColumns);
                 if (mnamesstr.contains("\"point\",")) {
                     String replacement = "ST_X(ST_TRANSFORM(point,4674)) point_lon, ST_Y(ST_TRANSFORM(point,4674)) point_lat";
@@ -192,23 +203,27 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 sqlbuilder.append(mnamesstr);
                 sqlbuilder.append("\"");
             }
-            sqlbuilder.append(" FROM ");
-            sqlbuilder.append(this.schema);
-            sqlbuilder.append(".");
-            sqlbuilder.append(this.table);
+            
+            // Build FROM ... WHERE clause (separate because in geojson request it must be placed on other location)
+            StringBuilder frombuilder = new StringBuilder();
+            
+            frombuilder.append(" FROM ");
+            frombuilder.append(this.schema);
+            frombuilder.append(".");
+            frombuilder.append(this.table);
 
             if (filters != null && !filters.isEmpty()) {
-                sqlbuilder.append(" WHERE ");
+                frombuilder.append(" WHERE ");
                 int i = 0;
                 for (Filter curFilter : filters) {
                     if (i > 0) {
-                        sqlbuilder.append(" AND ");
+                        frombuilder.append(" AND ");
                     }
                     String prepcode = curFilter.getPrepareCode();
                     placeholders.put(curFilter.getFiltercode(), placeholderNo);
                     curFilter.setFirstPlaceholder(placeholderNo);
                     placeholderNo += curFilter.getNumberOfPlaceholders();
-                    sqlbuilder.append(prepcode);
+                    frombuilder.append(prepcode);
                     i++;
                 }
             }
@@ -216,9 +231,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Adding order by
             if (orderby != null && !orderby.isEmpty() && countOnly == false) {
                 if (orderByAvailable) {
-                    sqlbuilder.append(" ORDER BY \"").append(orderby).append("\"");
+                    frombuilder.append(" ORDER BY \"").append(orderby).append("\"");
                     // Adding orderkind
-                    sqlbuilder.append(" ").append(orderkind);
+                    frombuilder.append(" ").append(orderkind);
                 } else {
                     String warningtxt = "The orderby field >"
                             + orderby + "< is not available in the dataset. Could not"
@@ -233,13 +248,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (page != null) {
                 if(size < 1)
                     size = 20;
-                sqlbuilder.append(" OFFSET ?");
+                frombuilder.append(" OFFSET ?");
                 placeholders.put("offset", placeholderNo++);
             }
 
             // Adding limit if given
             if (size > 0) {
-                sqlbuilder.append(" LIMIT ?");
+                frombuilder.append(" LIMIT ?");
                 placeholders.put("limit", placeholderNo++);
             }
 
@@ -254,6 +269,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 sqlbuilder = newsqlsb;
             }
 
+            if(geojsonattr==null)
+                sqlbuilder.append(frombuilder);
+            
+            String prespecsql = sqlbuilder.toString();
+            
             // Modify select statement for export as json
             if (!deflatt && unique != null) {
                 StringBuilder newsqlsb = new StringBuilder();
@@ -266,8 +286,31 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (!deflatt) {
                 StringBuilder newsqlsb = new StringBuilder();
                 newsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");
-                newsqlsb.append(sqlbuilder.toString());
+                newsqlsb.append(prespecsql);
                 newsqlsb.append(") t");
+                sqlbuilder = newsqlsb;
+            }
+            
+            if(geojsonattr != null) {
+                StringBuilder newsqlsb = new StringBuilder();
+                // Package into one json
+                newsqlsb.append("SELECT row_to_json(fc) AS json FROM (");
+                // Create feature collection
+                newsqlsb.append("SELECT 'FeatureCollection' AS type, array_to_json(array_agg(f)) AS features  FROM (");
+                // Add type: "feature"
+                newsqlsb.append("SELECT 'feature' AS type");
+                // Add geometry information
+                newsqlsb.append(", ST_AsGeoJSON(\""+geojsonattr+"\")::json as geometry");
+                // Add properties attribute
+                newsqlsb.append(", (");
+                // Filter null values
+                newsqlsb.append("SELECT json_strip_nulls(row_to_json(t)) FROM (");
+                newsqlsb.append(prespecsql);
+                newsqlsb.append(") AS t");
+                newsqlsb.append(") AS properties");
+                newsqlsb.append(frombuilder);
+                newsqlsb.append(") AS f");
+                newsqlsb.append(") AS fc");
                 sqlbuilder = newsqlsb;
             }
 
@@ -331,7 +374,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt) throws DynException {
+    public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr) throws DynException {
         // Reset warnings for new get
         this.warnings = new ArrayList<>();
 
@@ -349,7 +392,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         
         try {
             // Prepare query or get allready prepeared one
-            String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt);
+            String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr);
             // Fill prepared query with data
             PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page);
             ResultSet rs = pstmt.executeQuery();
@@ -369,7 +412,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         }
     }
-
+    
     @Override
     public String getPreparedInsert(JsonObject json) throws DynException {
         String pstmtid = "insert_" + String.join("_", json.keySet());
