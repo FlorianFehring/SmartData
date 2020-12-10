@@ -69,6 +69,15 @@ public interface DynCollection extends Dyn {
     public abstract List<Attribute> getIdentityAttributes() throws DynException;
     
     /**
+     * Gets the collumns that have a geometry type
+     * 
+     * @return List of geo attributes
+     * 
+     * @throws DynException 
+     */
+    public abstract List<Attribute> getGeoAttributes() throws DynException;
+    
+    /**
      * Changes the name of a attributes
      * 
      * @param oldname Old attributes name

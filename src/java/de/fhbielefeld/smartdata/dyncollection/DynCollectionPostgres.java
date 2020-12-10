@@ -27,6 +27,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     protected String schema;
     protected String name;
+    protected Map<String, Attribute> attributes = new HashMap<>();
 
     public DynCollectionPostgres(String schema, String name) throws DynException {
         this.schema = schema;
@@ -147,21 +148,23 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public Map<String, Attribute> getAttributes() throws DynException {
-        Map<String, Attribute> columns = new HashMap<>();
+        if(!this.attributes.isEmpty()) {
+            return this.attributes;
+        }
         try {
             Statement stmt = this.con.createStatement();
             ResultSet rs = stmt.executeQuery(
                     "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
                     + "WHERE table_schema = '" + this.schema + "' "
                     + "AND table_name='" + this.name + "'");
-            // Walk trough columns
+            // Walk trough attributes
             while (rs.next()) {
                 Attribute curCol = this.getColumnObject(rs);
-                columns.put(curCol.getName(), curCol);
+                this.attributes.put(curCol.getName(), curCol);
             }
             rs.close();
             // Check if table does not exists when there is no column
-            if (columns.isEmpty()) {
+            if (this.attributes.isEmpty()) {
                 if (!this.exists()) {
                     throw new DynException("Table >" + this.schema + "." + this.name + "< does not exists.");
                 }
@@ -172,7 +175,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             throw dex;
         }
 
-        return columns;
+        return this.attributes;
     }
 
     @Override
@@ -185,7 +188,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     + "WHERE table_schema = '" + this.schema + "' "
                     + "AND table_name='" + this.name + "' "
                     + "AND column_name = '" + name + "'");
-            // Walk trough columns
+            // Walk trough attributes
             while (rs.next()) {
                 column = this.getColumnObject(rs);
             }
@@ -245,7 +248,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 curCol.setIsAutoIncrement(true);
             }
 
-            // Get enhanced data for geometry columns
+            // Get enhanced data for geometry attributes
             if (curCol.getType().equalsIgnoreCase("geometry")) {
                 // Get subtype
                 String geoquery = "SELECT type, srid, coord_dimension "
@@ -271,16 +274,26 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public List<Attribute> getIdentityAttributes() throws DynException {
-        Map<String, Attribute> columns = this.getAttributes();
-        List<Attribute> idcolumns = new ArrayList<>();
-        for (Attribute curColumn : columns.values()) {
-            if (curColumn.isIdentity()) {
-                idcolumns.add(curColumn);
+        List<Attribute> idattrs = new ArrayList<>();
+        for (Attribute curAttr : this.getAttributes().values()) {
+            if (curAttr.isIdentity()) {
+                idattrs.add(curAttr);
             }
         }
-        return idcolumns;
+        return idattrs;
     }
 
+    @Override
+    public List<Attribute> getGeoAttributes() throws DynException {
+        List<Attribute> geoattrs = new ArrayList<>();
+        for (Attribute curAttr : this.getAttributes().values()) {
+            if (curAttr.getType().equalsIgnoreCase("geometry")) {
+                geoattrs.add(curAttr);
+            }
+        }
+        return geoattrs;
+    }
+    
     @Override
     public void changeAttributeName(String oldname, String newname) throws DynException {
         throw new UnsupportedOperationException();

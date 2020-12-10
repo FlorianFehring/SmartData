@@ -4,6 +4,7 @@ import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
 import de.fhbielefeld.smartdata.dyn.DynMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +63,17 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
+    public List<Attribute> getGeoAttributes() throws DynException {
+        List<Attribute> geoattrs = new ArrayList<>();
+        for (Attribute curAttr : this.getAttributes().values()) {
+            if (curAttr.getType().equalsIgnoreCase("geometry")) {
+                geoattrs.add(curAttr);
+            }
+        }
+        return geoattrs;
+    }
+    
     @Override
     public void changeAttributeName(String oldname, String newname) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
