@@ -421,6 +421,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         if (!this.preparedStatements.containsKey(pstmtid)) {
             this.preparedWarnings.put(pstmtid, new ArrayList<>());
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
+            List<Attribute> geocolumns = this.dyncollection.getGeoAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
             // Build up insert statement
@@ -432,11 +433,18 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sqlbuilder.append(" (\"");
 
             int foundCols = 0;
+            List<Integer> foundGeoCols = new ArrayList();
             for (String curKey : json.keySet()) {
                 pstmtid += curKey;
                 // Check if table expects that data
                 if (!columns.containsKey(curKey)) {
                     continue;
+                }
+                // Check if the column has a geometry type
+                for (Attribute curAttr : geocolumns) {
+                    if (curAttr.getName().equals(curKey)) {
+                        foundGeoCols.add(foundCols);
+                    }
                 }
                 if (foundCols > 0) {
                     sqlbuilder.append("\",\"");
@@ -452,7 +460,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 if (i > 0) {
                     sqlbuilder.append(",");
                 }
-                sqlbuilder.append("?");
+                boolean isIn = false; 
+                for (int col : foundGeoCols) {
+                    if (i == col) {
+                        isIn = true;
+                    }
+                }
+                if (isIn) {
+                    sqlbuilder.append("ST_GeomFromText(?)");
+                } else {
+                    sqlbuilder.append("?");
+                }
             }
             sqlbuilder.append(")");
 
@@ -804,6 +822,10 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         JsonString jts = (JsonString) value;
                         LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
                         pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                        break;
+                    case "geometry":
+                        JsonString jgeom = (JsonString) value;
+                        pstmt.setObject(pindex, jgeom.getString());
                         break;
                     default:
                         Message msg = new Message(
