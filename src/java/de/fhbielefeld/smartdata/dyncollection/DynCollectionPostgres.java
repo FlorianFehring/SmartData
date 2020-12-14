@@ -92,12 +92,12 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     sql += idcol.getName();
                     if (idcol.isIsAutoIncrement()) {
                         // Create autoincrement id column
-                        sql += " serial PRIMARY KEY";
+                        sql += " bigserial PRIMARY KEY";
                     } else {
                         sql += " " + idcol.getType() + " PRIMARY KEY";
                     }
                 } else {
-                    sql += "id serial PRIMARY KEY";
+                    sql += "id bigserial PRIMARY KEY";
                 }
                 for (Attribute curCol : table.getAttributes()) {
                     if (!curCol.isIdentity()) {
