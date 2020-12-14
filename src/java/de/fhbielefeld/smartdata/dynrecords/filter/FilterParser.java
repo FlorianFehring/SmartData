@@ -86,6 +86,10 @@ public class FilterParser {
                 f = new ContainsGeoFilter(table);
                 f.parse(filter);
                 break;
+            case "scr":
+                f = new CrossesGeoFilter(table);
+                f.parse(filter);
+                break;
             default:
                 Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter >"+ filtername +"< for >" + filter + "< is unkown.");
 		Logger.addMessage(msg);
