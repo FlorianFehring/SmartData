@@ -106,6 +106,10 @@ public class FilterParser {
                 f = new OverlapsGeoFilter(table);
                 f.parse(filter);
                 break;
+            case "sto":
+                f = new TouchesGeoFilter(table);
+                f.parse(filter);
+                break;
             default:
                 Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter >"+ filtername +"< for >" + filter + "< is unkown.");
 		Logger.addMessage(msg);
