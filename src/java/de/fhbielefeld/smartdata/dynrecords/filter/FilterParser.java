@@ -98,6 +98,10 @@ public class FilterParser {
                 f = new EqualsGeoFilter(table);
                 f.parse(filter);
                 break;
+            case "sin":
+                f = new IntersectsGeoFilter(table);
+                f.parse(filter);
+                break;
             default:
                 Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter >"+ filtername +"< for >" + filter + "< is unkown.");
 		Logger.addMessage(msg);
