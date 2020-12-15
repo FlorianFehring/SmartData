@@ -94,6 +94,10 @@ public class FilterParser {
                 f = new DisjointGeoFilter(table);
                 f.parse(filter);
                 break;
+            case "seq":
+                f = new EqualsGeoFilter(table);
+                f.parse(filter);
+                break;
             default:
                 Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter >"+ filtername +"< for >" + filter + "< is unkown.");
 		Logger.addMessage(msg);
