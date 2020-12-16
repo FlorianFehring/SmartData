@@ -118,6 +118,10 @@ public class FilterParser {
                 f = new IsClosedGeoFilter(table);
                 f.parse(filter);
                 break;
+            case "sis":
+                f = new IsSimpleGeoFilter(table);
+                f.parse(filter);
+                break;
             default:
                 Message msg = new Message("SmartData", MessageLevel.ERROR, "Filter >"+ filtername +"< for >" + filter + "< is unkown.");
 		Logger.addMessage(msg);
