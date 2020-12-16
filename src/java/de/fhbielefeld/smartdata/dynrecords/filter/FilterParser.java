@@ -21,53 +21,93 @@ public class FilterParser {
         switch (filtername) {
             case "cs":
             case "ncs":
-                f = new ContainFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new ContainFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sw":
             case "nsw":
-                f = new StartsWithFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new StartsWithFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "ew":
             case "new":
-                f = new EndsWithFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new EndsWithFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "eq":
             case "neq":
-                f = new EqualsFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new EqualsFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "lt":
             case "nlt":
-                f = new LowerThanFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new LowerThanFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "le":
             case "nle":
-                f = new LowerOrEqualFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new LowerOrEqualFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "ge":
             case "nge":
-                f = new GreaterOrEqualFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new GreaterOrEqualFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "gt":
             case "ngt":
-                f = new GreaterThanFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new GreaterThanFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "bt":
             case "nbt":
-                f = new BetweenFilter(table);
-		f.parse(filter);
+                if(parts.length < 4) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new BetweenFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "in":
             case "nin":
-                f = new InFilter(table);
-		f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new InFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "is":
             case "nis":
@@ -75,44 +115,84 @@ public class FilterParser {
 		f.parse(filter);
                 break;
             case "sir":
-                f = new RadiusFilter(table);
-		f.parse(filter);
+                if(parts.length < 6) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new RadiusFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sib":
-                f = new BoundingBoxFilter(table);
-		f.parse(filter);
+                if(parts.length < 8) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new BoundingBoxFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sco":
-                f = new ContainsGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new ContainsGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "scr":
-                f = new CrossesGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new CrossesGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sdi":
-                f = new DisjointGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new DisjointGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "seq":
-                f = new EqualsGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new EqualsGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sin":
-                f = new IntersectsGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new IntersectsGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sov":
-                f = new OverlapsGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new OverlapsGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sto":
-                f = new TouchesGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new TouchesGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "swi":
-                f = new WithinGeoFilter(table);
-                f.parse(filter);
+                if(parts.length < 3) {
+                    throw new FilterException("Filter is not valid.");
+                } else {
+                    f = new WithinGeoFilter(table);
+                    f.parse(filter);
+                }
                 break;
             case "sic":
                 f = new IsClosedGeoFilter(table);
