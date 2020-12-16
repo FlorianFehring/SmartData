@@ -9,13 +9,13 @@ import java.sql.PreparedStatement;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 
 /**
- * Filter class for is closed geofilter
+ * Filter class for is valid geofilter
  *
  * @author Alexej Rogalski
  */
-public class IsClosedGeoFilter extends Filter {
+public class IsValidGeoFilter extends Filter {
 
-    public IsClosedGeoFilter(DynCollection table) {
+    public IsValidGeoFilter(DynCollection table) {
         super(table);
     }
     
@@ -34,13 +34,13 @@ public class IsClosedGeoFilter extends Filter {
             }
             if (!col.getType().equals("geometry")) {
                 Message msg = new Message(
-                        "IsClosedGeoFilter", MessageLevel.ERROR,
-                        "Column type >" + col.getType() + "< is not supported. Please choose a Column with type geometry.");
+                    "IsValidGeoFilter", MessageLevel.ERROR,
+                    "Column type >" + col.getType() + "< is not supported. Please choose a Column with type geometry.");
                 Logger.addDebugMessage(msg);
             }
 
         } catch (DynException ex) {
-            FilterException fex = new FilterException("Could not parse IsClosedGeoFilter: " + ex.getLocalizedMessage());
+            FilterException fex = new FilterException("Could not parse IsValidGeoFilter: " + ex.getLocalizedMessage());
             fex.addSuppressed(ex);
             throw fex;
         }
@@ -48,7 +48,7 @@ public class IsClosedGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_IsClosed(" + this.attribute + ")";
+        return "ST_IsValid(" + this.attribute + ")";
     }
 
     @Override
