@@ -32,6 +32,7 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
+import javax.json.JsonValue.ValueType;
 
 /**
  * Dynamic data access for postgres databases
@@ -421,7 +422,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         if (!this.preparedStatements.containsKey(pstmtid)) {
             this.preparedWarnings.put(pstmtid, new ArrayList<>());
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
-            List<Attribute> geocolumns = this.dyncollection.getGeoAttributes();
             Map<String, Integer> placeholders = new HashMap<>();
 
             // Build up insert statement
@@ -432,46 +432,44 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sqlbuilder.append(this.table);
             sqlbuilder.append(" (\"");
 
+            StringBuilder colsstr = new StringBuilder();
+            StringBuilder valuestr = new StringBuilder();
             int foundCols = 0;
-            List<Integer> foundGeoCols = new ArrayList();
             for (String curKey : json.keySet()) {
                 pstmtid += curKey;
                 // Check if table expects that data
                 if (!columns.containsKey(curKey)) {
                     continue;
                 }
-                // Check if the column has a geometry type
-                for (Attribute curAttr : geocolumns) {
-                    if (curAttr.getName().equals(curKey)) {
-                        foundGeoCols.add(foundCols);
-                    }
-                }
+                // Get definition for current column
+                Attribute attr = columns.get(curKey);
+                
                 if (foundCols > 0) {
-                    sqlbuilder.append("\",\"");
+                    colsstr.append("\",\"");
+                    valuestr.append(",");
                 }
-                sqlbuilder.append(curKey);
+                colsstr.append(curKey);
 
+                // Add placeholder depending on type
+                switch(attr.getType()) {
+                    case "json":
+                        valuestr.append("to_json(?::json)");
+                        break;
+                    case "geometry":
+                        valuestr.append("ST_GeomFromText(?)");
+                        break;
+                        default:
+                            valuestr.append("?");
+                }
+                
                 foundCols++;
                 // Note placeholder
                 placeholders.put(curKey, foundCols);
             }
+            // Put together
+            sqlbuilder.append(colsstr);
             sqlbuilder.append("\") VALUES (");
-            for (int i = 0; i < foundCols; i++) {
-                if (i > 0) {
-                    sqlbuilder.append(",");
-                }
-                boolean isIn = false; 
-                for (int col : foundGeoCols) {
-                    if (i == col) {
-                        isIn = true;
-                    }
-                }
-                if (isIn) {
-                    sqlbuilder.append("ST_GeomFromText(?)");
-                } else {
-                    sqlbuilder.append("?");
-                }
-            }
+            sqlbuilder.append(valuestr);
             sqlbuilder.append(")");
 
             String sql = sqlbuilder.toString();
@@ -793,6 +791,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
      */
     private void setPlaceholder(PreparedStatement pstmt, int pindex, Attribute col, JsonValue value) throws DynException {
         try {
+            System.out.println("coltype:");
+            System.out.println(col.getType());
                 switch (col.getType()) {
                     case "text":
                     case "varchar":
@@ -822,6 +822,16 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         JsonString jts = (JsonString) value;
                         LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
                         pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                        break;
+                    case "json":
+                        if(value.getValueType() == ValueType.OBJECT || value.getValueType() == ValueType.ARRAY) {
+                            // Given value is json
+                            pstmt.setString(pindex, value.toString());
+                        } else {
+                            // Given value is string
+                            JsonString jjson = (JsonString) value;
+                            pstmt.setString(pindex, jjson.getString());
+                        }
                         break;
                     case "geometry":
                         JsonString jgeom = (JsonString) value;
