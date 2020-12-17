@@ -647,12 +647,26 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     identitycol = curKey;
                     continue;
                 }
+                // Get definition for current column
+                Attribute attr = columns.get(curKey);
+
                 if (foundCols > 0) {
                     sqlbuilder.append(",");
                 }
                 sqlbuilder.append("\"");
                 sqlbuilder.append(curKey);
-                sqlbuilder.append("\" = ?");
+                
+                // Add placeholder depending on type
+                switch(attr.getType()) {
+                    case "json":
+                        sqlbuilder.append("\" = to_json(?::json)");
+                        break;
+                    case "geometry":
+                        sqlbuilder.append("\" = ST_GeomFromText(?)");
+                        break;
+                    default:
+                        sqlbuilder.append("\" = ?");
+                }
 
                 // Note placeholder
                 foundCols++;
