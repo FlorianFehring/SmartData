@@ -525,11 +525,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public List<Long> create(String json) throws DynException {
+    public List<Object> create(String json) throws DynException {
         // Reset warnings for new create
         this.warnings = new ArrayList<>();
         JsonReader jsonReader = Json.createReader(new StringReader(json));
-        List<Long> ids = new ArrayList<>();
+        List<Object> ids = new ArrayList<>();
         // Records, array or Single mode
         if(json.startsWith("{\"records\":")) {
             JsonObject jsonobject = jsonReader.readObject();
@@ -561,7 +561,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public Long create(JsonObject json) throws DynException {
+    public Object create(JsonObject json) throws DynException {
         String pstmtid = this.getPreparedInsert(json);
         PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
@@ -591,14 +591,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (idpstmt != null) {
                 try (ResultSet prs = idpstmt.executeQuery()) {
                     if (prs.next()) {
-                        return prs.getLong(1);
+                        return prs.getObject(1);
                     }
                 }
             }
             return null;
         } catch (SQLException ex) {
             try {
-                System.out.println("SQLEXCEPTION: " + ex.getLocalizedMessage());
+                Message msg = new Message("DynDataPostgres/create",MessageLevel.ERROR,ex.getLocalizedMessage());
+                Logger.addDebugMessage(msg);
                 pstmt.close();
                 this.con.rollback();
             } catch(SQLException ex1) {
@@ -805,8 +806,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
      */
     private void setPlaceholder(PreparedStatement pstmt, int pindex, Attribute col, JsonValue value) throws DynException {
         try {
-            System.out.println("coltype:");
-            System.out.println(col.getType());
                 switch (col.getType()) {
                     case "text":
                     case "varchar":

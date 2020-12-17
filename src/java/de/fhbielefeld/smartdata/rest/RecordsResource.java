@@ -110,7 +110,7 @@ public class RecordsResource {
         }
 
         try {
-            List<Long> ids = dynr.create(json);
+            List<Object> ids = dynr.create(json);
             // Use TreeQL specification extension
             if (conf.getProperty("spec.version") != null
                     && conf.getProperty("spec.version").equals("2020fhbi")) {

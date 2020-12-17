@@ -87,7 +87,7 @@ public interface DynRecords extends Dyn {
      * @return Ids of the new created datasets
      * @throws DynException
      */
-    public abstract List<Long> create(String json) throws DynException;
+    public abstract List<Object> create(String json) throws DynException;
 
     /**
      * Creates a dataset from the given json and inserts it into collection
@@ -97,7 +97,7 @@ public interface DynRecords extends Dyn {
      * @return Id of the new created datasets
      * @throws DynException
      */
-    public abstract Long create(JsonObject json) throws DynException;
+    public abstract Object create(JsonObject json) throws DynException;
     
     /**
      * GEt a prepared query for updateing datasets.
