@@ -167,8 +167,9 @@ public class RecordsResource {
             @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
-            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format (untested)",
-                    schema = @Schema(type = STRING)) @QueryParam("geojsonattr") String geojsonattr) {
+            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format",
+                    schema = @Schema(type = STRING)) @QueryParam("geojsonattr") String geojsonattr,
+            @Parameter(description = "Package values into datasets") @QueryParam("deflatt") boolean deflatt) {
 
         if (storage == null) {
             storage = "public";
@@ -225,7 +226,7 @@ public class RecordsResource {
         }
 
         try {
-            String json = dynr.get(includes, filters, 1, null, null, false, null, false, geojsonattr);
+            String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr);
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
             if (geojsonattr != null) {
@@ -277,7 +278,6 @@ public class RecordsResource {
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
             @Parameter(description = "If datasets should only be counted (untested)") @QueryParam("countonly") boolean countonly,
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
-            @Parameter(description = "Package values into datasets (untested)") @QueryParam("deflatt") boolean deflatt,
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format (untested)") @QueryParam("geojsonattr") String geojsonattr) {
 
         if (storage == null) {
@@ -328,7 +328,7 @@ public class RecordsResource {
         }
 
         try {
-            String json = dynr.get(includes, filters, size, page, order, countonly, unique, deflatt, geojsonattr);
+            String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr);
             if (json.equals("{}")) {
                 json = "[]";
             }

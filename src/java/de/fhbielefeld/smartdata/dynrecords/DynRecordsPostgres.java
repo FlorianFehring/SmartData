@@ -32,7 +32,16 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.util.Map.Entry;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue.ValueType;
+import javax.json.JsonWriter;
+import javax.json.JsonWriterFactory;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParser;
 
 /**
  * Dynamic data access for postgres databases
@@ -276,21 +285,20 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             String prespecsql = sqlbuilder.toString();
             
             // Modify select statement for export as json
-            if (!deflatt && unique != null) {
+            if (unique != null) {
                 StringBuilder newsqlsb = new StringBuilder();
                 newsqlsb.append("SELECT json_agg(t.\"" + unique + "\") from (");
                 newsqlsb.append(sqlbuilder.toString());
                 newsqlsb.append(") as t");
                 sqlbuilder = newsqlsb;
             }
-
-            if (!deflatt) {
-                StringBuilder newsqlsb = new StringBuilder();
-                newsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");
-                newsqlsb.append(prespecsql);
-                newsqlsb.append(") t");
-                sqlbuilder = newsqlsb;
-            }
+            
+            // Remove null values
+            StringBuilder rnullsqlsb = new StringBuilder();
+            rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");
+            rnullsqlsb.append(prespecsql);
+            rnullsqlsb.append(") t");
+            sqlbuilder = rnullsqlsb;
             
             if(geojsonattr != null) {
                 StringBuilder newsqlsb = new StringBuilder();
@@ -402,6 +410,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 String dbjson = rs.getString("json");
                 if (dbjson != null && !dbjson.isEmpty()) {
                     json = dbjson;
+                    if(deflatt) {
+                        json = this.deflatt(json);
+                    }
                 }
             }
             rs.close();
@@ -412,6 +423,61 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             ex.printStackTrace();
             throw de;
         }
+    }
+    
+    /**
+     * Creates deflatted json representation of flatted datasets
+     * 
+     * @return 
+     */
+    private String deflatt(String json) {
+        Map<Integer,Map<String,JsonValue>> newdatamap = new HashMap<>() {};
+        // Parse json
+        JsonParser parser = Json.createParser(new StringReader(json));
+        parser.next();
+        JsonArray dataArr = parser.getArray();
+        for(JsonValue curVal : dataArr) {
+            JsonObject curDataset = (JsonObject) curVal;
+            for(Entry<String, JsonValue> curAttr : curDataset.entrySet()) {
+                String attrcall = curAttr.getKey();
+                // Get last digit position from the end
+                int i = attrcall.length();
+                while (i > 0 && Character.isDigit(attrcall.charAt(i - 1))) {
+                    i--;
+                }
+                // When there is a digit at the end
+                if (i != attrcall.length()) {
+                    String attrname = attrcall.substring(0, i);
+                    int deflattedId = Integer.parseInt(attrcall.substring(i));
+                    // Create place for dataset in map if not exists
+                    if(!newdatamap.containsKey(deflattedId)) {
+                        newdatamap.put(deflattedId, new HashMap<>());
+                    }
+                    Map<String, JsonValue> setmap = newdatamap.get(deflattedId);
+                    setmap.put(attrname, curAttr.getValue());
+                }
+            }
+        }
+        
+        // New json array
+        JsonArrayBuilder newdataarr = Json.createArrayBuilder();
+        for(Entry<Integer,Map<String,JsonValue>> curVal : newdatamap.entrySet()) {
+            JsonObjectBuilder newdataset = Json.createObjectBuilder();
+            newdataset.add("id", curVal.getKey());
+            for(Entry<String,JsonValue> curAttr : curVal.getValue().entrySet()) {
+                newdataset.add(curAttr.getKey(), curAttr.getValue());
+            }
+            newdataarr.add(newdataset);
+        }
+        
+        Map<String, Object> properties = new HashMap<>(1);
+        properties.put(JsonGenerator.PRETTY_PRINTING, false);
+        JsonWriterFactory writerFactory = Json.createWriterFactory(properties);
+        StringWriter sw = new StringWriter();
+        try (JsonWriter jsonWriter = writerFactory.createWriter(sw)) {
+            jsonWriter.writeArray(newdataarr.build());
+        }
+        return sw.toString();
     }
     
     @Override
