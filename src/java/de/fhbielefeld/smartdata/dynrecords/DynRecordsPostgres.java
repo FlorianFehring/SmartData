@@ -33,7 +33,6 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.util.Map.Entry;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
