@@ -276,9 +276,9 @@ public class RecordsResource {
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
-            @Parameter(description = "If datasets should only be counted (untested)") @QueryParam("countonly") boolean countonly,
+            @Parameter(description = "If datasets should only be counted") @QueryParam("countonly") boolean countonly,
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
-            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format (untested)") @QueryParam("geojsonattr") String geojsonattr) {
+            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr) {
 
         if (storage == null) {
             storage = "public";
