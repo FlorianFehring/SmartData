@@ -131,7 +131,7 @@ public class EqualsFilter extends Filter {
                 pstmt.setTimestamp(pos, ts);
             }
         } catch (SQLException ex) {
-            FilterException fex = new FilterException("Could not set value");
+            FilterException fex = new FilterException("Could not set value (" + ex.getLocalizedMessage() + ")");
             fex.addSuppressed(ex);
             throw fex;
         }
