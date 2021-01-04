@@ -32,7 +32,10 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Map.Entry;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
@@ -76,11 +79,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             stmtId += includes;
         }
         if (filters != null) {
-            //TODO pruefen ob das hier reiht oder nicht jedes mal ein neues Ergebnis gibt
-            stmtId += filters.hashCode();
-            System.out.println("=== FiltersHash;");
-            System.out.println(stmtId);
-            // => GEHT NICHT! EINZELNE FILTER PRÜFEN!
+            for(Filter curFilter : filters) {
+                stmtId += curFilter.getPrepareCode();
+            }
         }
         if (order != null) {
             stmtId += order;
@@ -137,80 +138,94 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Build up list of placeholders
             Map<String, Integer> placeholders = new HashMap<>();
             int placeholderNo = 1;
-            // Build up list of columns
-            Collection<String> includeColumns = new ArrayList<>();
+
             if (countOnly) {
                 sqlbuilder.append("SELECT COUNT(*) AS count ");
             } else {
                 sqlbuilder.append("SELECT ");
 
-                // Build up list of columns if no ones given
-                if (includes == null || includes.isEmpty()) {
-                    for (String curColumn : attributes.keySet()) {
-                        includeColumns.add(curColumn);
-                        if (orderby != null && curColumn.equals(orderby)) {
-                            orderByAvailable = true;
-                        }
-                    }
-                } else {
+                // Parse and split requested attribute names
+                boolean attrsSelected = false;
+                Collection<String> requestedAttr = new ArrayList<>();
+                if(includes != null && !includes.isEmpty()) {
                     // Parse includes
-                    includeColumns = Arrays.asList(includes.split(","));
-
-                    // Build list of columns
-                    Collection<String> newColumnNames = new ArrayList<>();
-
-                    for (Attribute curColumn : attributes.values()) {
-                        // Check and automatic add orderby column
-                        if (orderby != null && curColumn.getName().equals(orderby)) {
-                            newColumnNames.add(curColumn.getName());
-                            orderByAvailable = true;
-                            continue;
-                        }
-                        // Automatically add column if its a identity column
-                        if (curColumn.isIdentity()) {
-                            newColumnNames.add(curColumn.getName());
-                            // Check if id was given
-                            if (includes.contains(curColumn.getName())) {
-                                Message msg = new Message("Requested identity column "
-                                        + ">" + curColumn.getName() + "< will be delivered in every case. You do not "
-                                        + "have to list it in your measurementnames calling "
-                                        + "getData()", MessageLevel.INFO);
-                                Logger.addDebugMessage(msg);
-                            }
-                        } else if (includeColumns.contains(curColumn.getName())) {
-                            newColumnNames.add(curColumn.getName());
-                        }
-                    }
-
-                    // Check if there are columns requested not available                    
-                    for (String curColumnName : includeColumns) {
-                        if (!newColumnNames.contains(curColumnName)) {
-                            String msgstr = "There requested column >"
-                                    + curColumnName + "< is not available.";
-                            Message msg = new Message(msgstr, MessageLevel.WARNING);
-                            Logger.addDebugMessage(msg);
-                            this.preparedWarnings.get(stmtId).add(msgstr);
-                        }
-                    }
-
-                    includeColumns = newColumnNames;
-                }
-
-                // Exclude geo attribute, if geojson should be returned
-                if(geojsonattr != null) {
-                    includeColumns.remove(geojsonattr);
+                    requestedAttr = new ArrayList<>(Arrays.asList(includes.split(",")));
+                    attrsSelected = true;
                 }
                 
-                String mnamesstr = String.join("\",\"", includeColumns);
-                if (mnamesstr.contains("\"point\",")) {
-                    String replacement = "ST_X(ST_TRANSFORM(point,4674)) point_lon, ST_Y(ST_TRANSFORM(point,4674)) point_lat";
-                    mnamesstr = mnamesstr.replace("\"point\"", replacement);
+                // Build list of columns
+                ArrayList<String> queryColExrpessions = new ArrayList<>();
+                
+                for (Attribute curColumn : attributes.values()) {
+                    // Automatically add column if its a identity column
+                    if (curColumn.isIdentity()) {
+                        // Check if id was given
+                        if (requestedAttr.contains(curColumn.getName())) {
+                            Message msg = new Message("Requested identity attribute "
+                                    + ">" + curColumn.getName() + "< will be delivered in every case. You do not "
+                                    + "have to list it in your measurementnames calling "
+                                    + "getData()", MessageLevel.INFO);
+                            Logger.addDebugMessage(msg);
+                        } else {
+                            requestedAttr.add(curColumn.getName());
+                        }
+                    }
+                    
+                    // Check and automatic add orderby column
+                    if (orderby != null && curColumn.getName().equals(orderby)) {
+                        orderByAvailable = true;
+                        // Check if orderby column was given
+                        if (requestedAttr.contains(curColumn.getName())) {
+                            Message msg = new Message("Requested orderby attribute "
+                                    + ">" + curColumn.getName() + "< will be delivered in every case. You do not "
+                                    + "have to list it in your measurementnames calling "
+                                    + "getData()", MessageLevel.INFO);
+                            Logger.addDebugMessage(msg);
+                        } else {
+                            requestedAttr.add(curColumn.getName());
+                        }
+                    }
+                    
+                    // Go next if attribute is not requested
+                    if(attrsSelected && !requestedAttr.contains(curColumn.getName())) {
+                        continue;
+                    }
+                    
+                    // Exclude geo attribute, if geojson should be returned
+                    if(geojsonattr != null) {
+                        requestedAttr.remove(geojsonattr);
+                        continue;
+                    }
+                    
+                    // Create selection expression
+                    if(curColumn.getType().equalsIgnoreCase("bytea")) {
+                        // binary data should be fetched base64 encoded
+                        queryColExrpessions.add("ENCODE(\"" + curColumn.getName()+ "\", 'BASE64') " + curColumn.getName());
+//                    } else if(curColumn.getType().equalsIgnoreCase("geometry")) {
+//                        queryColExrpessions.add("ST_X(ST_TRANSFORM(\"" 
+//                        + curColumn.getName()+ "\",4674)) " 
+//                        + curColumn.getName()+ "_lon, ST_Y(ST_TRANSFORM(\"" 
+//                        + curColumn.getName()+ "\",4674)) " + curColumn.getName()+ "_lat");
+                    } else {
+                        queryColExrpessions.add("\"" + curColumn.getName() + "\"");
+                    }
+                    // Remove from requesteds list
+                    requestedAttr.remove(curColumn.getName());
                 }
 
+                // Check if there are columns requested not available    
+                if (!requestedAttr.isEmpty()) {
+                    String msgstr = "There requested columns >"
+                        + requestedAttr + "< are not available.";
+                    Message msg = new Message(msgstr, MessageLevel.WARNING);
+                    Logger.addDebugMessage(msg);
+                    this.preparedWarnings.get(stmtId).add(msgstr);
+                }
+                
+                String mnamesstr = String.join(",", queryColExrpessions);
+
                 // Create select names
-                sqlbuilder.append("\"");
                 sqlbuilder.append(mnamesstr);
-                sqlbuilder.append("\"");
             }
             
             // Build FROM ... WHERE clause (separate because in geojson request it must be placed on other location)
@@ -229,8 +244,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         frombuilder.append(" AND ");
                     }
                     String prepcode = curFilter.getPrepareCode();
-                    placeholders.put(curFilter.getFiltercode(), placeholderNo);
-                    curFilter.setFirstPlaceholder(placeholderNo);
+                    placeholders.put(curFilter.getPrepareCode(), placeholderNo);
                     placeholderNo += curFilter.getNumberOfPlaceholders();
                     frombuilder.append(prepcode);
                     i++;
@@ -337,7 +351,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
         return stmtId;
     }
-
+    
     @Override
     public PreparedStatement setQueryClauses(String stmtid, Collection<Filter> filters, int size, String page) throws DynException {
         PreparedStatement stmt = this.preparedStatements.get(stmtid);
@@ -345,6 +359,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
         for (Filter curFilter : filters) {
             try {
+                Integer placeholderpos = placeholders.get(curFilter.getPrepareCode());
+                curFilter.setFirstPlaceholder(placeholderpos);
                 stmt = curFilter.setFilterValue(stmt);
                 this.warnings.addAll(curFilter.getWarnings());
             } catch (FilterException ex) {
@@ -385,7 +401,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr) throws DynException {
         // Reset warnings for new get
         this.warnings = new ArrayList<>();
-
+        
         Configuration conf = new Configuration();
         String hardLimitStr = conf.getProperty("hardLimit");
         if(hardLimitStr != null) {
@@ -915,6 +931,26 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         JsonString jgeom = (JsonString) value;
                         pstmt.setObject(pindex, jgeom.getString());
                         break;
+                    case "bytea":
+                        JsonString jbytea = (JsonString) value;
+                        String sbytea = jbytea.getString();
+                        
+                        // Handle encoded media (from html elements like canvas)
+                        byte bytes[];
+                        String[] basecode = sbytea.split(";base64,",2);
+                        if (basecode.length > 1) {
+                            String encodedImg = basecode[1];
+                            bytes = java.util.Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
+                            InputStream targetStream = new ByteArrayInputStream(bytes);
+                            pstmt.setBinaryStream(pindex, targetStream);
+                        } else {
+                            Message msg = new Message(
+                                "DynDataPostgres", MessageLevel.WARNING,
+                                "Write to database does not support type >" + col.getType() + "< without base64 encodeing.");
+                            Logger.addDebugMessage(msg);
+                            this.warnings.add("Could not save value for >" + col.getName() + "<: Please provide binary data in base64 encoded form.");
+                        }
+                        break;
                     default:
                         Message msg = new Message(
                                 "DynDataPostgres", MessageLevel.WARNING,
@@ -962,8 +998,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     
     @Override
     public List<String> getWarnings() {
-        List<String> allwarns = this.preparedWarnings.get(this.lastStmtId);
-        allwarns.addAll(this.warnings);
+        List<String> allwarns = this.warnings;
+        allwarns.addAll(this.preparedWarnings.get(this.lastStmtId));
         return allwarns;
     }
 }
