@@ -1,6 +1,8 @@
 package de.fhbielefeld.smartdata.dbo;
 
 import java.util.ArrayList;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -11,6 +13,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author Florian Fehring
  */
 @XmlRootElement
+//@XmlAccessorType(XmlAccessType.FIELD) // Should avoid dulicate attribute error, but causes content before problem
 public class DataCollection {
     
     private String name;

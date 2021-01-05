@@ -547,6 +547,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 // Note placeholder
                 placeholders.put(curKey, foundCols);
             }
+            // Check if there is no data to insert
+            if(foundCols<1) {
+                throw new DynException("There is no data to insert");
+            }
+            
             // Put together
             sqlbuilder.append(colsstr);
             sqlbuilder.append("\") VALUES (");
