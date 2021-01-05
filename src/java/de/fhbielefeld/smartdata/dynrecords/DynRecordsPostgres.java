@@ -320,7 +320,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 // Create feature collection
                 newsqlsb.append("SELECT 'FeatureCollection' AS type, array_to_json(array_agg(f)) AS features  FROM (");
                 // Add type: "feature"
-                newsqlsb.append("SELECT 'feature' AS type");
+                newsqlsb.append("SELECT 'Feature' AS type");
                 // Add geometry information
                 newsqlsb.append(", ST_AsGeoJSON(\""+geojsonattr+"\")::json as geometry");
                 // Add properties attribute
