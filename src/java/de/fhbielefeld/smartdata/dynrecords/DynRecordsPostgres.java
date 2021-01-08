@@ -616,8 +616,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         this.warnings = new ArrayList<>();
         JsonReader jsonReader = Json.createReader(new StringReader(json));
         List<Object> ids = new ArrayList<>();
-        // Records, array or Single mode
-        if(json.startsWith("{\"records\":")) {
+        // Records, geojson, array or Single mode
+        if(json.startsWith("{\"type\":\"FeatureCollection\"")) {
+            JsonObject jsonobject = jsonReader.readObject();
+            jsonReader.close();
+            JsonArray featurearray = jsonobject.getJsonArray("features");
+            for(int i=0; i < featurearray.size(); i++) {
+                    ids.add(this.createFromGeojson(featurearray.getJsonObject(i)));
+            }
+        } else if(json.startsWith("{\"records\":")) {
             JsonObject jsonobject = jsonReader.readObject();
             jsonReader.close();
             JsonArray jsonarray = jsonobject.getJsonArray("records");
@@ -646,6 +653,89 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         return ids;
     }
 
+    /**
+     * Converts a geosjon Feature into one simple json dataset, converting geo 
+     * informations into WKT.
+     * 
+     * @param geojsonobj Geojson Feature object
+     * @return Result of the insertion
+     * @throws DynException 
+     */
+    public Object createFromGeojson(JsonObject geojsonobj) throws DynException {
+        JsonObjectBuilder databuilder = Json.createObjectBuilder();
+        // Check if geojson is valid
+        String featurestring = geojsonobj.getString("type");
+        if(featurestring == null || !featurestring.equals("Feature"))
+            throw new DynException("Given json is not valid geojson");
+        JsonObject geom = geojsonobj.getJsonObject("geometry");
+        // Check if there is a geometry
+        if(geom==null)
+            throw new DynException("Given json has no geometry information");
+        // Check if geometry has no type
+        if(geom.getString("type") == null)
+            throw new DynException("Given geometry has no type");
+        
+        List<JsonObject> geometries = new ArrayList<>();
+        // Check if geometry is collection
+        if(geom.getString("type").equals("GeometryCollection")) {
+            // Get all geometries
+            for(JsonValue curGeom : geom.getJsonArray("geometries")) {
+                geometries.add(curGeom.asJsonObject());
+            }
+        } else {
+            // If its not a collection its a single geometry (of any kind)
+            geometries.add(geom);
+        }
+        
+        // Add all geometrie informations to geometry fields in given order (because there is no nameing mechanism in geojson)
+        for(JsonValue curGeom : geometries) {
+            // Search matching attribute
+            for(Attribute curAttr : this.dyncollection.getGeoAttributes()) {
+                // Create WKT from geojson geometty
+                String wktsql = "SELECT ST_AsText(";
+                // Adding coordinate system transformation if its different
+                if(curAttr.getSrid() != 4326) {
+                    wktsql += "ST_Transform(";
+                }
+                // Check if geometry type is matching
+                if(!curGeom.asJsonObject().getString("type").equalsIgnoreCase(curAttr.getSubtype()))
+                    continue;
+                
+                wktsql += "ST_GeomFromGeoJSON('"+curGeom.toString()+"')";
+                if(curAttr.getSrid() != 4326) {
+                    wktsql += ","+curAttr.getSrid()+")";
+                }
+                wktsql += ") AS geom";
+
+                String wkt;
+                try {
+                    Statement wktstmt = this.con.createStatement();
+                    ResultSet wktrs = wktstmt.executeQuery(wktsql);
+                    wktrs.next();
+                    // No other reference system awaited from geojson (removed from geojson specification)
+                    wkt = "SRID="+curAttr.getSrid()+";" + wktrs.getString("geom");
+                    // Add WKT to import object
+                    databuilder.add(curAttr.getName(), wkt);
+                    break;
+                } catch (SQLException ex) {
+                    String msg = "Could not get WKT from geojson: " + ex.getLocalizedMessage();
+                    if(ex.getLocalizedMessage().contains("proj_crs_get_coordinate_system returned NULL"))
+                        msg = "Given coordinates and target coordinate system are not compatible";
+                    this.warnings.add(msg);
+                }
+            }
+        }
+        
+        JsonObject props = geojsonobj.getJsonObject("properties");
+        if(props != null) {
+            for(Entry<String,JsonValue> curProp : props.entrySet()) {
+                databuilder.add(curProp.getKey(), curProp.getValue());
+            }
+        }
+        
+        return this.create(databuilder.build());
+    }
+    
     @Override
     public Object create(JsonObject json) throws DynException {
         String pstmtid = this.getPreparedInsert(json);
