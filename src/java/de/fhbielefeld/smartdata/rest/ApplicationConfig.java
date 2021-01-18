@@ -8,7 +8,7 @@ import javax.ws.rs.core.Application;
  * 
  * @author Florian Fehring
  */
-@javax.ws.rs.ApplicationPath("smartdata/*")
+@javax.ws.rs.ApplicationPath("smartdata")
 public class ApplicationConfig extends Application {
 
     @Override
