@@ -134,15 +134,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             // Build up query
-            StringBuilder sqlbuilder = new StringBuilder();
+            StringBuilder selectbuilder = new StringBuilder();
             // Build up list of placeholders
             Map<String, Integer> placeholders = new HashMap<>();
             int placeholderNo = 1;
 
             if (countOnly) {
-                sqlbuilder.append("SELECT COUNT(*) AS count ");
+                selectbuilder.append("SELECT COUNT(*) AS count ");
             } else {
-                sqlbuilder.append("SELECT ");
+                selectbuilder.append("SELECT ");
 
                 // Parse and split requested attribute names
                 boolean attrsSelected = false;
@@ -155,7 +155,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 
                 // Build list of columns
                 ArrayList<String> queryColExrpessions = new ArrayList<>();
-                
+
                 for (Attribute curColumn : attributes.values()) {
                     // Automatically add column if its a identity column
                     if (curColumn.isIdentity()) {
@@ -166,7 +166,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                                     + "have to list it in your measurementnames calling "
                                     + "getData()", MessageLevel.INFO);
                             Logger.addDebugMessage(msg);
-                        } else {
+                        } else if(attrsSelected) {
                             requestedAttr.add(curColumn.getName());
                         }
                     }
@@ -181,7 +181,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                                     + "have to list it in your measurementnames calling "
                                     + "getData()", MessageLevel.INFO);
                             Logger.addDebugMessage(msg);
-                        } else {
+                        } else if(attrsSelected) {
                             requestedAttr.add(curColumn.getName());
                         }
                     }
@@ -192,7 +192,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     
                     // Exclude geo attribute, if geojson should be returned
-                    if(geojsonattr != null) {
+                    if(geojsonattr != null && curColumn.getName().equals(geojsonattr)) {
                         requestedAttr.remove(geojsonattr);
                         continue;
                     }
@@ -222,10 +222,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     this.preparedWarnings.get(stmtId).add(msgstr);
                 }
                 
-                String mnamesstr = String.join(",", queryColExrpessions);
-
+                String namesstr = String.join(",", queryColExrpessions);
                 // Create select names
-                sqlbuilder.append(mnamesstr);
+                selectbuilder.append(namesstr);
             }
             
             // Build FROM ... WHERE clause (separate because in geojson request it must be placed on other location)
@@ -287,23 +286,23 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 newsqlsb.append("SELECT DISTINCT \"");
                 newsqlsb.append(unique);
                 newsqlsb.append("\" FROM (");
-                newsqlsb.append(sqlbuilder);
+                newsqlsb.append(selectbuilder);
                 newsqlsb.append(") as aliastable");
-                sqlbuilder = newsqlsb;
+                selectbuilder = newsqlsb;
             }
 
             if(geojsonattr==null)
-                sqlbuilder.append(frombuilder);
+                selectbuilder.append(frombuilder);
             
-            String prespecsql = sqlbuilder.toString();
+            String prespecsql = selectbuilder.toString();
             
             // Modify select statement for export as json
             if (unique != null) {
                 StringBuilder newsqlsb = new StringBuilder();
                 newsqlsb.append("SELECT json_agg(t.\"" + unique + "\") from (");
-                newsqlsb.append(sqlbuilder.toString());
+                newsqlsb.append(selectbuilder.toString());
                 newsqlsb.append(") as t");
-                sqlbuilder = newsqlsb;
+                selectbuilder = newsqlsb;
             }
             
             // Remove null values
@@ -311,7 +310,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");
             rnullsqlsb.append(prespecsql);
             rnullsqlsb.append(") t");
-            sqlbuilder = rnullsqlsb;
+            selectbuilder = rnullsqlsb;
             
             if(geojsonattr != null) {
                 StringBuilder newsqlsb = new StringBuilder();
@@ -333,10 +332,10 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 newsqlsb.append(frombuilder);
                 newsqlsb.append(") AS f");
                 newsqlsb.append(") AS fc");
-                sqlbuilder = newsqlsb;
+                selectbuilder = newsqlsb;
             }
 
-            String stmt = sqlbuilder.toString();
+            String stmt = selectbuilder.toString();
             Message msg = new Message("DynDataPostgres", MessageLevel.INFO, "SQL: " + stmt);
             Logger.addDebugMessage(msg);
             try {
