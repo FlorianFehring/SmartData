@@ -169,6 +169,7 @@ public class RecordsResource {
             @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format",
                     schema = @Schema(type = STRING)) @QueryParam("geojsonattr") String geojsonattr,
+            @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
             @Parameter(description = "Package values into datasets") @QueryParam("deflatt") boolean deflatt) {
 
         if (storage == null) {
@@ -226,7 +227,7 @@ public class RecordsResource {
         }
 
         try {
-            String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr);
+            String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform);
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
             if (geojsonattr != null) {
@@ -278,7 +279,8 @@ public class RecordsResource {
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
             @Parameter(description = "If datasets should only be counted") @QueryParam("countonly") boolean countonly,
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
-            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr) {
+            @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr,
+            @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform) {
 
         if (storage == null) {
             storage = "public";
@@ -328,7 +330,7 @@ public class RecordsResource {
         }
 
         try {
-            String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr);
+            String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr, geotransform);
             if (json.equals("{}")) {
                 json = "[]";
             }

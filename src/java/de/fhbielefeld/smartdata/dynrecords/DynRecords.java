@@ -30,11 +30,12 @@ public interface DynRecords extends Dyn {
      * @param deflatt If true a single dataset should be deflatted into multiple
      * datasets
      * @param geojsonattr Attribut that holds position for geojson
+     * @param geotransform Type of the transform that should be applied to geometry columns (EPSG code or 'latlon')
      * 
      * @return Id of the generated statement and placeholdermap
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
-    public abstract String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr) throws DynException;
+    public abstract String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException;
 
     /**
      * Sets the clauses (WHERE, LIMIT, ...) on a prepared statement.
@@ -63,11 +64,12 @@ public interface DynRecords extends Dyn {
      * @param deflatt If true a single dataset should be deflatted into multiple
      * datasets
      * @param geojsonattr Attribut that holds data for geo location
+     * @param geotransform Type of the transform that should be applied to geometry columns (EPSG code or 'latlon')
      *
      * @return JSON representation of the data
      * @throws DynException
      */
-    public abstract String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr) throws DynException;
+    public abstract String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException;
 
     /**
      * Prepares the code for insertion of data

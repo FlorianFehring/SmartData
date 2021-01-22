@@ -71,7 +71,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr) throws DynException {
+    public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException {
         // Build statement id string
         String stmtId = "";
         stmtId += this.schema + '_' + this.table;
@@ -94,6 +94,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         if(geojsonattr != null) {
             stmtId += "_geo" + geojsonattr;
+        }
+        if(geotransform != null) {
+            stmtId += "_geot" + geotransform;
         }
 
         stmtId += countOnly;
@@ -154,7 +157,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 }
                 
                 // Build list of columns
-                ArrayList<String> queryColExrpessions = new ArrayList<>();
+                ArrayList<String> queryColExpressions = new ArrayList<>();
 
                 for (Attribute curColumn : attributes.values()) {
                     // Automatically add column if its a identity column
@@ -200,14 +203,21 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     // Create selection expression
                     if(curColumn.getType().equalsIgnoreCase("bytea")) {
                         // binary data should be fetched base64 encoded
-                        queryColExrpessions.add("ENCODE(\"" + curColumn.getName()+ "\", 'BASE64') " + curColumn.getName());
-//                    } else if(curColumn.getType().equalsIgnoreCase("geometry")) {
-//                        queryColExrpessions.add("ST_X(ST_TRANSFORM(\"" 
-//                        + curColumn.getName()+ "\",4674)) " 
-//                        + curColumn.getName()+ "_lon, ST_Y(ST_TRANSFORM(\"" 
-//                        + curColumn.getName()+ "\",4674)) " + curColumn.getName()+ "_lat");
+                        queryColExpressions.add("ENCODE(\"" + curColumn.getName()+ "\", 'BASE64') " + curColumn.getName());
+                    } else if(curColumn.getType().equalsIgnoreCase("geometry") && geotransform != null) {
+                        // Convert to latlon output
+                        if(geotransform.equalsIgnoreCase("latlon")) {
+                            queryColExpressions.add("ST_X(ST_TRANSFORM(\"" 
+                            + curColumn.getName()+ "\",4674)) " 
+                            + curColumn.getName()+ "_lon, ST_Y(ST_TRANSFORM(\"" 
+                            + curColumn.getName()+ "\",4674)) " + curColumn.getName()+ "_lat");
+                        } else {
+                            // Treat as EPSG code
+                            queryColExpressions.add("ST_TRANSFORM(\"" 
+                            + curColumn.getName()+ "\","+geotransform+") " + curColumn.getName());
+                        }
                     } else {
-                        queryColExrpessions.add("\"" + curColumn.getName() + "\"");
+                        queryColExpressions.add("\"" + curColumn.getName() + "\"");
                     }
                     // Remove from requesteds list
                     requestedAttr.remove(curColumn.getName());
@@ -222,7 +232,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     this.preparedWarnings.get(stmtId).add(msgstr);
                 }
                 
-                String namesstr = String.join(",", queryColExrpessions);
+                String namesstr = String.join(",", queryColExpressions);
                 // Create select names
                 selectbuilder.append(namesstr);
             }
@@ -313,6 +323,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             selectbuilder = rnullsqlsb;
             
             if(geojsonattr != null) {
+                // Get geojsonattr information
+                Attribute geoattr = attributes.get(geojsonattr);
                 StringBuilder newsqlsb = new StringBuilder();
                 // Package into one json
                 newsqlsb.append("SELECT row_to_json(fc) AS json FROM (");
@@ -321,7 +333,28 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 // Add type: "feature"
                 newsqlsb.append("SELECT 'Feature' AS type");
                 // Add geometry information
-                newsqlsb.append(", ST_AsGeoJSON(\""+geojsonattr+"\")::json as geometry");
+                newsqlsb.append(", ST_AsGeoJSON(");
+                // Add transformation if needed
+                if(geoattr.getDimension() == 2 && geoattr.getSrid() != 4326) {
+                    newsqlsb.append("ST_Transform(");
+                }
+                if(geoattr.getDimension() == 3 && geoattr.getSrid() != 4979) {
+                    newsqlsb.append("ST_Transform(");
+                }
+                newsqlsb.append("\"");
+                newsqlsb.append(geojsonattr);
+                newsqlsb.append("\"");
+                
+                // Add transformation if needed
+                if(geoattr.getDimension() == 2 && geoattr.getSrid() != 4326) {
+                    newsqlsb.append(",4326)");
+                }
+                if(geoattr.getDimension() == 3 && geoattr.getSrid() != 4979) {
+                    newsqlsb.append(",4979)");
+                }
+                
+                newsqlsb.append(")::json as geometry");
+                
                 // Add properties attribute
                 newsqlsb.append(", (");
                 // Filter null values
@@ -397,7 +430,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr) throws DynException {
+    public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException {
         // Reset warnings for new get
         this.warnings = new ArrayList<>();
         
@@ -415,7 +448,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         
         try {
             // Prepare query or get allready prepeared one
-            String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr);
+            String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
             // Fill prepared query with data
             PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page);
             ResultSet rs = pstmt.executeQuery();
