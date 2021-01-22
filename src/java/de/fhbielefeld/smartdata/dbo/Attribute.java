@@ -3,7 +3,7 @@ package de.fhbielefeld.smartdata.dbo;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * Represemts attribute information
+ * Represents attribute information
  * 
  * @author Florian Fehring
  */
