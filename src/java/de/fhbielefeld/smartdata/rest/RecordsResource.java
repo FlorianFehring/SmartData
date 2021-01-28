@@ -16,6 +16,7 @@ import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.dynrecords.DynRecords;
 import de.fhbielefeld.smartdata.dynrecords.DynRecordsMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
+import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +68,7 @@ public class RecordsResource {
     @Path("{collection}/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Creates a new dataset",
             description = "Creates a new dataset stored in database")
     @APIResponse(
@@ -147,6 +149,7 @@ public class RecordsResource {
     @GET
     @Path("{collection}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Gets a dataset",
             description = "Delivers a dataset from database")
     @APIResponse(
@@ -254,6 +257,7 @@ public class RecordsResource {
     @GET
     @Path("{collection}/")
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Lists datasets from database",
             description = "Lists datasets from database that are matching the parameters.")
     @APIResponse(
@@ -360,6 +364,7 @@ public class RecordsResource {
     @PUT
     @Path("{collection}/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Updates a dataset",
             description = "Updates an existing dataset. Does nothing if the dataset does not exists.")
     @APIResponse(
@@ -420,6 +425,7 @@ public class RecordsResource {
     @PUT
     @Path("{collection}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Updates multiple datasets",
             description = "Updates existing datasets. The identity attribute must be included in the json.")
     @APIResponse(
@@ -478,6 +484,7 @@ public class RecordsResource {
 
     @DELETE
     @Path("{collection}/{id}")
+    @SmartUserAuth
     @Operation(summary = "Deletes a dataset",
             description = "Deletes a dataset from database.")
     @APIResponse(

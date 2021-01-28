@@ -10,6 +10,7 @@ import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 import de.fhbielefeld.smartdata.dyncollection.DynCollectionMongo;
 import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
+import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 import java.util.List;
 import javax.naming.NamingException;
 import javax.ws.rs.Produces;
@@ -55,6 +56,7 @@ public class CollectionResource {
 
     @POST
     @Path("{collection}/create")
+    @SmartUserAuth
     @Operation(summary = "Creates a collection",
             description = "Creates a collection based on the definition given.")
     @APIResponse(
@@ -127,6 +129,7 @@ public class CollectionResource {
     @GET
     @Path("{collection}/getAttributes")
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Lists attributes of a collection",
             description = "Lists all attributes of a collection and gives base information about them.")
     @APIResponse(
@@ -197,6 +200,7 @@ public class CollectionResource {
     @PUT
     @Path("{collection}/addAttributes")
     @Consumes(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Adds attributes",
             description = "Adds attributes to a collection.")
     @APIResponse(
@@ -260,6 +264,7 @@ public class CollectionResource {
 
     @PUT
     @Path("{collection}/changeAttribute")
+    @SmartUserAuth
     @Operation(summary = "Changes the srid of a attribute",
             description = "Changes the srid of a attribute")
     @APIResponse(

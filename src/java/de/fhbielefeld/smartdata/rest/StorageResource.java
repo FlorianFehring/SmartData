@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import de.fhbielefeld.smartdata.dynstorage.DynStorage;
 import de.fhbielefeld.smartdata.dynstorage.DynStorageMongo;
+import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 
 /**
  * Resource for accessing database informations
@@ -51,6 +52,7 @@ public class StorageResource {
     @POST
     @Path("create")
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Creates a new storage",
             description = "Creates a new storage")
     @APIResponse(
@@ -113,6 +115,7 @@ public class StorageResource {
     @GET
     @Path("getAbilities")
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Lists all abilities",
             description = "Lists all abilities of a storage")
     @APIResponse(
@@ -168,6 +171,7 @@ public class StorageResource {
     @GET
     @Path("getCollections")
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Lists all collections",
             description = "Lists all collections of a storage")
     @APIResponse(
@@ -223,6 +227,7 @@ public class StorageResource {
     @DELETE
     @Path("delete")
     @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
     @Operation(summary = "Deletes a storage",
             description = "Deletes a storage and all its contents")
     @APIResponse(
