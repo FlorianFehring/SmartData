@@ -1017,8 +1017,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 switch (col.getType()) {
                     case "text":
                     case "varchar":
-                        JsonString jstr = (JsonString) value;
-                        pstmt.setString(pindex, jstr.getString());
+                        if (value.getValueType() == ValueType.NUMBER) {
+                            pstmt.setString(pindex, value.toString());
+                        } else {
+                            JsonString jstr = (JsonString) value;
+                            pstmt.setString(pindex, jstr.getString());
+                        }
                         break;
                     case "bool":
                         // Isn't there a better method to get the boolean value?
