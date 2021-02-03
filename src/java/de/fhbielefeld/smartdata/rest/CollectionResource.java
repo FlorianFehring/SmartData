@@ -55,7 +55,7 @@ public class CollectionResource {
     }
 
     @POST
-    @Path("{collection}/create")
+    @Path("{collection}")
     @SmartUserAuth
     @Operation(summary = "Creates a collection",
             description = "Creates a collection based on the definition given.")
@@ -127,10 +127,10 @@ public class CollectionResource {
     }
 
     @GET
-    @Path("{collection}/getAttributes")
+    @Path("{collection}")
     @Produces(MediaType.APPLICATION_JSON)
     @SmartUserAuth
-    @Operation(summary = "Lists attributes of a collection",
+    @Operation(summary = "Gets the definition of the collection",
             description = "Lists all attributes of a collection and gives base information about them.")
     @APIResponse(
             responseCode = "200",
@@ -151,7 +151,7 @@ public class CollectionResource {
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
-    public Response getAttributes(
+    public Response get(
             @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
