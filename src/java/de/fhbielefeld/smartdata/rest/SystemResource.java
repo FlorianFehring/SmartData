@@ -5,11 +5,11 @@ import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Map.Entry;
 import javax.naming.NamingException;
@@ -140,9 +140,10 @@ public class SystemResource {
             rob.add("appid", MAC);
         }
         // HTTPS support check
+        HttpURLConnection conn = null;
         try {
-            URL masterURL = new URL("https://google.de");
-            final URLConnection conn = masterURL.openConnection();
+            URL httpsCheck = new URL("https://www.fh-bielefeld.de/");
+            conn = (HttpURLConnection) httpsCheck.openConnection();
             conn.setConnectTimeout(1000);
             conn.connect();
             rob.add("httpsSupported", true);
@@ -152,17 +153,25 @@ public class SystemResource {
         } catch (NoSuchMethodError ex) {
             rob.add("httpsSupported", false);
             System.err.println("DEBUG (SystemBean): There is no https support, because of missing method: " + ex.getLocalizedMessage());
+        } finally {
+            if(conn != null)
+                conn.disconnect();
         }
+        
         // Internet conectivity check
+        HttpURLConnection con2 = null;
         try {
-            final URL url = new URL("http://www.google.de");
-            final URLConnection conn = url.openConnection();
-            conn.setConnectTimeout(1000);
-            conn.connect();
+            URL httpsCheck = new URL("http://www.fh-bielefeld.de/");
+            con2 = (HttpURLConnection) httpsCheck.openConnection();
+            con2.setConnectTimeout(1000);
+            con2.connect();
             rob.add("internetConnectivity", true);
         } catch (IOException ex) {
             rob.add("internetConnectivity", false);
-            System.err.println("Could not connect to google.de " + ex.getLocalizedMessage());
+            System.err.println("Could not connect to, because of: " + ex.getLocalizedMessage());
+        } finally {
+            if(conn != null)
+                conn.disconnect();
         }
 
         rob.add("systemJavaVendor", System.getProperty("java.vendor"));
