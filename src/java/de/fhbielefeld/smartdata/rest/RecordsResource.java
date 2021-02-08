@@ -2,6 +2,8 @@ package de.fhbielefeld.smartdata.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
+import de.fhbielefeld.scl.logger.message.Message;
+import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dbo.Attribute;
@@ -17,9 +19,13 @@ import de.fhbielefeld.smartdata.dynrecords.DynRecords;
 import de.fhbielefeld.smartdata.dynrecords.DynRecordsMongo;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
+import de.fhbielefeld.smartuser.securitycontext.SmartPrincipal;
+import de.fhbielefeld.smartuser.securitycontext.SmartSecurityContext;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.logging.Level;
 import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
@@ -30,8 +36,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PUT;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import static org.eclipse.microprofile.openapi.annotations.enums.SchemaType.STRING;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -72,7 +82,7 @@ public class RecordsResource {
     @Operation(summary = "Creates a new dataset",
             description = "Creates a new dataset stored in database")
     @APIResponse(
-            responseCode = "200",
+            responseCode = "201",
             description = "Primary key of the new created dataset.",
             content = @Content(
                     mediaType = "text/plain",
@@ -127,9 +137,9 @@ public class RecordsResource {
                 for (String curWarning : dynr.getWarnings()) {
                     rob.addWarningMessage(curWarning);
                 }
-                rob.setStatus(Response.Status.OK);
+                rob.setStatus(Response.Status.CREATED);
             } else {
-                Response.ResponseBuilder rb = Response.status(Response.Status.OK);
+                Response.ResponseBuilder rb = Response.status(Response.Status.CREATED);
                 String idstr = ids.toString().replace("[", "").replace("]", "").replace(" ", "");
                 rb.entity(idstr);
                 return rb.build();
@@ -284,7 +294,8 @@ public class RecordsResource {
             @Parameter(description = "If datasets should only be counted") @QueryParam("countonly") boolean countonly,
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr,
-            @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform) {
+            @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
+            @Context ContainerRequestContext requestContext) {
 
         if (storage == null) {
             storage = "public";
@@ -316,6 +327,46 @@ public class RecordsResource {
             return rob.toResponse();
         }
 
+        // Check if there is a request context and user has restricted rights
+        if (requestContext != null) {
+            String contextInfo = null;
+            SecurityContext sc = requestContext.getSecurityContext();
+            if (sc != null) {
+                SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
+                if (sp != null) {
+                    String ids = sp.getContextIds()+"";
+                    // Replace unwanted chars
+                    ids = ids.replaceAll(" ", "")
+                            .replace("[", "")
+                            .replace("]", "");
+                    // Create filter if there is no one
+                    if (filter == null) {
+                        filter = "";
+                    }
+                    Attribute idattr;
+                    try {
+                        // Get identity column (only first identity supported)
+                        idattr = dync.getIdentityAttributes().get(0);
+                    } catch (DynException ex) {
+                        rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+                        rob.addErrorMessage("Could not get identity column.");
+                        return rob.toResponse();
+                    }
+                    // Write filter
+                    filter = idattr.getName() + ",in," + ids;
+                } else {
+                    contextInfo = "No user identified!";
+                }
+            } else {
+                contextInfo = "No SecurityContext in Requestcontext found!";
+            }
+
+            if (contextInfo != null) {
+                Message msg = new Message(contextInfo, MessageLevel.INFO);
+                Logger.addDebugMessage(msg);
+            }
+        }
+        
         List<Filter> filters = new ArrayList<>();
 
         try {

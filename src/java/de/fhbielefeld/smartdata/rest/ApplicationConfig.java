@@ -32,6 +32,7 @@ public class ApplicationConfig extends Application {
         resources.add(de.fhbielefeld.smartdata.rest.StorageResource.class);
         resources.add(de.fhbielefeld.smartdata.rest.SystemResource.class);
         resources.add(de.fhbielefeld.smartuser.rest.AuthenticationFilter.class);
+        resources.add(de.fhbielefeld.smartuser.rest.OwnershipFilter.class);
     }
     
 }
