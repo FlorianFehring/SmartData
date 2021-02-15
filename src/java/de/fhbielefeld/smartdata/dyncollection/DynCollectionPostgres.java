@@ -61,7 +61,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 texists = rs.next();
             }
         } catch (SQLException ex) {
-            DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
+            DynException dex = new DynException("Could not check dataset exists: Could not get schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
             throw dex;
         }
@@ -170,7 +170,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 }
             }
         } catch (SQLException ex) {
-            DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
+            DynException dex = new DynException("Could not get attributes: Could not get schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
             throw dex;
         }
@@ -194,7 +194,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             }
             rs.close();
         } catch (SQLException ex) {
-            DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
+            DynException dex = new DynException("Could not get attribute: Could not schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
             throw dex;
         }
@@ -265,7 +265,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 sridrs.close();
             }
         } catch (SQLException ex) {
-            DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
+            DynException dex = new DynException("Could not get coulmn object: Could not get schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
             throw dex;
         }
@@ -308,7 +308,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                         "SELECT UpdateGeometrySRID('" + this.schema + "', '"
                         + this.name + "','" + curCol.getName() + "'," + curCol.getSrid() + ")");
             } catch (SQLException ex) {
-                DynException dex = new DynException("Could not get schema information: " + ex.getLocalizedMessage());
+                DynException dex = new DynException("Could not change attributes: Could not get schema information: " + ex.getLocalizedMessage());
                 dex.addSuppressed(ex);
                 throw dex;
             }

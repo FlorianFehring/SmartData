@@ -172,7 +172,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
             }
             rs.close();
         } catch (SQLException ex) {
-            DynException dex = new DynException("Could not get schema information");
+            DynException dex = new DynException("Could not get storage: Could not get schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
             throw dex;
         }
