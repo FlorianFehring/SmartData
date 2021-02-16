@@ -478,7 +478,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
      * @return 
      */
     private String deflatt(String json) {
-        Map<Integer,Map<String,JsonValue>> newdatamap = new HashMap<>() {};
+        Map<Integer,Map<String,JsonValue>> newdatamap = new HashMap<>();
         // Parse json
         JsonParser parser = Json.createParser(new StringReader(json));
         parser.next();
