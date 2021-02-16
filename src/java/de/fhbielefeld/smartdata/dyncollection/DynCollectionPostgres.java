@@ -105,15 +105,31 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     }
                 }
                 sql += ")";
+                commitlock.acquire();
                 this.con.setAutoCommit(true);
                 Statement stmt = this.con.createStatement();
                 stmt.executeUpdate(sql);
                 this.con.setAutoCommit(false);
                 created = true;
             } catch (SQLException ex) {
-                Message msg = new Message("Could not create table >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                Message msg = new Message("Could not create collection >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 msg.addException(ex);
                 Logger.addMessage(msg);
+            } catch (Exception ex) {
+                Message msg = new Message("Could not create collection >" + this.schema
+                        + "." + this.name + "< an >" + ex.getClass().getSimpleName()
+                        + "< occured: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                msg.addException(ex);
+                Logger.addMessage(msg);
+            } finally {
+                try {
+                    this.con.setAutoCommit(true);
+                } catch (SQLException ex) {
+                    Message msg = new Message("DynDataPostgres/create",
+                            MessageLevel.ERROR, "Could not reset autocomit mode to true!");
+                    Logger.addDebugMessage(msg);
+                }
+                commitlock.release();
             }
         }
         return created;
@@ -132,6 +148,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             i++;
         }
         try {
+            commitlock.acquire();
             this.con.setAutoCommit(true);
             Statement stmt = this.con.createStatement();
             stmt.executeUpdate(sql);
@@ -141,6 +158,21 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             Message msg = new Message("Could not add columns to >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
             msg.addException(ex);
             Logger.addMessage(msg);
+        } catch (Exception ex) {
+            Message msg = new Message("Could not addAttributes >" + this.schema
+                    + "." + this.name + "< an >" + ex.getClass().getSimpleName()
+                    + "< occured: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+            msg.addException(ex);
+            Logger.addMessage(msg);
+        } finally {
+            try {
+                this.con.setAutoCommit(true);
+            } catch (SQLException ex) {
+                Message msg = new Message("DynCollectionPostgres/addAttributes",
+                        MessageLevel.ERROR, "Could not reset autocomit mode to true!");
+                Logger.addDebugMessage(msg);
+            }
+            commitlock.release();
         }
 
         return created;
@@ -148,7 +180,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public Map<String, Attribute> getAttributes() throws DynException {
-        if(!this.attributes.isEmpty()) {
+        if (!this.attributes.isEmpty()) {
             return this.attributes;
         }
         try {
@@ -293,7 +325,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         }
         return geoattrs;
     }
-    
+
     @Override
     public void changeAttributeName(String oldname, String newname) throws DynException {
         throw new UnsupportedOperationException();

@@ -139,6 +139,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
         boolean storageExists = this.storageExists(name);
         if (!storageExists) {
             try {
+                commitlock.acquire();
                 this.con.setAutoCommit(true);
                 Statement stmt = this.con.createStatement();
                 stmt.executeUpdate("CREATE SCHEMA " + name);
@@ -148,6 +149,20 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
                 Message msg = new Message("Could not create schema >" + name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 msg.addException(ex);
                 Logger.addMessage(msg);
+            } catch (Exception ex) {
+                Message msg = new Message("Could not create chema >" + name + "< an >" + ex.getClass().getSimpleName()
+                        + "< occured: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                msg.addException(ex);
+                Logger.addMessage(msg);
+            } finally {
+                try {
+                    this.con.setAutoCommit(true);
+                } catch (SQLException ex) {
+                    Message msg = new Message("DynStoragePostgres/create",
+                            MessageLevel.ERROR, "Could not reset autocomit mode to true!");
+                    Logger.addDebugMessage(msg);
+                }
+                commitlock.release();
             }
         }
         return created;
@@ -212,15 +227,30 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
         boolean storageExists = this.storageExists(name);
         if (storageExists) {
             try {
+                commitlock.acquire();
                 this.con.setAutoCommit(true);
                 Statement stmt = this.con.createStatement();
                 stmt.executeUpdate("DROP SCHEMA " + name + " CASCADE");
                 this.con.setAutoCommit(false);
                 deleted = true;
             } catch (SQLException ex) {
-                Message msg = new Message("Could not delete schema >" + name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                Message msg = new Message("Could not delete storage >" + name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 msg.addException(ex);
                 Logger.addMessage(msg);
+            } catch (Exception ex) {
+                Message msg = new Message("Could not delete storage >" + name + "< an >" + ex.getClass().getSimpleName()
+                        + "< occured: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                msg.addException(ex);
+                Logger.addMessage(msg);
+            } finally {
+                try {
+                    this.con.setAutoCommit(true);
+                } catch (SQLException ex) {
+                    Message msg = new Message("DynStoragePostgres/deleteStorage",
+                            MessageLevel.ERROR, "Could not reset autocomit mode to true!");
+                    Logger.addDebugMessage(msg);
+                }
+                commitlock.release();
             }
         }
         return deleted;

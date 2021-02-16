@@ -790,6 +790,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
         }
         try {
+            // Prevent process form accessing manual comit mode, if other process
+            // is in manual comit mode (on any other location)
+            commitlock.acquire();
             this.con.setAutoCommit(false);
             pstmt.executeUpdate();
             pstmt.close();
@@ -821,8 +824,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         } catch (Exception ex) {
             try {
                 Message msg = new Message("DynDataPostgres/create",MessageLevel.ERROR, 
-                        "Catched an unexpected " + ex.getClass().getSimpleName() 
-                                + " exception:" + ex.getLocalizedMessage());
+                        "Catched an unexpected >" + ex.getClass().getSimpleName() 
+                                + "< exception:" + ex.getLocalizedMessage());
                 Logger.addDebugMessage(msg);
                 pstmt.close();
                 this.con.rollback();
@@ -839,10 +842,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             try {
                 this.con.setAutoCommit(true);
             } catch(SQLException ex) {
-                Message msg = new Message("DynDataPostgres/create",
+                Message msg = new Message("DynRecordsPostgres/create",
                         MessageLevel.ERROR,"Could not reset autocomit mode to true!");
                 Logger.addDebugMessage(msg);
             }
+            commitlock.release();
         }
     }
     
