@@ -811,16 +811,37 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 pstmt.close();
                 this.con.rollback();
             } catch(SQLException ex1) {
-                System.err.println("Could not close statement: " + ex1.getLocalizedMessage());
+                Message msg = new Message("DynDataPostgres/create",
+                        MessageLevel.ERROR,"Could not rollback: " + ex1.getLocalizedMessage());
+                Logger.addDebugMessage(msg);
             }
             DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
             throw de;
+        } catch (Exception ex) {
+            try {
+                Message msg = new Message("DynDataPostgres/create",MessageLevel.ERROR, 
+                        "Catched an unexpected " + ex.getClass().getSimpleName() 
+                                + " exception:" + ex.getLocalizedMessage());
+                Logger.addDebugMessage(msg);
+                pstmt.close();
+                this.con.rollback();
+            } catch(SQLException ex1) {
+                Message msg = new Message("DynDataPostgres/create",
+                        MessageLevel.ERROR,"Could not rollback: " + ex1.getLocalizedMessage());
+                Logger.addDebugMessage(msg);
+            }
+            DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
+            de.addSuppressed(ex);
+            throw de;
+        
         } finally {
             try {
-           this.con.setAutoCommit(true);
+                this.con.setAutoCommit(true);
             } catch(SQLException ex) {
-            System.err.println("ERROR: Could not set autocommit mode!");
+                Message msg = new Message("DynDataPostgres/create",
+                        MessageLevel.ERROR,"Could not reset autocomit mode to true!");
+                Logger.addDebugMessage(msg);
             }
         }
     }
