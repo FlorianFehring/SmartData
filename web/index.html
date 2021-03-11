@@ -10,19 +10,69 @@
 
         <script src="/SWAC/libs/uikit/js/uikit.min.js"></script>
         <script src="/SWAC/swac/swac.js"></script>
+        <script src="index.js"></script>
     </head>
     <body>
         <h1>SmartData</h1>
         <p>This is the information page about this SmartData instance.</p>
-        <h2>Documentations for useing the REST interface</h2>
-        <dl class="uk-list">
-            <dt>swagger REST documentation</dt>
-            <dd><a href="/swagger">Documentation with live tryout</a></dd>
-            <dt>Full documentation</dt>
-            <dd><a href="http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/home">Full specification behavior and testcases</a></dd>
-        </dl>
-        <h2>Configuration</h2>
-        <p>This SmartData instance is runing with the following configuration:</p>
-        <div id="smartdata_config" swa="Present FROM system/config"></div>
+
+        <ul uk-accordion>
+            <li class="uk-open">
+                <a class="uk-accordion-title" href="#">API documentation</a>
+                <div class="uk-accordion-content">
+                    <p>This SmartData instance can be accessed by REST API.</p>
+                    <div class="uk-child-width-1-3@m uk-grid-small uk-grid-match" uk-grid>
+                        <div>
+                            <div class="uk-card uk-card-default uk-card-body">
+                                <h3 class="uk-card-title">Swagger UI</h3>
+                                <a class="smartdata_swaggerlink" href="/swagger">
+                                    <img src="pics/swagger.png" width="150" height = "150" alt="Swagger UI">
+                                    <p>-> Documentation with live tryout</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="uk-card uk-card-primary uk-card-body">
+                                <h3 class="uk-card-title">Smart*Ecosystem</h3>
+                                <a href="http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring">
+                                    <img src="pics/SmartEcosystemLogo.jpg" width="150" height = "150" alt="Smart*Ecosystem">
+                                    <p>-> SmartData is part of Smart*Ecosystem</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="uk-card uk-card-secondary uk-card-body">
+                                <h3 class="uk-card-title">Full API Specification</h3>
+                                <a href="http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/home">
+                                    <img src="pics/SmartDataLogo.jpg" width="150" height = "150" alt="SmartDataAPI">
+                                    <p>-> Full specification behavior and testcases</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <a class="uk-accordion-title" href="#">Available tables</a>
+                <div class="uk-accordion-content">
+                    <p>This SmartData instance grants access to the folowing tables:</p>
+                    <div id="smartdata_tables" swa="Present FROM storage/getCollections TEMPLATE table_for_all_datasets"></div>
+                </div>
+            </li>
+            <li>
+                <a class="uk-accordion-title" href="#">ER-Diagram</a>
+                <div class="uk-accordion-content">
+                    <p>Below is the ER-Diagram of data behind this SmartData instance</p>
+                    <img class="smartdata_er" src="../SmartData/ER/" alt="ER-Diagram of data behind this SmartData instance">
+                </div>
+            </li>
+            <li>
+                <a class="uk-accordion-title" href="#">SmartData configuration</a>
+                <div class="uk-accordion-content">
+                    <p>This SmartData instance is runing with the following configuration:</p>
+                    <div id="smartdata_config" swa="Present FROM system/config"></div>
+                </div>
+            </li>
+        </ul>
     </body>
 </html>
