@@ -116,7 +116,6 @@ public class RecordsResource {
             rob.addException(ex);
             return rob.toResponse();
         }
-
         try {
             List<Object> ids = dynr.create(json);
             // Use TreeQL specification extension
@@ -135,6 +134,12 @@ public class RecordsResource {
                 }
                 rob.setStatus(Response.Status.CREATED);
             } else {
+                if (!dynr.getWarnings().isEmpty()) {
+                    System.out.println("Warnings occured, that can't be deliverd");
+                    for (String curWarning : dynr.getWarnings()) {
+                        System.out.println(curWarning);
+                    }
+                }
                 Response.ResponseBuilder rb = Response.status(Response.Status.CREATED);
                 String idstr = ids.toString().replace("[", "").replace("]", "").replace(" ", "");
                 rb.entity(idstr);
@@ -143,6 +148,8 @@ public class RecordsResource {
         } catch (DynException ex) {
             if (ex.getLocalizedMessage().contains("Unique-Constraint")) {
                 rob.setStatus(Response.Status.CONFLICT);
+            } else if(ex.getLocalizedMessage().contains("does not exists")) {
+                rob.setStatus(Response.Status.NOT_FOUND);
             } else {
                 rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             }
@@ -330,7 +337,7 @@ public class RecordsResource {
             if (sc != null) {
                 SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
                 if (sp != null) {
-                    String ids = sp.getContextIds()+"";
+                    String ids = sp.getContextIds() + "";
                     // Replace unwanted chars
                     ids = ids.replaceAll(" ", "")
                             .replace("[", "")
@@ -362,7 +369,7 @@ public class RecordsResource {
                 Logger.addDebugMessage(msg);
             }
         }
-        
+
         List<Filter> filters = new ArrayList<>();
 
         try {

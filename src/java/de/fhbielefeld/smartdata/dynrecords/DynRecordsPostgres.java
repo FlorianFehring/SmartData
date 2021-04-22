@@ -661,21 +661,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             jsonReader.close();
             JsonArray jsonarray = jsonobject.getJsonArray("records");
             for(int i=0; i < jsonarray.size(); i++) {
-                try {
-                    ids.add(this.create(jsonarray.getJsonObject(i)));
-                } catch(DynException ex) {
-                    this.warnings.add(ex.getLocalizedMessage());
-                }
+                ids.add(this.create(jsonarray.getJsonObject(i)));
             }
         } else if(json.startsWith("[")) {
             JsonArray jsonarray = jsonReader.readArray();
             jsonReader.close();
             for(int i=0; i < jsonarray.size(); i++) {
-                try {
-                    ids.add(this.create(jsonarray.getJsonObject(i)));
-                } catch(DynException ex) {
-                    this.warnings.add(ex.getLocalizedMessage());
-                }
+                ids.add(this.create(jsonarray.getJsonObject(i)));
             }
         } else {
             JsonObject jsonobject = jsonReader.readObject();
@@ -770,11 +762,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     
     @Override
     public Object create(JsonObject json) throws DynException {
+        if(json.isEmpty()) {
+            throw new DynException("Given json is empty");
+        }
         String pstmtid = this.getPreparedInsert(json);
         PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
         Map<String, Attribute> columns = this.dyncollection.getAttributes();
-
         for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
             String jkey = curEntry.getKey();
             // Check if table expects that data
