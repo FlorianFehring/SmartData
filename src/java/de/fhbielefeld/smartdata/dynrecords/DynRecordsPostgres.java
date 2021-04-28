@@ -1149,7 +1149,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     @Override
     public List<String> getWarnings() {
         List<String> allwarns = this.warnings;
-        allwarns.addAll(this.preparedWarnings.get(this.lastStmtId));
+        List<String> stmtwarns = this.preparedWarnings.get(this.lastStmtId);
+        if(stmtwarns != null)
+            allwarns.addAll(stmtwarns);
         return allwarns;
     }
 }
