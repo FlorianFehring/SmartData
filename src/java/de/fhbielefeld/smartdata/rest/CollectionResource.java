@@ -140,7 +140,7 @@ public class CollectionResource {
                     example = "{\"attributes\" : [ { \"name\" : \"attribute1\", \"type\" : \"integer\"} ]}"
             ))
     @APIResponse(
-            responseCode = "400",
+            responseCode = "404",
             description = "Table does not exists, or the whole schema does not exists.",
             content = @Content(
                     mediaType = "application/json",
@@ -186,10 +186,8 @@ public class CollectionResource {
             System.out.println(ex.getLocalizedMessage());
             if (ex.getLocalizedMessage().contains("does not exists")) {
                 rob.setStatus(Response.Status.NOT_FOUND);
-                System.out.println("FOUND!");
             } else {
                 rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-                System.out.println("NOT!");
             }
             rob.addErrorMessage("Could not get attributes information: " + ex.getLocalizedMessage());
             rob.addException(ex);
