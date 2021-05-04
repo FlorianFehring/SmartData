@@ -212,6 +212,10 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public Attribute getAttribute(String name) throws DynException {
+        // Use from prev call if possible
+        if(this.attributes.containsKey(name))
+            return this.attributes.get(name);
+        
         Attribute column = null;
         try {
             Statement stmt = this.con.createStatement();

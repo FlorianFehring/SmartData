@@ -22,7 +22,9 @@ import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 import de.fhbielefeld.smartuser.securitycontext.SmartPrincipal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
@@ -55,6 +57,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("records")
 @Tag(name = "Records", description = "Accessing, inserting, updateing and deleting datasets.")
 public class RecordsResource {
+
+    private static Map<String, DynCollection> dynColCache = new HashMap<>();
+    private static Map<String, DynRecords> dynRecCache = new HashMap<>();
 
     /**
      * Creates a new instance of RootResource
@@ -148,7 +153,7 @@ public class RecordsResource {
         } catch (DynException ex) {
             if (ex.getLocalizedMessage().contains("Unique-Constraint")) {
                 rob.setStatus(Response.Status.CONFLICT);
-            } else if(ex.getLocalizedMessage().contains("does not exists")) {
+            } else if (ex.getLocalizedMessage().contains("does not exists")) {
                 rob.setStatus(Response.Status.NOT_FOUND);
             } else {
                 rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -191,32 +196,47 @@ public class RecordsResource {
         if (storage == null) {
             storage = "public";
         }
-
+//        long start = System.nanoTime();
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         // Init access
+//        long startInitAccess = System.nanoTime();
         DynCollection dync;
         DynRecords dynr;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dync = new DynCollectionMongo(storage, collection);
-                dynr = new DynRecordsMongo();
-            } else {
-                dync = new DynCollectionPostgres(storage, collection);
-                dynr = new DynRecordsPostgres(storage, collection);
+
+        if (dynColCache.containsKey(storage + "_" + collection)) {
+            dync = dynColCache.get(storage + "_" + collection);
+            dynr = dynRecCache.get(storage + "_" + collection);
+        } else {
+            Configuration conf = new Configuration();
+            try {
+                if (conf.getProperty("mongo.url") != null) {
+                    dync = new DynCollectionMongo(storage, collection);
+                    dynr = new DynRecordsMongo();
+                } else {
+                    dync = new DynCollectionPostgres(storage, collection);
+                    dynr = new DynRecordsPostgres(storage, collection);
+                }
+                dynColCache.put(storage + "_" + collection,dync);
+                dynRecCache.put(storage + "_" + collection,dynr);
+            } catch (DynException ex) {
+                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+                rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
+                rob.addException(ex);
+                return rob.toResponse();
             }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
         }
+//        long stopInitAccess = System.nanoTime();
+//        double neededInitAccess = stopInitAccess - startInitAccess;
+//        double neededInitAccessA = neededInitAccess / 1000 / 1000;
+//        System.out.println("Time for initAccess: " + neededInitAccessA + " ms");
 
         List<Filter> filters = new ArrayList<>();
         // Init collection access
+//        long startIdFilter = System.nanoTime();
         try {
             List<Attribute> idattrs = dync.getIdentityAttributes();
+
             if (idattrs.isEmpty()) {
                 rob.addErrorMessage("There is no identity attribute for collection >" + collection + "< could not get single dataset.");
                 rob.setStatus(Response.Status.NOT_ACCEPTABLE);
@@ -241,9 +261,20 @@ public class RecordsResource {
             rob.addException(ex);
             return rob.toResponse();
         }
+//        long stopIdFilter = System.nanoTime();
+//        double neededIdFilter = stopIdFilter - startIdFilter;
+//        double neededIdFilterB = neededIdFilter / 1000 / 1000;
+//        System.out.println("Time for IdFilter: " + neededIdFilterB + " ms");
 
+//        long startBuildResponse=0;
+//        long startGetData = System.nanoTime();
         try {
+            
             String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform);
+//            long finishGetData = System.nanoTime();
+//            double neededTimes = finishGetData - startGetData;
+//            double needetGetData = neededTimes / 1000 / 1000;
+//            System.out.println("Time for get data: " + needetGetData + " ms");
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
             if (geojsonattr != null) {
@@ -263,6 +294,11 @@ public class RecordsResource {
             return rob.toResponse();
         }
         rob.setStatus(Response.Status.OK);
+
+//        long finish = System.nanoTime();
+//        double finishDouble = finish - start;
+//        double needetFinish = finishDouble / 1000 / 1000;
+//        System.out.println("Time until response: " + needetFinish + " ms");
 
         return rob.toResponseStream();
     }
