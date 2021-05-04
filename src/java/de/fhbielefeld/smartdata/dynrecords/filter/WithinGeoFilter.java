@@ -30,8 +30,8 @@ public class WithinGeoFilter extends Filter {
             String[] parts = filtercode.split(",");
             // First element is the name of the attribute wanted to filter
             this.attribute = parts[0];
-            // Check if the table contains such a attribute
-            Attribute col = this.table.getAttribute(this.attribute);
+            // Check if the collection contains such a attribute
+            Attribute col = this.collection.getAttribute(this.attribute);
 
             if (col == null) {
                 throw new FilterException("The Column >" + this.attribute + "< does not exists.");
