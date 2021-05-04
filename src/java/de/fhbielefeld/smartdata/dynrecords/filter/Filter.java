@@ -13,15 +13,15 @@ import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 public abstract class Filter {
 
     protected String filtercode;
-    protected DynCollection table;
+    protected DynCollection collection;
     protected String attribute;
     protected int firstPlaceholder;
     protected boolean negative;
     // Noteing warnings for calling methods
     protected List<String> warnings = new ArrayList<>();
 
-    public Filter(DynCollection table) {
-        this.table = table;
+    public Filter(DynCollection collection) {
+        this.collection = collection;
     }
 
     /**
