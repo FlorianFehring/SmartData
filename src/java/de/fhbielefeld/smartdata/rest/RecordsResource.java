@@ -280,6 +280,12 @@ public class RecordsResource {
             if (geojsonattr != null) {
                 Response.ResponseBuilder rb = Response.status(Response.Status.OK);
                 rb.entity(json);
+                // Add HATEOAS links
+                rob.addLink("records/" + collection + "/" + id, "edit");
+                rob.addLink("records/" + collection + "/" + id, "delete");
+                rob.addLink("records/" + collection + "/" + (id+1), "next");
+                if(id > 1)
+                    rob.addLink("records/" + collection + "/" + (id-1), "prev");
                 return rb.build();
             } else {
                 rob.add("records", new String(u8));
