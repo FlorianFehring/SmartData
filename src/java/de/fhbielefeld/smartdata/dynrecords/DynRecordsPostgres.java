@@ -1110,6 +1110,10 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 }
             } catch (SQLException ex) {
                 this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage());
+            } catch (ClassCastException ex) {
+                DynException dye = new DynException("Could not interpret >" + col.getName() + "< because of: " + ex.getLocalizedMessage());
+                dye.addSuppressed(ex);
+                throw dye;
             }
     }
     
