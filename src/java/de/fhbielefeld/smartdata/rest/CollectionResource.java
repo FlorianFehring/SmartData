@@ -15,6 +15,7 @@ import java.util.List;
 import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -315,6 +316,60 @@ public class CollectionResource {
             rob.addException(ex);
         }
 
+        return rob.toResponse();
+    }
+
+    @DELETE
+    @Path("{collection}")
+    @SmartUserAuth
+    @Operation(summary = "Deletes a collection",
+            description = "Delets the given collection and all of its contents.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Collection deleted")
+    @APIResponse(
+            responseCode = "304",
+            description = "Collection does not exists")
+    @APIResponse(
+            responseCode = "500",
+            description = "Error mesage",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Could not create collection: Because of ... \"]}"))
+    public Response delete(
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String name,
+            @Parameter(description = "Storage name", required = false,
+                    schema = @Schema(type = STRING, defaultValue = "public"),
+                    example = "myschema") @QueryParam("storage") String storage) {
+
+        if (storage == null) {
+            storage = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        DynCollection dync;
+        Configuration conf = new Configuration();
+        try {
+            if (conf.getProperty("mongo.url") != null) {
+                dync = new DynCollectionMongo(storage, name);
+            } else {
+                dync = new DynCollectionPostgres(storage, name);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get collection information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        try {
+            dync.delete();
+            rob.setStatus(Response.Status.OK);
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not delete collection >" + name + "<: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+        }
         return rob.toResponse();
     }
 }

@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import de.fhbielefeld.smartdata.dynstorage.DynStorage;
+import java.util.logging.Level;
 
 /**
  * Class for manageing dynamic tables from postgres
@@ -213,9 +214,10 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public Attribute getAttribute(String name) throws DynException {
         // Use from prev call if possible
-        if(this.attributes.containsKey(name))
+        if (this.attributes.containsKey(name)) {
             return this.attributes.get(name);
-        
+        }
+
         Attribute column = null;
         try {
             Statement stmt = this.con.createStatement();
@@ -353,6 +355,13 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public void delete() throws DynException {
-        throw new UnsupportedOperationException();
+        try {
+            Statement stmt = this.con.createStatement();
+            stmt.executeUpdate("DROP TABLE IF EXISTS " + this.name + "");
+        } catch (SQLException ex) {
+            DynException de = new DynException("Could not delete collection: " + ex.getLocalizedMessage());
+            de.addSuppressed(ex);
+            throw de;
+        }
     }
 }
