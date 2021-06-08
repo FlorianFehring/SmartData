@@ -1,13 +1,20 @@
-/* 
- * This is the main configuration file for SWAC documentation.
- * 
- * You should only change values in these file for your setup. No need to
- * modify other files.
- */
-
-/**
- * Configuration for SWAC
- */
+// Backend connection settings
+SWAC_config.datasources = [
+    {
+        url: "/SmartData/smartdata/[iface]/[fromName]",
+        interfaces: {
+            get: ['GET','records'],
+            list: ['GET','records'],
+            defs: ['GET','collection'],
+            create: ['POST','records'],
+            update: ['PUT','records'],
+            delete: ['DELETE','records']
+        }
+    },
+    {
+        url: "/SmartData/smartdata/[fromName]"
+    }
+];
 
 // Options for progressive webapp
 SWAC_config.progressive = {
@@ -38,19 +45,6 @@ SWAC_config.onlinereactions = [];
 //    config: {}
 //};
 
-// Backend connection settings
-SWAC_config.datasources = [];
-SWAC_config.datasources[0] = SWAC_config.app_root + "/smartdata/[fromName]";
-
-SWAC_config.interfaces = {};
-SWAC_config.interfaces.get = 'get';
-SWAC_config.interfaces.list = 'list';
-//SWAC_config.interfaces.create = '';
-SWAC_config.interfaces.update = 'update';
-SWAC_config.interfaces.delete = 'delete';
-SWAC_config.interfaces.definition = 'definition';
-SWAC_config.apicheckup = false;
-
 SWAC_config.algosources = [];
 
 // Connection timeout in miliseconds
@@ -67,47 +61,9 @@ SWAC_config.notifyDuration = 5000;
 SWAC_config.debugmode = false;
 
 /**
- * SWAC core components can be deactivated if they are not needed.
- * 
- */
-// SWAC core components can be deactivated if they are not needed.
-SWAC_config.coreComponents = [
-    SWAC_config.swac_root + "/swac/Msg.js",
-    SWAC_config.swac_root + "/swac/swac.css",
-    //TODO move to algorithm as dependency (only load when need)
-    SWAC_config.swac_root + "/swac/libs/luxon.min.js",
-    //TODO check if this is no longer neccessery
-    SWAC_config.swac_root + "/swac/libs/moment-with-locales.min.js",
-    SWAC_config.swac_root + "/swac/connectors/remote.js",
-    // TODO check if this every time load is neccessery
-    SWAC_config.swac_root + "/swac/algorithms/DatatypeReflection.js",
-    SWAC_config.swac_root + "/swac/View.js",
-    SWAC_config.swac_root + "/swac/Binding.js",
-    SWAC_config.swac_root + "/swac/WatchableSet.js",
-    SWAC_config.swac_root + "/swac/BindPoint.js",
-    SWAC_config.swac_root + "/swac/model.js",
-    SWAC_config.swac_root + "/swac/storage.js",
-    SWAC_config.swac_root + "/swac/Component.js",
-    SWAC_config.swac_root + "/swac/ComponentHandler.js",
-    SWAC_config.swac_root + "/swac/ComponentPlugin.js",
-    SWAC_config.swac_root + "/swac/ComponentPluginHandler.js",
-    //TODO check implementation
-    //SWAC_config.swac_root + "/swac/Reactions.js"
-    SWAC_config.swac_root + "/swac/OnlineReactions.js",
-    SWAC_config.swac_root + "/swac/OnlineReaction.js",
-    SWAC_config.swac_root + "/swac/language.js",
-    SWAC_config.swac_root + "/swac/langs/de.js",
-    //TODO check if uikit dependencies are neccessery (allready loaded by html)
-    //SWAC_config.swac_root + "/swac/libs/uikit/js/uikit.min.js",
-    //SWAC_config.swac_root + "/swac/libs/uikit/css/uikit.min.css",
-    //SWAC_config.swac_root + "/swac/libs/uikit/js/uikit-icons.min.js"
-];
-
-/**
  * Links for footer navigation
  */
 var footerlinks = [];
 footerlinks[0] = {id: 1, rfrom: "*", rto: "datenschutz.html", name: "Datenschutzerklärung"};
 footerlinks[1] = {id: 2, rfrom: "*", rto: "impressum.html", name: "Impressum"};
-footerlinks[2] = {id: 3, rfrom: "*", rto: "haftung.html", name: "Haftungsausschluss"};
-footerlinks[3] = {id: 4, rfrom: "*", rto: "http://git01-ifm-min.ad.fh-bielefeld.de/scl/2015_03_SCL_SmartMonitoring_Frontend/wikis/home", name: "Über SmartMonitoring"};
+footerlinks[2] = {id: 3, rfrom: "*", rto: "http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartecosystem/smartdata/-/wikis/home", name: "Über SmartData"};
