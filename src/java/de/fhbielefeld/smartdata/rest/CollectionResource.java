@@ -181,6 +181,8 @@ public class CollectionResource {
 
         try {
             // Get attributes
+            rob.add("name",collection);
+            rob.add("storage",storage);
             rob.add("attributes", dync.getAttributes().values());
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
