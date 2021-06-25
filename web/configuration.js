@@ -1,15 +1,8 @@
 // Backend connection settings
+var SWAC_config = {};
 SWAC_config.datasources = [
     {
-        url: "/SmartData/smartdata/[iface]/[fromName]",
-        interfaces: {
-            get: ['GET','records'],
-            list: ['GET','records'],
-            defs: ['GET','collection'],
-            create: ['POST','records'],
-            update: ['PUT','records'],
-            delete: ['DELETE','records']
-        }
+        url: "/SmartData/smartdata/[fromName]"
     },
     {
         url: "/SmartData/smartdata/[fromName]"
