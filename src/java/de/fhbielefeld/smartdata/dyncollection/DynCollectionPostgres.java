@@ -285,6 +285,32 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             if (defaultvalue != null && defaultvalue.startsWith("nextval(")) {
                 curCol.setIsAutoIncrement(true);
             }
+            // Get if column is a reference
+            String rquery = "SELECT "
+                    + "tc.table_name, "
+                    + "kcu.column_name, "
+                    + "ccu.table_schema AS foreign_table_schema, "
+                    + "ccu.table_name AS foreign_table_name, "
+                    + "ccu.column_name AS foreign_column_name "
+                    + "FROM "
+                    + "information_schema.table_constraints AS tc "
+                    + "JOIN information_schema.key_column_usage AS kcu "
+                    + "ON tc.constraint_name = kcu.constraint_name "
+                    + "AND tc.table_schema = kcu.table_schema "
+                    + "JOIN information_schema.constraint_column_usage AS ccu "
+                    + "ON ccu.constraint_name = tc.constraint_name "
+                    + "AND ccu.table_schema = tc.table_schema "
+                    + "WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema='"
+                    + this.schema + "' AND tc.table_name='" + this.name
+                    + "' and kcu.column_name='" + curCol.getName() + "';";
+            Statement rstmt = this.con.createStatement();
+            ResultSet rrs = rstmt.executeQuery(rquery);
+            if (rrs.next()) {
+                curCol.setRefCollection(rrs.getString("foreign_table_name"));
+                curCol.setRefStorage(rrs.getString("foreign_table_schema"));
+                curCol.setRefAttribute(rrs.getString("foreign_column_name"));
+            }
+            rrs.close();
 
             // Get enhanced data for geometry attributes
             if (curCol.getType().equalsIgnoreCase("geometry")) {

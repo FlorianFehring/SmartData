@@ -19,6 +19,9 @@ public class Attribute {
     private boolean isIdentity = false;
     private String defaultvalue = null;
     private boolean isAutoIncrement = false;
+    private String refCollection = null;
+    private String refStorage = null;
+    private String refAttribute = null;
     
     public Attribute() {
         
@@ -99,5 +102,29 @@ public class Attribute {
 
     public void setIsAutoIncrement(boolean isAutoIncrement) {
         this.isAutoIncrement = isAutoIncrement;
+    }
+
+    public String getRefCollection() {
+        return refCollection;
+    }
+
+    public void setRefCollection(String refCollection) {
+        this.refCollection = refCollection;
+    }
+
+    public String getRefStorage() {
+        return refStorage;
+    }
+
+    public void setRefStorage(String refStorage) {
+        this.refStorage = refStorage;
+    }
+
+    public String getRefAttribute() {
+        return refAttribute;
+    }
+
+    public void setRefAttribute(String refAttribute) {
+        this.refAttribute = refAttribute;
     }
 }
