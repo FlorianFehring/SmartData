@@ -212,7 +212,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
                 throw new DynException("Schema >" + name + "< does not exist.");
             }
         } catch (SQLException ex) {
-            DynException dex = new DynException("Could not get tables information");
+            DynException dex = new DynException("Could not get tables information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
             throw dex;
         }
