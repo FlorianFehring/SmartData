@@ -36,6 +36,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.sql.Date;
 import java.util.Map.Entry;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
@@ -1066,6 +1068,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         JsonString jts = (JsonString) value;
                         LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
                         pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                        break;
+                    case "date":
+                        JsonString jdate = (JsonString) value;
+                        LocalDate ldate = DataConverter.objectToLocalDate(jdate.getString());
+                        pstmt.setDate(pindex, Date.valueOf(ldate));
                         break;
                     case "json":
                         if(value.getValueType() == ValueType.OBJECT || value.getValueType() == ValueType.ARRAY) {

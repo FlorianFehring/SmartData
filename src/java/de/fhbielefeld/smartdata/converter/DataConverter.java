@@ -129,15 +129,38 @@ public class DataConverter {
                     .atZone(ZoneId.systemDefault())
                     .toLocalDate();
         } else {
+            String datetimestring = (String) value;
+            List<DynException> exs = new ArrayList<>();
             // Try parsing as long and interpret as timestamp
             try {
                 Long days = Long.parseLong((String) value);
                 return LocalDate.of(1899, 12, 30).plusDays(days);
             } catch (NumberFormatException ex) {
-                DynException pex = new DynException("Error parsing value >" + value + "<: " + ex.getLocalizedMessage());
+                DynException pex = new DynException("Can not parse value >" + value + "< as date: " + ex.getLocalizedMessage());
                 pex.addSuppressed(ex);
-                throw pex;
+                exs.add(pex);
             }
+            
+            // Try parse after ISO8601
+            try {
+                DateTimeFormatter dtf = DateTimeFormatter.ISO_DATE;
+                LocalDate date = LocalDate.parse(datetimestring, dtf);
+                return date;
+            } catch (DateTimeParseException ex) {
+                DynException pex = new DynException("Could not parse >"
+                        + datetimestring
+                        + "< as LocalDateTime after ISO pattern (2011-12-30)"
+                        + ex.getLocalizedMessage());
+                pex.addSuppressed(ex);
+                exs.add(pex);
+            }
+            
+            DynException nex = new DynException("Could not parse date");
+            for(Exception curEx : exs) {
+                nex.addSuppressed(curEx);
+                System.out.println(curEx.getLocalizedMessage());
+            }
+            throw nex;
         }
     }
 
