@@ -217,8 +217,8 @@ public class RecordsResource {
                     dync = new DynCollectionPostgres(storage, collection);
                     dynr = new DynRecordsPostgres(storage, collection);
                 }
-                dynColCache.put(storage + "_" + collection,dync);
-                dynRecCache.put(storage + "_" + collection,dynr);
+                dynColCache.put(storage + "_" + collection, dync);
+                dynRecCache.put(storage + "_" + collection, dynr);
             } catch (DynException ex) {
                 rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
                 rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
@@ -269,7 +269,7 @@ public class RecordsResource {
 //        long startBuildResponse=0;
 //        long startGetData = System.nanoTime();
         try {
-            
+
             String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform);
 //            long finishGetData = System.nanoTime();
 //            double neededTimes = finishGetData - startGetData;
@@ -283,9 +283,10 @@ public class RecordsResource {
                 // Add HATEOAS links
                 rob.addLink("records/" + collection + "/" + id, "edit");
                 rob.addLink("records/" + collection + "/" + id, "delete");
-                rob.addLink("records/" + collection + "/" + (id+1), "next");
-                if(id > 1)
-                    rob.addLink("records/" + collection + "/" + (id-1), "prev");
+                rob.addLink("records/" + collection + "/" + (id + 1), "next");
+                if (id > 1) {
+                    rob.addLink("records/" + collection + "/" + (id - 1), "prev");
+                }
                 return rb.build();
             } else {
                 rob.add("records", new String(u8));
@@ -305,7 +306,6 @@ public class RecordsResource {
 //        double finishDouble = finish - start;
 //        double needetFinish = finishDouble / 1000 / 1000;
 //        System.out.println("Time until response: " + needetFinish + " ms");
-
         return rob.toResponseStream();
     }
 
@@ -322,6 +322,9 @@ public class RecordsResource {
                     mediaType = "application/json",
                     example = "{\"records\" : [{\"id\" :  1, \"value\" : 12.4}]}"
             ))
+    @APIResponse(
+            responseCode = "404",
+            description = "Table not found")
     @APIResponse(
             responseCode = "500",
             description = "Error mesage",
@@ -447,9 +450,14 @@ public class RecordsResource {
                 rob.addWarningMessage(curWarn);
             }
         } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-            rob.addException(ex);
+            String msg = ex.getLocalizedMessage();
+            if (msg.contains("Table") && msg.contains("does not exist")) {
+                rob.setStatus(Response.Status.NOT_FOUND);
+            } else {
+                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+                rob.addErrorMessage("Could not get data: " + msg);
+                rob.addException(ex);
+            }
             return rob.toResponse();
         }
         rob.setStatus(Response.Status.OK);
