@@ -471,6 +471,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             de.addSuppressed(ex);
             ex.printStackTrace();
             throw de;
+        } catch(Exception ex) {
+            if(ex.getLocalizedMessage().contains("connection has been closed")) {
+                // Try reconnect
+                this.connect();
+                return this.get(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
+            }
+            DynException de = new DynException("Exception fetching data: " + ex.getLocalizedMessage());
+            de.addSuppressed(ex);
+            throw de;
         }
     }
     
