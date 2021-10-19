@@ -56,7 +56,8 @@
                 <a class="uk-accordion-title" href="#">Available tables</a>
                 <div class="uk-accordion-content">
                     <p>This SmartData instance grants access to the folowing tables:</p>
-                    <div id="smartdata_tables" swa="Present FROM storage/getCollections TEMPLATE table_for_all_datasets"></div>
+                    <div id="smartdata_tables" swa="Present FROM smartdata/storage/getCollections TEMPLATE table_for_all_datasets"></div>
+                    <br>Access with: <a href="smartdata/records/[tablename]?size=100">Template link</a>
                 </div>
             </li>
             <li>
@@ -70,7 +71,7 @@
                 <a class="uk-accordion-title" href="#">SmartData configuration</a>
                 <div class="uk-accordion-content">
                     <p>This SmartData instance is runing with the following configuration:</p>
-                    <div id="smartdata_config" swa="Present FROM system/config"></div>
+                    <div id="smartdata_config" swa="Present FROM smartdata/system/config"></div>
                 </div>
             </li>
         </ul>

@@ -2,10 +2,10 @@
 var SWAC_config = {};
 SWAC_config.datasources = [
     {
-        url: "/SmartData/smartdata/[fromName]"
+        url: "[fromName]"
     },
     {
-        url: "/SmartData/smartdata/[fromName]"
+        url: "../[fromName]"
     }
 ];
 
