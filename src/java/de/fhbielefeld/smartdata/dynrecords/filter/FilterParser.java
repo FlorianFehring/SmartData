@@ -15,14 +15,14 @@ public class FilterParser {
         Filter f = null;
         String[] parts = filter.split(",");
         if(parts.length < 2) {
-            throw new FilterException("Filter is not valid.");
+            throw new FilterException("Filter has less then 2 parts.");
         }
         String filtername = parts[1];
         switch (filtername) {
             case "cs":
             case "ncs":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*cs Filter >"+filter+"< is not valid.");
                 } else {
                     f = new ContainFilter(table);
                     f.parse(filter);
@@ -31,7 +31,7 @@ public class FilterParser {
             case "sw":
             case "nsw":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*sw Filter >"+filter+"< is not valid.");
                 } else {
                     f = new StartsWithFilter(table);
                     f.parse(filter);
@@ -40,7 +40,7 @@ public class FilterParser {
             case "ew":
             case "new":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*ew Filter >"+filter+"< is not valid.");
                 } else {
                     f = new EndsWithFilter(table);
                     f.parse(filter);
@@ -49,7 +49,7 @@ public class FilterParser {
             case "eq":
             case "neq":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*eq Filter >"+filter+"< is not valid.");
                 } else {
                     f = new EqualsFilter(table);
                     f.parse(filter);
@@ -58,7 +58,7 @@ public class FilterParser {
             case "lt":
             case "nlt":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*lt Filter >"+filter+"< is not valid.");
                 } else {
                     f = new LowerThanFilter(table);
                     f.parse(filter);
@@ -67,7 +67,7 @@ public class FilterParser {
             case "le":
             case "nle":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*le Filter >"+filter+"< is not valid.");
                 } else {
                     f = new LowerOrEqualFilter(table);
                     f.parse(filter);
@@ -76,7 +76,7 @@ public class FilterParser {
             case "ge":
             case "nge":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*ge Filter >"+filter+"< is not valid.");
                 } else {
                     f = new GreaterOrEqualFilter(table);
                     f.parse(filter);
@@ -85,7 +85,7 @@ public class FilterParser {
             case "gt":
             case "ngt":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*gt Filter >"+filter+"< is not valid.");
                 } else {
                     f = new GreaterThanFilter(table);
                     f.parse(filter);
@@ -94,7 +94,7 @@ public class FilterParser {
             case "bt":
             case "nbt":
                 if(parts.length < 4) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*bt Filter >"+filter+"< is not valid.");
                 } else {
                     f = new BetweenFilter(table);
                     f.parse(filter);
@@ -103,7 +103,7 @@ public class FilterParser {
             case "in":
             case "nin":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*in Filter >"+filter+"< is not valid.");
                 } else {
                     f = new InFilter(table);
                     f.parse(filter);
@@ -116,7 +116,7 @@ public class FilterParser {
                 break;
             case "sir":
                 if(parts.length < 6) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("n*is Filter >"+filter+"< is not valid.");
                 } else {
                     f = new RadiusFilter(table);
                     f.parse(filter);
@@ -124,7 +124,7 @@ public class FilterParser {
                 break;
             case "sib":
                 if(parts.length < 8) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("sib Filter >"+filter+"< is not valid.");
                 } else {
                     f = new BoundingBoxFilter(table);
                     f.parse(filter);
@@ -132,7 +132,7 @@ public class FilterParser {
                 break;
             case "sco":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("sco Filter >"+filter+"< is not valid.");
                 } else {
                     f = new ContainsGeoFilter(table);
                     f.parse(filter);
@@ -140,7 +140,7 @@ public class FilterParser {
                 break;
             case "scr":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("scr Filter >"+filter+"< is not valid.");
                 } else {
                     f = new CrossesGeoFilter(table);
                     f.parse(filter);
@@ -148,7 +148,7 @@ public class FilterParser {
                 break;
             case "sdi":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("sdi Filter >"+filter+"< is not valid.");
                 } else {
                     f = new DisjointGeoFilter(table);
                     f.parse(filter);
@@ -156,7 +156,7 @@ public class FilterParser {
                 break;
             case "seq":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("seq Filter >"+filter+"< is not valid.");
                 } else {
                     f = new EqualsGeoFilter(table);
                     f.parse(filter);
@@ -164,7 +164,7 @@ public class FilterParser {
                 break;
             case "sin":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("sin Filter >"+filter+"< is not valid.");
                 } else {
                     f = new IntersectsGeoFilter(table);
                     f.parse(filter);
@@ -172,7 +172,7 @@ public class FilterParser {
                 break;
             case "sov":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("sov Filter >"+filter+"< is not valid.");
                 } else {
                     f = new OverlapsGeoFilter(table);
                     f.parse(filter);
@@ -180,7 +180,7 @@ public class FilterParser {
                 break;
             case "sto":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("sto Filter >"+filter+"< is not valid.");
                 } else {
                     f = new TouchesGeoFilter(table);
                     f.parse(filter);
@@ -188,7 +188,7 @@ public class FilterParser {
                 break;
             case "swi":
                 if(parts.length < 3) {
-                    throw new FilterException("Filter is not valid.");
+                    throw new FilterException("swi Filter >"+filter+"< is not valid.");
                 } else {
                     f = new WithinGeoFilter(table);
                     f.parse(filter);
