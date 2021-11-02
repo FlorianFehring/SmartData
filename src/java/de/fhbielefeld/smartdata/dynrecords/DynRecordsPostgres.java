@@ -1062,11 +1062,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     case "float4":
                     case "float8":
                     case "numeric":
+                    case "decimal":
+                    case "real":
+                    case "double precision":
                         JsonNumber jdoub = (JsonNumber) value;
                         pstmt.setDouble(pindex, jdoub.doubleValue());
                         break;
                     case "int2":
                     case "int4":
+                    case "smallint":
+                    case "integer":
+                    case "bigint":
                         JsonNumber jint = (JsonNumber) value;
                         pstmt.setInt(pindex, jint.intValue());
                         break;
