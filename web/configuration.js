@@ -1,57 +1,40 @@
 // Backend connection settings
-var SWAC_config = {};
-SWAC_config.datasources = [
-    {
-        url: "[fromName]"
-    },
-    {
-        url: "../[fromName]"
-    }
-];
-
-// Options for progressive webapp
-SWAC_config.progressive = {
-    active: false,
-    cachetimeout: 30, // Timeout in days after that a reload should be done or unused pages leave the cache
-    precache: [
-        // List files here that should be available offline for the user after first visit
-        SWAC_config.app_root + '/css/global.css',
-        SWAC_config.app_root + '/sites/index.html',
-        SWAC_config.app_root + '/css/index.css',
-        // basic content (design pictures)
-        SWAC_config.app_root + '/content/logo.png',
-        // default data
-        SWAC_config.app_root + '/manifest.json',
-        SWAC_config.app_root + '/configuration.js',
-        SWAC_config.app_root + '/data/routes.js'
+var SWAC_config = {
+    lang: 'de',
+    notifyDuration: 5000,
+    remoteTimeout: 50000,
+    debugmode: false,
+    debug: 'all',
+    datasources: [
+        {
+            url: "[fromName]"
+        },
+        {
+            url: "../[fromName]"
+        }
     ],
-    // List components here that should be precached
-    components: [
-        'Navigation'
-    ]
+    progressive: {
+        active: false,
+        cachetimeout: 30, // Timeout in days after that a reload should be done or unused pages leave the cache
+        precache: [
+            // List files here that should be available offline for the user after first visit
+            '/css/global.css',
+            '/sites/index.html',
+            '/css/index.css',
+            // basic content (design pictures)
+            '/content/logo.png',
+            // default data
+            '/manifest.json',
+            '/configuration.js',
+            '/data/routes.js'
+        ],
+        // List components here that should be precached
+        components: [
+            'Navigation'
+        ]
+    },
+    onlinereactions: []
 };
-
-// OnlineReactions
-SWAC_config.onlinereactions = [];
-//SWAC_config.onlinereactions[0] = {
-//    path: SWAC_config.swac_root + '/swac/components/Upload/UploadOnReact.js',
-//    config: {}
-//};
-
-SWAC_config.algosources = [];
-
-// Connection timeout in miliseconds
-SWAC_config.remoteTimeout = 50000;
-
-/* Language for notifications from SWAC */
-SWAC_config.lang = 'de';
-
-/* Frontend behaivior settings */
-// Time nodifications should be displayed in miliseconds
-SWAC_config.notifyDuration = 5000;
-
-/* Debugging mode for output of SWAC NOTICE and SWAC WARNING messages */
-SWAC_config.debugmode = false;
 
 /**
  * Links for footer navigation
