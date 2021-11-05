@@ -3,6 +3,7 @@ package de.fhbielefeld.smartdata.config;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.logger.Logger;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,9 +34,9 @@ public class Configuration {
                 this.prop.load(inputStream);
                 this.proploaded = true;
             } catch (IOException ex) {
-                // Do not report every not found
-//                Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file >" + fileName + "<: " + ex.getLocalizedMessage());
-//                Logger.addMessage(msg);
+                String workingDir = new File(".").getAbsolutePath();
+                Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file >" + workingDir + "/" + fileName + "<: " + ex.getLocalizedMessage());
+                Logger.addMessage(msg);
             }
         } catch (NamingException ex) {
             Message msg = new Message("Configuration", MessageLevel.ERROR, "Could not load properties file" + ex.getLocalizedMessage());
