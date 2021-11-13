@@ -335,7 +335,7 @@ public class RecordsResource {
             @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
-            @Parameter(description = "Definition of an filter <a href=\"http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/Funktionen/Uebersicht\" target=\"_new\">See filter documentation</a>", example = "id,eq,1") @QueryParam("filter") String filter,
+            @Parameter(description = "Definition of an filter <a href=\"http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/Funktionen/Uebersicht\" target=\"_new\">See filter documentation</a>", example = "id,eq,1") @QueryParam("filter") List<String> filterList,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
@@ -388,8 +388,8 @@ public class RecordsResource {
                             .replace("[", "")
                             .replace("]", "");
                     // Create filter if there is no one
-                    if (filter == null) {
-                        filter = "";
+                    if (filterList == null) {
+                        filterList = new ArrayList<String>();
                     }
                     Attribute idattr;
                     try {
@@ -401,7 +401,7 @@ public class RecordsResource {
                         return rob.toResponse();
                     }
                     // Write filter
-                    filter = idattr.getName() + ",in," + ids;
+                    filterList.add(idattr.getName() + ",in," + ids);
                 } else {
                     contextInfo = "No user identified!";
                 }
@@ -418,16 +418,18 @@ public class RecordsResource {
         List<Filter> filters = new ArrayList<>();
 
         try {
-            if (filter != null) {
+            if (filterList != null) {
                 // Build filter objects
-                Filter filt = FilterParser.parse(filter, dync);
-                if (filt != null) {
-                    filters.add(filt);
+                for (String curFilterStr : filterList) {
+                    Filter filt = FilterParser.parse(curFilterStr, dync);
+                    if (filt != null) {
+                        filters.add(filt);
+                    }
                 }
             }
         } catch (FilterException ex) {
             rob.setStatus(Response.Status.BAD_REQUEST);
-            rob.addErrorMessage("Could not parse filter rule >" + filter + "<: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
             rob.addException(ex);
             return rob.toResponse();
         }
