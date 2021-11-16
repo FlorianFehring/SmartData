@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import de.fhbielefeld.smartdata.dynstorage.DynStorage;
-import java.util.logging.Level;
 
 /**
  * Class for manageing dynamic tables from postgres
@@ -86,7 +85,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         boolean schemaExists = this.exists();
         if (!schemaExists) {
             try {
-                String sql = "CREATE TABLE " + this.schema + "." + this.name + "(";
+                String sql = "CREATE TABLE \"" + this.schema + "\".\"" + this.name + "\"(";
                 // Add identity attribute
                 Attribute idcol = table.getIdentityColum();
                 if (idcol != null) {
@@ -139,7 +138,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public boolean addAttributes(List<Attribute> columns) throws DynException {
         boolean created = false;
-        String sql = "ALTER TABLE " + this.schema + "." + this.name;
+        String sql = "ALTER TABLE \"" + this.schema + "\".\"" + this.name + "\"";
         int i = 0;
         for (Attribute curCol : columns) {
             if (i > 0) {
@@ -383,7 +382,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     public void delete() throws DynException {
         try {
             Statement stmt = this.con.createStatement();
-            stmt.executeUpdate("DROP TABLE IF EXISTS " + this.name + "");
+            stmt.executeUpdate("DROP TABLE IF EXISTS \"" + this.name + "\"");
         } catch (SQLException ex) {
             DynException de = new DynException("Could not delete collection: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);

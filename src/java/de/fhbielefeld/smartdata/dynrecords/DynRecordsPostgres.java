@@ -243,10 +243,14 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             StringBuilder frombuilder = new StringBuilder();
             
             frombuilder.append(" FROM ");
+            frombuilder.append("\"");
             frombuilder.append(this.schema);
+            frombuilder.append("\"");
             frombuilder.append(".");
+            frombuilder.append("\"");
             frombuilder.append(this.table);
-
+            frombuilder.append("\"");
+            
             if (filters != null && !filters.isEmpty()) {
                 frombuilder.append(" WHERE ");
                 int i = 0;
@@ -551,9 +555,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Build up insert statement
             StringBuilder sqlbuilder = new StringBuilder();
             sqlbuilder.append("INSERT INTO ");
+            sqlbuilder.append("\"");
             sqlbuilder.append(this.schema);
+            sqlbuilder.append("\"");
             sqlbuilder.append(".");
+            sqlbuilder.append("\"");
             sqlbuilder.append(this.table);
+            sqlbuilder.append("\"");
             sqlbuilder.append(" (\"");
 
             StringBuilder colsstr = new StringBuilder();
@@ -626,11 +634,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             sqlbuilderid.append("\" FROM ");
+            sqlbuilderid.append("\"");
             sqlbuilderid.append(this.schema);
+            sqlbuilderid.append("\"");
             sqlbuilderid.append(".");
+            sqlbuilderid.append("\"");
             sqlbuilderid.append(this.table);
+            sqlbuilderid.append("\"");
             sqlbuilderid.append(" ORDER BY ");
+            sqlbuilderid.append("\"");
             sqlbuilderid.append(firstidColumn);
+            sqlbuilderid.append("\"");
             sqlbuilderid.append(" DESC LIMIT 1");
             
             try {
@@ -868,9 +882,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Build up insert statement
             StringBuilder sqlbuilder = new StringBuilder();
             sqlbuilder.append("UPDATE ");
+            sqlbuilder.append("\"");
             sqlbuilder.append(this.schema);
+            sqlbuilder.append("\"");
             sqlbuilder.append(".");
+            sqlbuilder.append("\"");
             sqlbuilder.append(this.table);
+            sqlbuilder.append("\"");
             sqlbuilder.append(" SET ");
 
             int foundCols = 0;
@@ -1147,7 +1165,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     @Override
     public Long delete(String idstr) throws DynException {
         String[] ids = idstr.split(",");
-        String sql = "DELETE FROM " + this.schema + "." + this.table + " WHERE ";
+        String sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\" WHERE ";
         
         // Get name of first id column
         List<Attribute> columns = this.dyncollection.getIdentityAttributes();
