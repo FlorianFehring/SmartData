@@ -48,8 +48,9 @@ public class CollectionResource {
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
+            Configuration conf = new Configuration(); 
             Logger.getInstance("SmartData", moduleName);
-            Logger.setDebugMode(true);
+            Logger.setDebugMode(Boolean.parseBoolean(conf.getProperty("debugmode")));
         } catch (LoggerException | NamingException ex) {
             System.err.println("Error init logger: " + ex.getLocalizedMessage());
         }

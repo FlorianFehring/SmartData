@@ -2,9 +2,14 @@ package de.fhbielefeld.smartdata.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
+import de.fhbielefeld.scl.logger.message.Message;
+import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -39,8 +44,9 @@ public class SystemResource {
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
+            Configuration conf = new Configuration(); 
             Logger.getInstance("SmartData", moduleName);
-            Logger.setDebugMode(true);
+            Logger.setDebugMode(Boolean.parseBoolean(conf.getProperty("debugmode")));
         } catch (LoggerException | NamingException ex) {
             System.err.println("Error init logger: " + ex.getLocalizedMessage());
         }
@@ -103,7 +109,7 @@ public class SystemResource {
         // Init config
         Configuration conf = new Configuration();
 
-        rob.add("version", "29.07.2021");
+        rob.add("version", "23.11.2021");
         // IP adress
         try {
             rob.add("publicip", InetAddress.getLocalHost().getHostAddress());
