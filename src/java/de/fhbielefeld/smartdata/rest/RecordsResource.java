@@ -7,6 +7,7 @@ import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dbo.Attribute;
+import de.fhbielefeld.smartdata.dyn.DynFactory;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 import de.fhbielefeld.smartdata.dyncollection.DynCollectionMongo;
 import de.fhbielefeld.smartdata.dynrecords.DynRecordsPostgres;
@@ -68,7 +69,7 @@ public class RecordsResource {
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
-            Configuration conf = new Configuration(); 
+            Configuration conf = new Configuration();
             Logger.getInstance("SmartData", moduleName);
             Logger.setDebugMode(Boolean.parseBoolean(conf.getProperty("debugmode")));
         } catch (LoggerException | NamingException ex) {
@@ -107,22 +108,8 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        // Init access
-        DynRecords dynr;
         Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dynr = new DynRecordsMongo();
-            } else {
-                dynr = new DynRecordsPostgres(storage, collection);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-        try {
+        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             List<Object> ids = dynr.create(json);
             // Use TreeQL specification extension
             if (conf.getProperty("spec.version") != null
@@ -200,42 +187,14 @@ public class RecordsResource {
 //        long start = System.nanoTime();
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        // Init access
-//        long startInitAccess = System.nanoTime();
-        DynCollection dync;
-        DynRecords dynr;
-
-        if (dynColCache.containsKey(storage + "_" + collection)) {
-            dync = dynColCache.get(storage + "_" + collection);
-            dynr = dynRecCache.get(storage + "_" + collection);
-        } else {
-            Configuration conf = new Configuration();
-            try {
-                if (conf.getProperty("mongo.url") != null) {
-                    dync = new DynCollectionMongo(storage, collection);
-                    dynr = new DynRecordsMongo();
-                } else {
-                    dync = new DynCollectionPostgres(storage, collection);
-                    dynr = new DynRecordsPostgres(storage, collection);
-                }
-                dynColCache.put(storage + "_" + collection, dync);
-                dynRecCache.put(storage + "_" + collection, dynr);
-            } catch (DynException ex) {
-                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-                rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-                rob.addException(ex);
-                return rob.toResponse();
-            }
-        }
 //        long stopInitAccess = System.nanoTime();
 //        double neededInitAccess = stopInitAccess - startInitAccess;
 //        double neededInitAccessA = neededInitAccess / 1000 / 1000;
 //        System.out.println("Time for initAccess: " + neededInitAccessA + " ms");
-
         List<Filter> filters = new ArrayList<>();
         // Init collection access
 //        long startIdFilter = System.nanoTime();
-        try {
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             List<Attribute> idattrs = dync.getIdentityAttributes();
 
             if (idattrs.isEmpty()) {
@@ -269,8 +228,7 @@ public class RecordsResource {
 
 //        long startBuildResponse=0;
 //        long startGetData = System.nanoTime();
-        try {
-
+        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform);
 //            long finishGetData = System.nanoTime();
 //            double neededTimes = finishGetData - startGetData;
@@ -356,86 +314,67 @@ public class RecordsResource {
         }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        List<Filter> filters = new ArrayList<>();
 
-        // Init access
-        DynCollection dync;
-        DynRecords dynr;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dync = new DynCollectionMongo(storage, collection);
-                dynr = new DynRecordsMongo();
-            } else {
-                dync = new DynCollectionPostgres(storage, collection);
-                dynr = new DynRecordsPostgres(storage, collection);
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+            // Check if there is a request context and user has restricted rights
+
+            if (requestContext != null) {
+                String contextInfo = null;
+                SecurityContext sc = requestContext.getSecurityContext();
+                if (sc != null) {
+                    SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
+                    if (sp != null) {
+                        String ids = sp.getContextIds() + "";
+                        // Replace unwanted chars
+                        ids = ids.replaceAll(" ", "")
+                                .replace("[", "")
+                                .replace("]", "");
+                        // Create filter if there is no one
+                        if (filterList == null) {
+                            filterList = new ArrayList<String>();
+                        }
+                        Attribute idattr;
+                        // Get identity column (only first identity supported)
+                        idattr = dync.getIdentityAttributes().get(0);
+                        // Write filter
+                        filterList.add(idattr.getName() + ",in," + ids);
+                    } else {
+                        contextInfo = "No user identified!";
+                    }
+                } else {
+                    contextInfo = "No SecurityContext in Requestcontext found!";
+                }
+
+                if (contextInfo != null) {
+                    Message msg = new Message(contextInfo, MessageLevel.INFO);
+                    Logger.addDebugMessage(msg);
+                }
+            }
+
+            try {
+                if (filterList != null) {
+                    // Build filter objects
+                    for (String curFilterStr : filterList) {
+                        Filter filt = FilterParser.parse(curFilterStr, dync);
+                        if (filt != null) {
+                            filters.add(filt);
+                        }
+                    }
+                }
+            } catch (FilterException ex) {
+                rob.setStatus(Response.Status.BAD_REQUEST);
+                rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
+                rob.addException(ex);
+                return rob.toResponse();
             }
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-            rob.addException(ex);
+            rob.addErrorMessage("Could not get identity column.");
             return rob.toResponse();
         }
 
-        // Check if there is a request context and user has restricted rights
-        if (requestContext != null) {
-            String contextInfo = null;
-            SecurityContext sc = requestContext.getSecurityContext();
-            if (sc != null) {
-                SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
-                if (sp != null) {
-                    String ids = sp.getContextIds() + "";
-                    // Replace unwanted chars
-                    ids = ids.replaceAll(" ", "")
-                            .replace("[", "")
-                            .replace("]", "");
-                    // Create filter if there is no one
-                    if (filterList == null) {
-                        filterList = new ArrayList<String>();
-                    }
-                    Attribute idattr;
-                    try {
-                        // Get identity column (only first identity supported)
-                        idattr = dync.getIdentityAttributes().get(0);
-                    } catch (DynException ex) {
-                        rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-                        rob.addErrorMessage("Could not get identity column.");
-                        return rob.toResponse();
-                    }
-                    // Write filter
-                    filterList.add(idattr.getName() + ",in," + ids);
-                } else {
-                    contextInfo = "No user identified!";
-                }
-            } else {
-                contextInfo = "No SecurityContext in Requestcontext found!";
-            }
-
-            if (contextInfo != null) {
-                Message msg = new Message(contextInfo, MessageLevel.INFO);
-                Logger.addDebugMessage(msg);
-            }
-        }
-
-        List<Filter> filters = new ArrayList<>();
-
-        try {
-            if (filterList != null) {
-                // Build filter objects
-                for (String curFilterStr : filterList) {
-                    Filter filt = FilterParser.parse(curFilterStr, dync);
-                    if (filt != null) {
-                        filters.add(filt);
-                    }
-                }
-            }
-        } catch (FilterException ex) {
-            rob.setStatus(Response.Status.BAD_REQUEST);
-            rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr, geotransform);
             if (json.equals("{}")) {
                 json = "[]";
@@ -487,12 +426,14 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response update(
-            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
+            @Parameter(description = "Collections name", required = true, example = "mycollection")
+            @PathParam("collection") String collection,
             @Parameter(description = "Datasets id", required = true, example = "1") @PathParam("id") Long id,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "json data",
-                    schema = @Schema(type = STRING, defaultValue = "public")) String json) {
+                    schema = @Schema(type = STRING, defaultValue = "public")) String json
+    ) {
 
         if (storage == null) {
             storage = "public";
@@ -500,23 +441,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        // Init access
-        DynRecords dynr;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dynr = new DynRecordsMongo();
-            } else {
-                dynr = new DynRecordsPostgres(storage, collection);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -548,11 +473,13 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response update(
-            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
+            @Parameter(description = "Collections name", required = true, example = "mycollection")
+            @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "json data",
-                    schema = @Schema(type = STRING, defaultValue = "public")) String json) {
+                    schema = @Schema(type = STRING, defaultValue = "public")) String json
+    ) {
 
         if (storage == null) {
             storage = "public";
@@ -560,23 +487,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        // Init access
-        DynRecords dynr;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dynr = new DynRecordsMongo();
-            } else {
-                dynr = new DynRecordsPostgres(storage, collection);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, null);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -607,10 +518,12 @@ public class RecordsResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
     public Response delete(
-            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
+            @Parameter(description = "Collections name", required = true, example = "mycollection")
+            @PathParam("collection") String collection,
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
-            @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") String id) {
+            @Parameter(description = "Dataset id", required = true, example = "1") @PathParam("id") String id
+    ) {
 
         if (storage == null) {
             storage = "public";
@@ -618,23 +531,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        // Init access
-        DynRecords dynr;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dynr = new DynRecordsMongo();
-            } else {
-                dynr = new DynRecordsPostgres(storage, collection);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get data: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.delete(id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);

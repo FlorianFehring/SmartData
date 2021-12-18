@@ -52,14 +52,11 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public boolean exists() throws DynException {
         boolean texists = false;
-        try {
-            Statement stmt = this.con.createStatement();
-            try ( ResultSet rs = stmt.executeQuery(
-                    "SELECT * FROM information_schema.tables "
-                    + "WHERE table_schema = '" + this.schema + "' "
-                    + "AND table_name='" + this.name + "'")) {
-                texists = rs.next();
-            }
+        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
+                "SELECT * FROM information_schema.tables "
+                + "WHERE table_schema = '" + this.schema + "' "
+                + "AND table_name='" + this.name + "'")) {
+            texists = rs.next();
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not check dataset exists: Could not get schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
@@ -107,10 +104,11 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 sql += ")";
                 commitlock.acquire();
                 this.con.setAutoCommit(true);
-                Statement stmt = this.con.createStatement();
-                stmt.executeUpdate(sql);
-                this.con.setAutoCommit(false);
-                created = true;
+                try ( Statement stmt = this.con.createStatement()) {
+                    stmt.executeUpdate(sql);
+                    this.con.setAutoCommit(false);
+                    created = true;
+                }
             } catch (SQLException ex) {
                 Message msg = new Message("Could not create collection >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 msg.addException(ex);
@@ -150,8 +148,9 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         try {
             commitlock.acquire();
             this.con.setAutoCommit(true);
-            Statement stmt = this.con.createStatement();
-            stmt.executeUpdate(sql);
+            try ( Statement stmt = this.con.createStatement()) {
+                stmt.executeUpdate(sql);
+            }
             this.con.setAutoCommit(false);
             created = true;
         } catch (SQLException ex) {
@@ -183,18 +182,15 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         if (!this.attributes.isEmpty()) {
             return this.attributes;
         }
-        try {
-            Statement stmt = this.con.createStatement();
-            ResultSet rs = stmt.executeQuery(
-                    "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
-                    + "WHERE table_schema = '" + this.schema + "' "
-                    + "AND table_name='" + this.name + "'");
+        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
+                "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
+                + "WHERE table_schema = '" + this.schema + "' "
+                + "AND table_name='" + this.name + "'")) {
             // Walk trough attributes
             while (rs.next()) {
                 Attribute curCol = this.getColumnObject(rs);
                 this.attributes.put(curCol.getName(), curCol);
             }
-            rs.close();
             // Check if table does not exists when there is no column
             if (this.attributes.isEmpty()) {
                 if (!this.exists()) {
@@ -218,18 +214,15 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         }
 
         Attribute column = null;
-        try {
-            Statement stmt = this.con.createStatement();
-            ResultSet rs = stmt.executeQuery(
-                    "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
-                    + "WHERE table_schema = '" + this.schema + "' "
-                    + "AND table_name='" + this.name + "' "
-                    + "AND column_name = '" + name + "'");
+        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
+                "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
+                + "WHERE table_schema = '" + this.schema + "' "
+                + "AND table_name='" + this.name + "' "
+                + "AND column_name = '" + name + "'");) {
             // Walk trough attributes
             while (rs.next()) {
                 column = this.getColumnObject(rs);
             }
-            rs.close();
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not get attribute: Could not schema information: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
@@ -271,12 +264,11 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                         + "AND k.table_schema = '" + this.schema + "' "
                         + "AND k.table_name = '" + this.name + "' "
                         + "AND k.column_name = '" + curCol.getName() + "';";
-                Statement pkstmt = this.con.createStatement();
-                ResultSet pkrs = pkstmt.executeQuery(pkquery);
-                if (pkrs.next()) {
-                    curCol.setIsIdentity(true);
+                try ( Statement pkstmt = this.con.createStatement();  ResultSet pkrs = pkstmt.executeQuery(pkquery);) {
+                    if (pkrs.next()) {
+                        curCol.setIsIdentity(true);
+                    }
                 }
-                pkrs.close();
             }
             // Get if column is autoincrement
             String defaultvalue = rs.getString("column_default");
@@ -302,14 +294,13 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     + "WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema='"
                     + this.schema + "' AND tc.table_name='" + this.name
                     + "' and kcu.column_name='" + curCol.getName() + "';";
-            Statement rstmt = this.con.createStatement();
-            ResultSet rrs = rstmt.executeQuery(rquery);
-            if (rrs.next()) {
-                curCol.setRefCollection(rrs.getString("foreign_table_name"));
-                curCol.setRefStorage(rrs.getString("foreign_table_schema"));
-                curCol.setRefAttribute(rrs.getString("foreign_column_name"));
+            try ( Statement rstmt = this.con.createStatement();  ResultSet rrs = rstmt.executeQuery(rquery)) {
+                if (rrs.next()) {
+                    curCol.setRefCollection(rrs.getString("foreign_table_name"));
+                    curCol.setRefStorage(rrs.getString("foreign_table_schema"));
+                    curCol.setRefAttribute(rrs.getString("foreign_column_name"));
+                }
             }
-            rrs.close();
 
             // Get enhanced data for geometry attributes
             if (curCol.getType().equalsIgnoreCase("geometry")) {
@@ -318,14 +309,13 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                         + "FROM geometry_columns WHERE f_table_schema = '"
                         + this.schema + "' AND f_table_name = '" + this.name
                         + "' AND f_geometry_column = '" + curCol.getName() + "'";
-                Statement sridstmt = this.con.createStatement();
-                ResultSet sridrs = sridstmt.executeQuery(geoquery);
-                if (sridrs.next()) {
-                    curCol.setSubtype(sridrs.getString("type"));
-                    curCol.setSrid(sridrs.getInt("srid"));
-                    curCol.setDimension(sridrs.getInt("coord_dimension"));
+                try ( Statement sridstmt = this.con.createStatement();  ResultSet sridrs = sridstmt.executeQuery(geoquery)) {
+                    if (sridrs.next()) {
+                        curCol.setSubtype(sridrs.getString("type"));
+                        curCol.setSrid(sridrs.getInt("srid"));
+                        curCol.setDimension(sridrs.getInt("coord_dimension"));
+                    }
                 }
-                sridrs.close();
             }
         } catch (SQLException ex) {
             DynException dex = new DynException("Could not get coulmn object: Could not get schema information: " + ex.getLocalizedMessage());
@@ -365,8 +355,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public void changeAttributes(List<Attribute> columns) throws DynException {
         for (Attribute curCol : columns) {
-            try {
-                Statement stmt = this.con.createStatement();
+            try ( Statement stmt = this.con.createStatement()) {
                 stmt.executeQuery(
                         "SELECT UpdateGeometrySRID('" + this.schema + "', '"
                         + this.name + "','" + curCol.getName() + "'," + curCol.getSrid() + ")");
@@ -380,8 +369,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public void delete() throws DynException {
-        try {
-            Statement stmt = this.con.createStatement();
+        try ( Statement stmt = this.con.createStatement()) {
             stmt.executeUpdate("DROP TABLE IF EXISTS \"" + this.name + "\"");
         } catch (SQLException ex) {
             DynException de = new DynException("Could not delete collection: " + ex.getLocalizedMessage());

@@ -36,17 +36,14 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
     @Override
     public Map<String, String> getAbilities() throws DynException {
         Map<String, String> abilities = new HashMap<>();
-        // Check if gis is available
-        try {
-            Statement stmt = this.con.createStatement();
-            try ( ResultSet rs = stmt.executeQuery("SELECT PostGIS_full_version() AS version")) {
-                rs.next();
-                String info = rs.getString("version");
-                System.out.println(info);
-                info = info.replaceAll("\"", "'");
-                System.out.println(info);
-                abilities.put("gis", "PostGIS " + info);
-            }
+        // Check if gis is available    
+        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery("SELECT PostGIS_full_version() AS version")) {
+            rs.next();
+            String info = rs.getString("version");
+            System.out.println(info);
+            info = info.replaceAll("\"", "'");
+            System.out.println(info);
+            abilities.put("gis", "PostGIS " + info);
         } catch (SQLException ex) {
             DynException dex = new DynException(
                     "Could not get ability information: " + ex.getLocalizedMessage());
@@ -102,15 +99,12 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
 
     @Override
     public boolean storageExists(String name) throws DynException {
-        try {
-            Statement stmtCheck = this.con.createStatement();
-            String sql = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '" + name + "'";
-            try ( ResultSet rs = stmtCheck.executeQuery(sql)) {
-                if (rs.next()) {
-                    int count = rs.getInt("count");
-                    if (count == 1) {
-                        return true;
-                    }
+        String sql = "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '" + name + "'";
+        try ( Statement stmtCheck = this.con.createStatement();  ResultSet rs = stmtCheck.executeQuery(sql)) {
+            if (rs.next()) {
+                int count = rs.getInt("count");
+                if (count == 1) {
+                    return true;
                 }
             }
         } catch (SQLException ex) {
@@ -141,8 +135,9 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
             try {
                 commitlock.acquire();
                 this.con.setAutoCommit(true);
-                Statement stmt = this.con.createStatement();
-                stmt.executeUpdate("CREATE SCHEMA " + name);
+                try ( Statement stmt = this.con.createStatement()) {
+                    stmt.executeUpdate("CREATE SCHEMA " + name);
+                }
                 this.con.setAutoCommit(false);
                 created = true;
             } catch (SQLException ex) {
@@ -172,9 +167,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
     public Map<String, Object> getStorage(String name) throws DynException {
         Map<String, Object> information = new HashMap<>();
         information.put("name", name);
-        try {
-            Statement stmt = this.con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM information_schema.schemata WHERE schema_name = '" + name + "'");
+        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery("SELECT * FROM information_schema.schemata WHERE schema_name = '" + name + "'")) {
             ResultSetMetaData rsmd = rs.getMetaData();
             if (rs.next()) {
                 information.put("exists", true);
@@ -199,9 +192,7 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
     public List<DataCollection> getCollections(String name) throws DynException {
         List<DataCollection> tables = new ArrayList<>();
 
-        try {
-            Statement stmt = this.con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + name + "'");
+        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + name + "'")) {
             while (rs.next()) {
                 String tablename = rs.getString("table_name");
                 tables.add(new DataCollection(tablename));
@@ -229,8 +220,9 @@ public class DynStoragePostgres extends DynPostgres implements DynStorage {
             try {
                 commitlock.acquire();
                 this.con.setAutoCommit(true);
-                Statement stmt = this.con.createStatement();
-                stmt.executeUpdate("DROP SCHEMA " + name + " CASCADE");
+                try ( Statement stmt = this.con.createStatement()) {
+                    stmt.executeUpdate("DROP SCHEMA " + name + " CASCADE");
+                }
                 this.con.setAutoCommit(false);
                 deleted = true;
             } catch (SQLException ex) {

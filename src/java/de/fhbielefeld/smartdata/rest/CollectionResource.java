@@ -6,9 +6,8 @@ import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dbo.DataCollection;
+import de.fhbielefeld.smartdata.dyn.DynFactory;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
-import de.fhbielefeld.smartdata.dyncollection.DynCollectionMongo;
-import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 import java.util.List;
@@ -97,22 +96,7 @@ public class CollectionResource {
             return rob.toResponse();
         }
 
-        DynCollection dync;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dync = new DynCollectionMongo(storage, collectiondef.getName());
-            } else {
-                dync = new DynCollectionPostgres(storage, collectiondef.getName());
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynCollection dync = DynFactory.getDynCollection(storage, collectiondef.getName())) {
             // Get attributes
             boolean created = dync.create(collectiondef);
             if (created) {
@@ -165,22 +149,7 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        DynCollection dync;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dync = new DynCollectionMongo(storage, collection);
-            } else {
-                dync = new DynCollectionPostgres(storage, collection);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             // Get attributes
             rob.add("name",collection);
             rob.add("storage",storage);
@@ -234,22 +203,7 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        DynCollection dync;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dync = new DynCollectionMongo(storage, collection);
-            } else {
-                dync = new DynCollectionPostgres(storage, collection);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             if (dync.addAttributes(attributes)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
@@ -295,22 +249,7 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        DynCollection dync;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dync = new DynCollectionMongo(storage, collection);
-            } else {
-                dync = new DynCollectionPostgres(storage, collection);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             dync.changeAttributes(attributes);
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
@@ -339,7 +278,7 @@ public class CollectionResource {
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not create collection: Because of ... \"]}"))
     public Response delete(
-            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String name,
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
                     example = "myschema") @QueryParam("storage") String storage) {
@@ -350,27 +289,12 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        DynCollection dync;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dync = new DynCollectionMongo(storage, name);
-            } else {
-                dync = new DynCollectionPostgres(storage, name);
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get collection information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             dync.delete();
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not delete collection >" + name + "<: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Could not delete collection >" + collection + "<: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
         return rob.toResponse();

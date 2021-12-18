@@ -59,7 +59,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     protected String lastStmtId = null;
 
     protected DynCollection dyncollection = null;
-    protected static final Map<String, PreparedStatement> preparedStatements = new HashMap<>();
+    protected static final Map<String, String> preparedStatements = new HashMap<>();
     protected static final Map<String, Map<String, Integer>> preparedPlaceholders = new HashMap<>();
     protected static final Map<String, List<String>> preparedWarnings = new HashMap<>();
 
@@ -103,20 +103,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
         stmtId += countOnly;
         this.lastStmtId = stmtId;
-
-        // Check if prepared statement is valid
-        if (this.preparedStatements.containsKey(stmtId)) {
-            PreparedStatement smt = this.preparedStatements.get(stmtId);
-            try {
-                if(smt.getConnection().isClosed()) {
-                    this.preparedStatements.remove(stmtId);
-                }
-            } catch (SQLException ex) {
-                DynException de = new DynException(ex.getLocalizedMessage());
-                de.addSuppressed(ex);
-                throw de;
-            }
-        }
         
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
@@ -377,14 +363,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             String stmt = selectbuilder.toString();
             Message msg = new Message("DynDataPostgres", MessageLevel.INFO, "SQL: " + stmt);
             Logger.addDebugMessage(msg);
-            try {
-                PreparedStatement pstmt = this.con.prepareStatement(stmt);
-                this.preparedStatements.put(stmtId, pstmt);
-                this.preparedPlaceholders.put(stmtId, placeholders);
-            } catch (SQLException ex) {
-                DynException dex = new DynException("Could not prepare staement >" + stmt + "<");
-                dex.addSuppressed(ex);
-            }
+            this.preparedStatements.put(stmtId, stmt);
+            this.preparedPlaceholders.put(stmtId, placeholders);
         }
 
         return stmtId;
@@ -392,21 +372,23 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     
     @Override
     public PreparedStatement setQueryClauses(String stmtid, Collection<Filter> filters, int size, String page) throws DynException {
-        PreparedStatement stmt = this.preparedStatements.get(stmtid);
+        String stmt = this.preparedStatements.get(stmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(stmtid);
-
-        for (Filter curFilter : filters) {
-            try {
-                Integer placeholderpos = placeholders.get(curFilter.getPrepareCode());
-                curFilter.setFirstPlaceholder(placeholderpos);
-                stmt = curFilter.setFilterValue(stmt);
-                this.warnings.addAll(curFilter.getWarnings());
-            } catch (FilterException ex) {
-                this.warnings.add("Filter >" + curFilter.getFiltercode() + "< could not be applied: " + ex.getLocalizedMessage());
-            }
-        }
-
+        
         try {
+            PreparedStatement pstmt = this.con.prepareStatement(stmt);
+
+            for (Filter curFilter : filters) {
+                try {
+                    Integer placeholderpos = placeholders.get(curFilter.getPrepareCode());
+                    curFilter.setFirstPlaceholder(placeholderpos);
+                    pstmt = curFilter.setFilterValue(pstmt);
+                    this.warnings.addAll(curFilter.getWarnings());
+                } catch (FilterException ex) {
+                    this.warnings.add("Filter >" + curFilter.getFiltercode() + "< could not be applied: " + ex.getLocalizedMessage());
+                }
+            }
+
             // Adding offset if given
             if (page != null) {
                 int pageno;
@@ -419,20 +401,19 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     pageno = Integer.parseInt(page);
                 }
                 int offsetpos = placeholders.get("offset");
-                stmt.setInt(offsetpos, size * pageno - size);
+                pstmt.setInt(offsetpos, size * pageno - size);
             }
 
             if (size > 0) {
                 int limitpos = placeholders.get("limit");
-                stmt.setInt(limitpos, size);
+                pstmt.setInt(limitpos, size);
             }
+            return pstmt;
         } catch (SQLException ex) {
             DynException de = new DynException("Could not execute query: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
             throw de;
         }
-
-        return stmt;
     }
 
     @Override
@@ -451,13 +432,10 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 this.warnings.add("The given limit of >" + size + "< exeeds the maximum of >" + hardLimit + "<. You will recive a maximum of >" + hardLimit + "< datasets.");
             }
         }
-        
-        try {
-            // Prepare query or get allready prepeared one
-            String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
-            // Fill prepared query with data
-            PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page);
-            ResultSet rs = pstmt.executeQuery();
+        // Prepare query or get allready prepeared one
+        String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
+        // Fill prepared query with data
+        try(PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page); ResultSet rs = pstmt.executeQuery()) {
             String json = "{}";
             if (rs.next()) {
                 String dbjson = rs.getString("json");
@@ -647,21 +625,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sqlbuilderid.append("\"");
             sqlbuilderid.append(" DESC LIMIT 1");
             
-            try {
-                // Prepare statement
-                PreparedStatement pstmt = this.con.prepareStatement(sql);
-                this.preparedStatements.put(pstmtid, pstmt);
-                this.preparedPlaceholders.put(pstmtid, placeholders);
-                if (firstidColumn != null) {
-                    String idsql = sqlbuilderid.toString();
-                    PreparedStatement idpstmt = this.con.prepareStatement(idsql);
-                    this.preparedStatements.put("id_" + pstmtid, idpstmt);
-                }
-            } catch (SQLException ex) {
-                DynException de = new DynException("Could not prepare statement >"
-                        + sql + "<: " + ex.getLocalizedMessage());
-                de.addSuppressed(ex);
-                throw de;
+            this.preparedStatements.put(pstmtid, sql);
+            this.preparedPlaceholders.put(pstmtid, placeholders);
+            if (firstidColumn != null) {
+                String idsql = sqlbuilderid.toString();
+                this.preparedStatements.put("id_" + pstmtid, idsql);
             }
         }
         return pstmtid;
@@ -757,9 +725,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 wktsql += ") AS geom";
 
                 String wkt;
-                try {
-                    Statement wktstmt = this.con.createStatement();
-                    ResultSet wktrs = wktstmt.executeQuery(wktsql);
+                try(Statement wktstmt = this.con.createStatement();
+                    ResultSet wktrs = wktstmt.executeQuery(wktsql)) {
                     wktrs.next();
                     // No other reference system awaited from geojson (removed from geojson specification)
                     wkt = "SRID="+curAttr.getSrid()+";" + wktrs.getString("geom");
@@ -791,24 +758,25 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw new DynException("Given json is empty");
         }
         String pstmtid = this.getPreparedInsert(json);
-        PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
-        Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
-        Map<String, Attribute> columns = this.dyncollection.getAttributes();
-        for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
-            String jkey = curEntry.getKey();
-            // Check if table expects that data
-            if (!placeholders.containsKey(jkey)) {
-                this.warnings.add("Table >" + this.table + "< does not expect data for >" + jkey + "<");
-                continue;
+        String stmt = this.preparedStatements.get(pstmtid);
+        
+        try(PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
+            Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
+            Map<String, Attribute> columns = this.dyncollection.getAttributes();
+            for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
+                String jkey = curEntry.getKey();
+                // Check if table expects that data
+                if (!placeholders.containsKey(jkey)) {
+                    this.warnings.add("Table >" + this.table + "< does not expect data for >" + jkey + "<");
+                    continue;
+                }
+
+                int pindex = placeholders.get(jkey);
+
+                // Get column information
+                Attribute curColumn = columns.get(jkey);
+                this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
             }
-
-            int pindex = placeholders.get(jkey);
-
-            // Get column information
-            Attribute curColumn = columns.get(jkey);
-            this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
-        }
-        try {
             // Prevent process form accessing manual comit mode, if other process
             // is in manual comit mode (on any other location)
             commitlock.acquire();
@@ -817,11 +785,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             pstmt.close();
             this.con.commit();
             // Request primary key
-            PreparedStatement idpstmt = this.preparedStatements.get("id_" + pstmtid);
-            if (idpstmt != null) {
-                try (ResultSet prs = idpstmt.executeQuery()) {
-                    if (prs.next()) {
-                        return prs.getObject(1);
+            String idstmt = this.preparedStatements.get("id_" + pstmtid);
+            try(PreparedStatement idpstmt = this.con.prepareStatement(idstmt)) {
+                if (idpstmt != null) {
+                    try (ResultSet prs = idpstmt.executeQuery()) {
+                        if (prs.next()) {
+                            return prs.getObject(1);
+                        }
                     }
                 }
             }
@@ -830,7 +800,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             try {
                 Message msg = new Message("DynDataPostgres/create",MessageLevel.ERROR,ex.getLocalizedMessage());
                 Logger.addDebugMessage(msg);
-                pstmt.close();
                 this.con.rollback();
             } catch(SQLException ex1) {
                 Message msg = new Message("DynDataPostgres/create",
@@ -846,7 +815,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         "Catched an unexpected >" + ex.getClass().getSimpleName() 
                                 + "< exception:" + ex.getLocalizedMessage());
                 Logger.addDebugMessage(msg);
-                pstmt.close();
                 this.con.rollback();
             } catch(SQLException ex1) {
                 Message msg = new Message("DynDataPostgres/create",
@@ -856,7 +824,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
             throw de;
-        
         } finally {
             try {
                 this.con.setAutoCommit(true);
@@ -950,17 +917,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             Message msg = new Message("DynDataPostgres/getPreparedUpdate",MessageLevel.INFO,sql);
             Logger.addDebugMessage(msg);
             
-            try {
-                // Prepare statement
-                PreparedStatement pstmt = this.con.prepareStatement(sql);
-                this.preparedStatements.put(pstmtid, pstmt);
-                this.preparedPlaceholders.put(pstmtid, placeholders);
-            } catch (SQLException ex) {
-                DynException de = new DynException("Could not prepare statement >"
-                        + sql + "<: " + ex.getLocalizedMessage());
-                de.addSuppressed(ex);
-                throw de;
-            }
+            this.preparedStatements.put(pstmtid, sql);
+            this.preparedPlaceholders.put(pstmtid, placeholders);
         }
         return pstmtid;
     }
@@ -999,49 +957,51 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     @Override
     public Long update(JsonObject json, Long id) throws DynException {
         String pstmtid = this.getPreparedUpdate(json, id);
-        PreparedStatement pstmt = this.preparedStatements.get(pstmtid);
-        Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
-        Map<String, Attribute> columns = this.dyncollection.getAttributes();
-    
-        int usedPlaceholders = 1;
-        for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
-            String jkey = curEntry.getKey();
-            // Check if table expects that data
-            if (!placeholders.containsKey(jkey)) {
-                this.warnings.add("Table >" + this.table + "< does not expect data for >" + jkey + "<");
-                continue;
-            }
-
-            int pindex = placeholders.get(jkey);
-
-            // Get column information
-            Attribute curColumn = columns.get(jkey);
-            this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
-            usedPlaceholders++;
-        }
-
-        // If there is a placeholder left it will be the id
-        if(usedPlaceholders <= placeholders.size()) {
-            try {
-                int nextId = usedPlaceholders++;
-                pstmt.setLong(nextId, id);
-            } catch(SQLException ex) {
-                DynException de = new DynException("Could set id to update statement: " + ex.getLocalizedMessage());
-                de.addSuppressed(ex);
-                throw de;
-            }
-        }
+        String stmt = this.preparedStatements.get(pstmtid);
         
-        try {
+        try(PreparedStatement pstmt = this.con.prepareStatement(stmt)) {
+            Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
+            Map<String, Attribute> columns = this.dyncollection.getAttributes();
+
+            int usedPlaceholders = 1;
+            for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
+                String jkey = curEntry.getKey();
+                // Check if table expects that data
+                if (!placeholders.containsKey(jkey)) {
+                    this.warnings.add("Table >" + this.table + "< does not expect data for >" + jkey + "<");
+                    continue;
+                }
+
+                int pindex = placeholders.get(jkey);
+
+                // Get column information
+                Attribute curColumn = columns.get(jkey);
+                this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
+                usedPlaceholders++;
+            }
+
+            // If there is a placeholder left it will be the id
+            if(usedPlaceholders <= placeholders.size()) {
+                try {
+                    int nextId = usedPlaceholders++;
+                    pstmt.setLong(nextId, id);
+                } catch(SQLException ex) {
+                    DynException de = new DynException("Could set id to update statement: " + ex.getLocalizedMessage());
+                    de.addSuppressed(ex);
+                    throw de;
+                }
+            }
             pstmt.executeUpdate();
             // Request primary key
-            PreparedStatement idpstmt = this.preparedStatements.get("id_" + pstmtid);
-            if (idpstmt != null) {
-                ResultSet prs = idpstmt.executeQuery();
-                if (prs.next()) {
-                    return prs.getLong(1);
+            String idstmt = this.preparedStatements.get("id_" + pstmtid);
+            try(PreparedStatement idpstmt = this.con.prepareStatement(idstmt);) {
+                if (idpstmt != null) {
+                    try(ResultSet prs = idpstmt.executeQuery()) {
+                        if (prs.next()) {
+                            return prs.getLong(1);
+                        }
+                    }
                 }
-                prs.close();
             }
             return null;
         } catch (SQLException ex) {
@@ -1184,8 +1144,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sql += String.join(" OR \"" + idcol.getName() + "\" = ", ids);
         }
         
-        try {
-            Statement stmt = this.con.createStatement();
+        try(Statement stmt = this.con.createStatement()) {
             stmt.executeUpdate(sql);
             return null;
         } catch (SQLException ex) {

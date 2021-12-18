@@ -21,7 +21,7 @@ import javax.sql.DataSource;
  */
 public class DynPostgres implements Dyn {
 
-    protected static Connection con;
+    protected Connection con;
     protected static Semaphore commitlock;
     protected List<String> warnings = new ArrayList<>();
 
@@ -60,6 +60,20 @@ public class DynPostgres implements Dyn {
             Message msg = new Message("", MessageLevel.ERROR, "Could not check connection: " + ex.getLocalizedMessage());
             Logger.addMessage(msg);
             DynException dex = new DynException("Could not check connection: " + ex.getLocalizedMessage());
+            dex.addSuppressed(ex);
+            throw dex;
+        }
+    }
+    
+    @Override
+    public void close() throws DynException {
+        try {
+            if(!this.con.isClosed())
+                this.con.close();
+        } catch (SQLException ex) {
+            Message msg = new Message("", MessageLevel.ERROR, "Could not close connection: " + ex.getLocalizedMessage());
+            Logger.addMessage(msg);
+            DynException dex = new DynException("Could not close connection: " + ex.getLocalizedMessage());
             dex.addSuppressed(ex);
             throw dex;
         }

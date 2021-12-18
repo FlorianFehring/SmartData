@@ -4,6 +4,7 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
+import de.fhbielefeld.smartdata.dyn.DynFactory;
 import de.fhbielefeld.smartdata.dynstorage.DynStoragePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import javax.naming.NamingException;
@@ -83,22 +84,7 @@ public class StorageResource {
             return rob.toResponse();
         }
 
-        DynStorage dyns;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dyns = new DynStorageMongo();
-            } else {
-                dyns = new DynStoragePostgres();
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynStorage dyns = DynFactory.getDynStorage()) {
             if (dyns.createStorageIfNotExists(name)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
@@ -142,22 +128,7 @@ public class StorageResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        DynStorage dyns;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dyns = new DynStorageMongo();
-            } else {
-                dyns = new DynStoragePostgres();
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynStorage dyns = DynFactory.getDynStorage()) {
             rob.add("list", dyns.getAbilities());
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -198,22 +169,7 @@ public class StorageResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        DynStorage dyns;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dyns = new DynStorageMongo();
-            } else {
-                dyns = new DynStoragePostgres();
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynStorage dyns = DynFactory.getDynStorage()) {
             rob.add("list", dyns.getCollections(name));
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -258,22 +214,7 @@ public class StorageResource {
             return rob.toResponse();
         }
 
-        DynStorage dyns;
-        Configuration conf = new Configuration();
-        try {
-            if (conf.getProperty("mongo.url") != null) {
-                dyns = new DynStorageMongo();
-            } else {
-                dyns = new DynStoragePostgres();
-            }
-        } catch (DynException ex) {
-            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get storage information: " + ex.getLocalizedMessage());
-            rob.addException(ex);
-            return rob.toResponse();
-        }
-
-        try {
+        try(DynStorage dyns = DynFactory.getDynStorage()) {
             if (dyns.deleteStorage(name)) {
                 rob.setStatus(Response.Status.OK);
             } else {

@@ -9,13 +9,20 @@ import java.util.List;
  * 
  * @author Florian Fehring
  */
-public interface Dyn {
+public interface Dyn extends AutoCloseable {
     
     /**
      * Creates a connection to the database
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
     public void connect() throws DynException;
+    
+    /**
+     * Disconnect from the connection to the database
+     * Database is returend to servers connection pool
+     * @throws DynException 
+     */
+    public void close() throws DynException;
     
     /**
      * Get warning that occured while processing
