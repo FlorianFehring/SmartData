@@ -2,14 +2,9 @@ package de.fhbielefeld.smartdata.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
-import de.fhbielefeld.scl.logger.message.Message;
-import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;

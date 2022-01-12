@@ -5,7 +5,6 @@ import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dyn.DynFactory;
-import de.fhbielefeld.smartdata.dynstorage.DynStoragePostgres;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import javax.naming.NamingException;
 import javax.ws.rs.DELETE;
@@ -24,7 +23,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import de.fhbielefeld.smartdata.dynstorage.DynStorage;
-import de.fhbielefeld.smartdata.dynstorage.DynStorageMongo;
 import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 
 /**
