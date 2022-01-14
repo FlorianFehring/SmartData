@@ -1033,9 +1033,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         }
                         break;
                     case "bool":
-                        // Isn't there a better method to get the boolean value?
-                        boolean bool = Boolean.parseBoolean(value.toString());
-                        pstmt.setBoolean(pindex, bool);
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.BOOLEAN);
+                        } else {
+                            // Isn't there a better method to get the boolean value?
+                            boolean bool = Boolean.parseBoolean(value.toString());
+                            pstmt.setBoolean(pindex, bool);
+                        }
                         break;
                     case "float4":
                     case "float8":
@@ -1043,33 +1047,55 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     case "decimal":
                     case "real":
                     case "double precision":
-                        JsonNumber jdoub = (JsonNumber) value;
-                        pstmt.setDouble(pindex, jdoub.doubleValue());
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.DOUBLE);
+                        } else {
+                            JsonNumber jdoub = (JsonNumber) value;
+                            pstmt.setDouble(pindex, jdoub.doubleValue());
+                        }
                         break;
                     case "int2":
                     case "int4":
                     case "smallint":
                     case "integer":
                     case "bigint":
-                        JsonNumber jint = (JsonNumber) value;
-                        pstmt.setInt(pindex, jint.intValue());
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.INTEGER);
+                        } else {
+                            JsonNumber jint = (JsonNumber) value;
+                            pstmt.setInt(pindex, jint.intValue());
+                        }
                         break;
                     case "int8":
-                        JsonNumber jbint = (JsonNumber) value;
-                        pstmt.setLong(pindex, jbint.longValue());
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.BIGINT);
+                        } else {
+                            JsonNumber jbint = (JsonNumber) value;
+                            pstmt.setLong(pindex, jbint.longValue());
+                        }
                         break;
                     case "timestamp":
-                        JsonString jts = (JsonString) value;
-                        LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
-                        pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.TIMESTAMP);
+                        } else {
+                            JsonString jts = (JsonString) value;
+                            LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
+                            pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                        }
                         break;
                     case "date":
-                        JsonString jdate = (JsonString) value;
-                        LocalDate ldate = DataConverter.objectToLocalDate(jdate.getString());
-                        pstmt.setDate(pindex, Date.valueOf(ldate));
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.DATE);
+                        } else {
+                            JsonString jdate = (JsonString) value;
+                            LocalDate ldate = DataConverter.objectToLocalDate(jdate.getString());
+                            pstmt.setDate(pindex, Date.valueOf(ldate));
+                        }
                         break;
                     case "json":
-                        if(value.getValueType() == ValueType.OBJECT || value.getValueType() == ValueType.ARRAY) {
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.LONGVARCHAR);
+                        } else if(value.getValueType() == ValueType.OBJECT || value.getValueType() == ValueType.ARRAY) {
                             // Given value is json
                             pstmt.setString(pindex, value.toString());
                         } else {
@@ -1079,27 +1105,35 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         }
                         break;
                     case "geometry":
-                        JsonString jgeom = (JsonString) value;
-                        pstmt.setObject(pindex, jgeom.getString());
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.OTHER);
+                        } else {
+                            JsonString jgeom = (JsonString) value;
+                            pstmt.setObject(pindex, jgeom.getString());
+                        }
                         break;
                     case "bytea":
-                        JsonString jbytea = (JsonString) value;
-                        String sbytea = jbytea.getString();
-                        
-                        // Handle encoded media (from html elements like canvas)
-                        byte bytes[];
-                        String[] basecode = sbytea.split(";base64,",2);
-                        if (basecode.length > 1) {
-                            String encodedImg = basecode[1];
-                            bytes = java.util.Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
-                            InputStream targetStream = new ByteArrayInputStream(bytes);
-                            pstmt.setBinaryStream(pindex, targetStream);
+                        if(value == null || value.toString().equals("null")) {
+                            pstmt.setNull(pindex, java.sql.Types.BLOB);
                         } else {
-                            Message msg = new Message(
-                                "DynDataPostgres", MessageLevel.WARNING,
-                                "Write to database does not support type >" + col.getType() + "< without base64 encodeing.");
-                            Logger.addDebugMessage(msg);
-                            this.warnings.add("Could not save value for >" + col.getName() + "<: Please provide binary data in base64 encoded form.");
+                            JsonString jbytea = (JsonString) value;
+                            String sbytea = jbytea.getString();
+
+                            // Handle encoded media (from html elements like canvas)
+                            byte bytes[];
+                            String[] basecode = sbytea.split(";base64,",2);
+                            if (basecode.length > 1) {
+                                String encodedImg = basecode[1];
+                                bytes = java.util.Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
+                                InputStream targetStream = new ByteArrayInputStream(bytes);
+                                pstmt.setBinaryStream(pindex, targetStream);
+                            } else {
+                                Message msg = new Message(
+                                    "DynDataPostgres", MessageLevel.WARNING,
+                                    "Write to database does not support type >" + col.getType() + "< without base64 encodeing.");
+                                Logger.addDebugMessage(msg);
+                                this.warnings.add("Could not save value for >" + col.getName() + "<: Please provide binary data in base64 encoded form.");
+                            }
                         }
                         break;
                     default:
