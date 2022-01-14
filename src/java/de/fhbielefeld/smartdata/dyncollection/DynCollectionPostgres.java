@@ -67,7 +67,10 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         if (!texists) {
             DynStorage db = new DynStoragePostgres(this.con);
             if (!db.storageExists(this.schema)) {
-                DynException dex = new DynException("Schema >" + this.schema + "< for table >" + this.name + "< does not exists.");
+                String msg = "Schema >" + this.schema + "< for table >" + this.name + "< does not exists.";
+                Message dmsg = new Message(msg,MessageLevel.ERROR);
+                Logger.addDebugMessage(dmsg);
+                DynException dex = new DynException(msg);
                 throw dex;
             }
         }
@@ -230,7 +233,10 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         }
         // If the column was not found, check if the table is available
         if (column == null & !this.exists()) {
-            DynException dex = new DynException("Table >" + this.schema + "." + this.name + "< does not exists.");
+            String msg = "Table >" + this.schema + "." + this.name + "< does not exists.";
+            Message dmsg = new Message(msg,MessageLevel.ERROR);
+            Logger.addDebugMessage(dmsg);
+            DynException dex = new DynException(msg);
             throw dex;
         }
 
