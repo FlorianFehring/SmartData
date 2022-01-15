@@ -361,7 +361,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             String stmt = selectbuilder.toString();
-            Message msg = new Message("DynDataPostgres", MessageLevel.INFO, "SQL: " + stmt);
+            Message msg = new Message("SQL: " + stmt, MessageLevel.INFO);
             Logger.addDebugMessage(msg);
             this.preparedStatements.put(stmtId, stmt);
             this.preparedPlaceholders.put(stmtId, placeholders);
@@ -588,7 +588,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sqlbuilder.append(")");
 
             String sql = sqlbuilder.toString();
-            Message msg = new Message("DynDataPostgres/getPreparedInsert",MessageLevel.INFO,sql);
+            Message msg = new Message("SQL: " + sql,MessageLevel.INFO);
             Logger.addDebugMessage(msg);
 
             // Build up primary key query
@@ -798,12 +798,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             return null;
         } catch (SQLException ex) {
             try {
-                Message msg = new Message("DynDataPostgres/create",MessageLevel.ERROR,ex.getLocalizedMessage());
+                Message msg = new Message("Error mesage: " + ex.getLocalizedMessage(),MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
+                ex.printStackTrace();
                 this.con.rollback();
             } catch(SQLException ex1) {
-                Message msg = new Message("DynDataPostgres/create",
-                        MessageLevel.ERROR,"Could not rollback: " + ex1.getLocalizedMessage());
+                Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
+                        MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
             }
             DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
@@ -811,14 +812,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         } catch (Exception ex) {
             try {
-                Message msg = new Message("DynDataPostgres/create",MessageLevel.ERROR, 
-                        "Catched an unexpected >" + ex.getClass().getSimpleName() 
-                                + "< exception:" + ex.getLocalizedMessage());
+                Message msg = new Message("Catched an unexpected >" + ex.getClass().getSimpleName() 
+                                + "< exception:" + ex.getLocalizedMessage(),MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
                 this.con.rollback();
             } catch(SQLException ex1) {
-                Message msg = new Message("DynDataPostgres/create",
-                        MessageLevel.ERROR,"Could not rollback: " + ex1.getLocalizedMessage());
+                Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
+                        MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
             }
             DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
@@ -828,8 +828,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             try {
                 this.con.setAutoCommit(true);
             } catch(SQLException ex) {
-                Message msg = new Message("DynRecordsPostgres/create",
-                        MessageLevel.ERROR,"Could not reset autocomit mode to true!");
+                Message msg = new Message("Could not reset autocomit mode to true!",
+                        MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
             }
             commitlock.release();
@@ -914,7 +914,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             placeholders.put(identitycol,foundCols);
             
             String sql = sqlbuilder.toString();
-            Message msg = new Message("DynDataPostgres/getPreparedUpdate",MessageLevel.INFO,sql);
+            Message msg = new Message("SQL: " + sql,MessageLevel.INFO);
             Logger.addDebugMessage(msg);
             
             this.preparedStatements.put(pstmtid, sql);
@@ -1129,8 +1129,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                                 pstmt.setBinaryStream(pindex, targetStream);
                             } else {
                                 Message msg = new Message(
-                                    "DynDataPostgres", MessageLevel.WARNING,
-                                    "Write to database does not support type >" + col.getType() + "< without base64 encodeing.");
+                                    "Write to database does not support type >" + col.getType() + "< without base64 encodeing.", MessageLevel.WARNING);
                                 Logger.addDebugMessage(msg);
                                 this.warnings.add("Could not save value for >" + col.getName() + "<: Please provide binary data in base64 encoded form.");
                             }
@@ -1138,8 +1137,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         break;
                     default:
                         Message msg = new Message(
-                                "DynDataPostgres", MessageLevel.WARNING,
-                                "Write to database does not support type >" + col.getType() + "<");
+                                "Write to database does not support type >" + col.getType() + "<", MessageLevel.WARNING);
                         Logger.addDebugMessage(msg);
                         this.warnings.add("Could not save value for >" + col.getName() + "<: Datatype >" + col.getType() + "< is not supported.");
                 }
