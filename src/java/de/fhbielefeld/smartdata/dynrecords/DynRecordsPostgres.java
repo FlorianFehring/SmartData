@@ -992,20 +992,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 }
             }
             pstmt.executeUpdate();
-            // Request primary key
-            String idstmt = this.preparedStatements.get("id_" + pstmtid);
-            try(PreparedStatement idpstmt = this.con.prepareStatement(idstmt);) {
-                if (idpstmt != null) {
-                    try(ResultSet prs = idpstmt.executeQuery()) {
-                        if (prs.next()) {
-                            return prs.getLong(1);
-                        }
-                    }
-                }
-            }
-            return null;
+            return id;
         } catch (SQLException ex) {
-            DynException de = new DynException("Could not update dataset: " + ex.getLocalizedMessage());
+            String msg = "Could not update dataset: " + ex.getLocalizedMessage();
+            Message msga = new Message(msg,MessageLevel.ERROR);
+            Logger.addMessage(msga);
+            ex.printStackTrace();
+            DynException de = new DynException(msg);
             de.addSuppressed(ex);
             throw de;
         }
@@ -1180,7 +1173,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             stmt.executeUpdate(sql);
             return null;
         } catch (SQLException ex) {
-            DynException de = new DynException("Could not update dataset: " + ex.getLocalizedMessage());
+            String msg = "Could not update dataset: " + ex.getLocalizedMessage();
+            Message msga = new Message(msg,MessageLevel.ERROR);
+            Logger.addMessage(msga);
+            ex.printStackTrace();
+            DynException de = new DynException(msg);
             de.addSuppressed(ex);
             throw de;
         }
