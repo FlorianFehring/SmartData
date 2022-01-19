@@ -991,7 +991,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     throw de;
                 }
             }
-            pstmt.executeUpdate();
+            int modifieds = pstmt.executeUpdate();
+            if(modifieds == 0) {
+                DynException de = new DynException("Dataset with id >" + id + "< not found.");
+                throw de;
+            }
             return id;
         } catch (SQLException ex) {
             String msg = "Could not update dataset: " + ex.getLocalizedMessage();
