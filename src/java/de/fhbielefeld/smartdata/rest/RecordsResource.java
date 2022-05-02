@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
@@ -324,19 +325,47 @@ public class RecordsResource {
                     SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
                     if (sp != null) {
                         String ids = sp.getContextIds() + "";
-                        // Replace unwanted chars
-                        ids = ids.replaceAll(" ", "")
-                                .replace("[", "")
-                                .replace("]", "");
-                        // Create filter if there is no one
-                        if (filterList == null) {
-                            filterList = new ArrayList<String>();
+                        boolean askerikFound = false;
+                        for(Entry<String,String> curEntry : sp.getContextRights().entrySet()) {
+                            if(Character.isDigit(curEntry.getKey().charAt(curEntry.getKey().length()-1)))
+                                continue;
+                            if(curEntry.getValue().equals("*"))
+                                askerikFound = true;
                         }
-                        Attribute idattr;
-                        // Get identity column (only first identity supported)
-                        idattr = dync.getIdentityAttributes().get(0);
-                        // Write filter
-                        filterList.add(idattr.getName() + ",in," + ids);
+                        if (askerikFound) {
+                            // User has *-right no filter needed
+                        } else {
+                            // Replace unwanted chars
+                            ids = ids.replaceAll(" ", "")
+                                    .replace("[", "")
+                                    .replace("]", "");
+                            // Create filter if there is no one
+                            if (filterList == null) {
+                                filterList = new ArrayList<String>();
+                            }
+                            Attribute idattr;
+                            // Get identity column (only first identity supported)
+                            idattr = dync.getIdentityAttributes().get(0);
+                            // Write filter
+                            filterList.add(idattr.getName() + ",in," + ids);
+                        }
+
+                        try {
+                            if (filterList != null) {
+                                // Build filter objects
+                                for (String curFilterStr : filterList) {
+                                    Filter filt = FilterParser.parse(curFilterStr, dync);
+                                    if (filt != null) {
+                                        filters.add(filt);
+                                    }
+                                }
+                            }
+                        } catch (FilterException ex) {
+                            rob.setStatus(Response.Status.BAD_REQUEST);
+                            rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
+                            rob.addException(ex);
+                            return rob.toResponse();
+                        }
                     } else {
                         contextInfo = "No user identified!";
                     }
@@ -350,29 +379,13 @@ public class RecordsResource {
                 }
             }
 
-            try {
-                if (filterList != null) {
-                    // Build filter objects
-                    for (String curFilterStr : filterList) {
-                        Filter filt = FilterParser.parse(curFilterStr, dync);
-                        if (filt != null) {
-                            filters.add(filt);
-                        }
-                    }
-                }
-            } catch (FilterException ex) {
-                rob.setStatus(Response.Status.BAD_REQUEST);
-                rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
-                rob.addException(ex);
-                return rob.toResponse();
-            }
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get identity column.");
             return rob.toResponse();
         }
 
-        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr, geotransform);
             if (json.equals("{}")) {
                 json = "[]";
@@ -439,7 +452,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -485,7 +498,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, null);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -529,7 +542,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try(DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.delete(id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
