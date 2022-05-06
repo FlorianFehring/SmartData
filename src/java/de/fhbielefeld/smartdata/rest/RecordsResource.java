@@ -326,11 +326,13 @@ public class RecordsResource {
                     if (sp != null) {
                         String ids = sp.getContextIds() + "";
                         boolean askerikFound = false;
-                        for(Entry<String,String> curEntry : sp.getContextRights().entrySet()) {
-                            if(Character.isDigit(curEntry.getKey().charAt(curEntry.getKey().length()-1)))
+                        for (Entry<String, String> curEntry : sp.getContextRights().entrySet()) {
+                            if (Character.isDigit(curEntry.getKey().charAt(curEntry.getKey().length() - 1))) {
                                 continue;
-                            if(curEntry.getValue().equals("*"))
+                            }
+                            if (curEntry.getValue().equals("*")) {
                                 askerikFound = true;
+                            }
                         }
                         if (askerikFound) {
                             // User has *-right no filter needed
@@ -339,19 +341,26 @@ public class RecordsResource {
                             ids = ids.replaceAll(" ", "")
                                     .replace("[", "")
                                     .replace("]", "");
-                            // Create filter if there is no one
-                            if (filterList == null) {
-                                filterList = new ArrayList<String>();
+                            if (!ids.isEmpty() && !ids.isBlank()) {
+                                // Create filter if there is no one
+                                if (filterList == null) {
+                                    filterList = new ArrayList<String>();
+                                }
+                                Attribute idattr;
+                                // Get identity column (only first identity supported)
+                                idattr = dync.getIdentityAttributes().get(0);
+                                // Write filter
+                                filterList.add(idattr.getName() + ",in," + ids);
+                            } else {
+                                // No rights on any set
+                                Response.ResponseBuilder rb = Response.status(Response.Status.OK);
+                                rb.entity("[]");
+                                return rb.build();
                             }
-                            Attribute idattr;
-                            // Get identity column (only first identity supported)
-                            idattr = dync.getIdentityAttributes().get(0);
-                            // Write filter
-                            filterList.add(idattr.getName() + ",in," + ids);
                         }
 
-                        try {
-                            if (filterList != null) {
+                        if (filterList != null) {
+                            try {
                                 // Build filter objects
                                 for (String curFilterStr : filterList) {
                                     Filter filt = FilterParser.parse(curFilterStr, dync);
@@ -359,12 +368,12 @@ public class RecordsResource {
                                         filters.add(filt);
                                     }
                                 }
+                            } catch (FilterException ex) {
+                                rob.setStatus(Response.Status.BAD_REQUEST);
+                                rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
+                                rob.addException(ex);
+                                return rob.toResponse();
                             }
-                        } catch (FilterException ex) {
-                            rob.setStatus(Response.Status.BAD_REQUEST);
-                            rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
-                            rob.addException(ex);
-                            return rob.toResponse();
                         }
                     } else {
                         contextInfo = "No user identified!";
