@@ -317,7 +317,6 @@ public class RecordsResource {
 
         try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             // Check if there is a request context and user has restricted rights
-
             if (requestContext != null) {
                 String contextInfo = null;
                 SecurityContext sc = requestContext.getSecurityContext();
@@ -359,22 +358,6 @@ public class RecordsResource {
                             }
                         }
 
-                        if (filterList != null) {
-                            try {
-                                // Build filter objects
-                                for (String curFilterStr : filterList) {
-                                    Filter filt = FilterParser.parse(curFilterStr, dync);
-                                    if (filt != null) {
-                                        filters.add(filt);
-                                    }
-                                }
-                            } catch (FilterException ex) {
-                                rob.setStatus(Response.Status.BAD_REQUEST);
-                                rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
-                                rob.addException(ex);
-                                return rob.toResponse();
-                            }
-                        }
                     } else {
                         contextInfo = "No user identified!";
                     }
@@ -386,8 +369,23 @@ public class RecordsResource {
                     Message msg = new Message(contextInfo, MessageLevel.INFO);
                     Logger.addDebugMessage(msg);
                 }
+            } // End security check
+            if (filterList != null) {
+                try {
+                    // Build filter objects
+                    for (String curFilterStr : filterList) {
+                        Filter filt = FilterParser.parse(curFilterStr, dync);
+                        if (filt != null) {
+                            filters.add(filt);
+                        }
+                    }
+                } catch (FilterException ex) {
+                    rob.setStatus(Response.Status.BAD_REQUEST);
+                    rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
+                    rob.addException(ex);
+                    return rob.toResponse();
+                }
             }
-
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Could not get identity column.");
