@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.StringJoiner;
 import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
@@ -323,43 +324,20 @@ public class RecordsResource {
                 if (sc != null) {
                     SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
                     if (sp != null) {
-                        String ids = sp.getContextIds() + "";
-                        boolean askerikFound = false;
-                        for (Entry<String, String> curEntry : sp.getContextRights().entrySet()) {
-                            if (Character.isDigit(curEntry.getKey().charAt(curEntry.getKey().length() - 1))) {
-                                continue;
+                        StringJoiner sb = new StringJoiner(",");
+                        for (Long curSet : sp.getContextRight().getIds()) {
+                            if (curSet == Long.MAX_VALUE) {
+                                break;
                             }
-                            if (curEntry.getValue().equals("*")) {
-                                askerikFound = true;
-                            }
+                            sb.add(curSet.toString());
                         }
-                        if (askerikFound) {
-                            // User has *-right no filter needed
-                        } else {
-                            // Replace unwanted chars
-                            ids = ids.replaceAll(" ", "")
-                                    .replace("[", "")
-                                    .replace("]", "");
-                            if (!ids.isEmpty() && !ids.isBlank()) {
-                                // Create filter if there is no one
-                                if (filterList == null) {
-                                    filterList = new ArrayList<String>();
-                                }
-                                Attribute idattr;
-                                // Get identity column (only first identity supported)
-                                idattr = dync.getIdentityAttributes().get(0);
-                                // Write filter
-                                filterList.add(idattr.getName() + ",in," + ids);
-                            } else {
-                                // No rights on any set
-                                Response.ResponseBuilder rb = Response.status(Response.Status.OK);
-                                rb.entity("[]");
-                                return rb.build();
-                            }
+                        if (sb.length() > 0) {
+                            Attribute idattr;
+                            // Get identity column (only first identity supported)
+                            idattr = dync.getIdentityAttributes().get(0);
+                            // Write filter
+                            filterList.add(idattr.getName() + ",in," + sb.toString());
                         }
-
-                    } else {
-                        contextInfo = "No user identified!";
                     }
                 } else {
                     contextInfo = "No SecurityContext in Requestcontext found!";
@@ -368,6 +346,8 @@ public class RecordsResource {
                 if (contextInfo != null) {
                     Message msg = new Message(contextInfo, MessageLevel.INFO);
                     Logger.addDebugMessage(msg);
+                    rob.setStatus(Response.Status.UNAUTHORIZED);
+                    return rob.toResponse();
                 }
             } // End security check
             if (filterList != null) {
