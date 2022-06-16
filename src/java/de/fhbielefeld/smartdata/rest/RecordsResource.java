@@ -393,6 +393,8 @@ public class RecordsResource {
             String msg = ex.getLocalizedMessage();
             if (msg.contains("Table") && msg.contains("does not exist")) {
                 rob.setStatus(Response.Status.NOT_FOUND);
+                Message msge = new Message(msg+ " Check table ownership.",MessageLevel.ERROR);
+                Logger.addDebugMessage(msge);
             } else {
                 rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
                 rob.addErrorMessage("Could not get data: " + msg);
