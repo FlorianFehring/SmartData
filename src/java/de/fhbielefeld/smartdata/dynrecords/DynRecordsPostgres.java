@@ -67,7 +67,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         this.schema = schema;
         this.table = table;
         this.connect();
-        
+
         // Get available columns
         this.dyncollection = new DynCollectionPostgres(this.schema, this.table, this.con);
     }
@@ -81,7 +81,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             stmtId += includes;
         }
         if (filters != null) {
-            for(Filter curFilter : filters) {
+            for (Filter curFilter : filters) {
                 stmtId += curFilter.getPrepareCode();
             }
         }
@@ -94,16 +94,16 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         if (page != null) {
             stmtId += page;
         }
-        if(geojsonattr != null) {
+        if (geojsonattr != null) {
             stmtId += "_geo" + geojsonattr;
         }
-        if(geotransform != null) {
+        if (geotransform != null) {
             stmtId += "_geot" + geotransform;
         }
 
         stmtId += countOnly;
         this.lastStmtId = stmtId;
-        
+
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
             this.preparedWarnings.put(stmtId, new ArrayList<>());
@@ -138,12 +138,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 // Parse and split requested attribute names
                 boolean attrsSelected = false;
                 Collection<String> requestedAttr = new ArrayList<>();
-                if(includes != null && !includes.isEmpty()) {
+                if (includes != null && !includes.isEmpty()) {
                     // Parse includes
                     requestedAttr = new ArrayList<>(Arrays.asList(includes.split(",")));
                     attrsSelected = true;
                 }
-                
+
                 // Build list of columns
                 ArrayList<String> queryColExpressions = new ArrayList<>();
 
@@ -157,11 +157,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                                     + "have to list it in your measurementnames calling "
                                     + "getData()", MessageLevel.INFO);
                             Logger.addDebugMessage(msg);
-                        } else if(attrsSelected) {
+                        } else if (attrsSelected) {
                             requestedAttr.add(curColumn.getName());
                         }
                     }
-                    
+
                     // Check and automatic add orderby column
                     if (orderby != null && curColumn.getName().equals(orderby)) {
                         orderByAvailable = true;
@@ -172,37 +172,37 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                                     + "have to list it in your measurementnames calling "
                                     + "getData()", MessageLevel.INFO);
                             Logger.addDebugMessage(msg);
-                        } else if(attrsSelected) {
+                        } else if (attrsSelected) {
                             requestedAttr.add(curColumn.getName());
                         }
                     }
-                    
+
                     // Go next if attribute is not requested
-                    if(attrsSelected && !requestedAttr.contains(curColumn.getName())) {
+                    if (attrsSelected && !requestedAttr.contains(curColumn.getName())) {
                         continue;
                     }
-                    
+
                     // Exclude geo attribute, if geojson should be returned
-                    if(geojsonattr != null && curColumn.getName().equals(geojsonattr)) {
+                    if (geojsonattr != null && curColumn.getName().equals(geojsonattr)) {
                         requestedAttr.remove(geojsonattr);
                         continue;
                     }
-                    
+
                     // Create selection expression
-                    if(curColumn.getType().equalsIgnoreCase("bytea")) {
+                    if (curColumn.getType().equalsIgnoreCase("bytea")) {
                         // binary data should be fetched base64 encoded
-                        queryColExpressions.add("ENCODE(\"" + curColumn.getName()+ "\", 'BASE64') " + curColumn.getName());
-                    } else if(curColumn.getType().equalsIgnoreCase("geometry") && geotransform != null) {
+                        queryColExpressions.add("ENCODE(\"" + curColumn.getName() + "\", 'BASE64') " + curColumn.getName());
+                    } else if (curColumn.getType().equalsIgnoreCase("geometry") && geotransform != null) {
                         // Convert to latlon output
-                        if(geotransform.equalsIgnoreCase("latlon")) {
-                            queryColExpressions.add("ST_X(ST_TRANSFORM(\"" 
-                            + curColumn.getName()+ "\",4674)) " 
-                            + curColumn.getName()+ "_lon, ST_Y(ST_TRANSFORM(\"" 
-                            + curColumn.getName()+ "\",4674)) " + curColumn.getName()+ "_lat");
+                        if (geotransform.equalsIgnoreCase("latlon")) {
+                            queryColExpressions.add("ST_X(ST_TRANSFORM(\""
+                                    + curColumn.getName() + "\",4674)) "
+                                    + curColumn.getName() + "_lon, ST_Y(ST_TRANSFORM(\""
+                                    + curColumn.getName() + "\",4674)) " + curColumn.getName() + "_lat");
                         } else {
                             // Treat as EPSG code
-                            queryColExpressions.add("ST_TRANSFORM(\"" 
-                            + curColumn.getName()+ "\","+geotransform+") " + curColumn.getName());
+                            queryColExpressions.add("ST_TRANSFORM(\""
+                                    + curColumn.getName() + "\"," + geotransform + ") " + curColumn.getName());
                         }
                     } else {
                         queryColExpressions.add("\"" + curColumn.getName() + "\"");
@@ -214,20 +214,20 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 // Check if there are columns requested not available    
                 if (!requestedAttr.isEmpty()) {
                     String msgstr = "There requested columns >"
-                        + requestedAttr + "< are not available.";
+                            + requestedAttr + "< are not available.";
                     Message msg = new Message(msgstr, MessageLevel.WARNING);
                     Logger.addDebugMessage(msg);
                     this.preparedWarnings.get(stmtId).add(msgstr);
                 }
-                
+
                 String namesstr = String.join(",", queryColExpressions);
                 // Create select names
                 selectbuilder.append(namesstr);
             }
-            
+
             // Build FROM ... WHERE clause (separate because in geojson request it must be placed on other location)
             StringBuilder frombuilder = new StringBuilder();
-            
+
             frombuilder.append(" FROM ");
             frombuilder.append("\"");
             frombuilder.append(this.schema);
@@ -236,7 +236,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             frombuilder.append("\"");
             frombuilder.append(this.table);
             frombuilder.append("\"");
-            
+
             if (filters != null && !filters.isEmpty()) {
                 frombuilder.append(" WHERE ");
                 int i = 0;
@@ -270,8 +270,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
             // Adding offset if given
             if (page != null) {
-                if(size < 1)
+                if (size < 1) {
                     size = 20;
+                }
                 frombuilder.append(" OFFSET ?");
                 placeholders.put("offset", placeholderNo++);
             }
@@ -293,11 +294,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 selectbuilder = newsqlsb;
             }
 
-            if(geojsonattr==null)
+            if (geojsonattr == null) {
                 selectbuilder.append(frombuilder);
-            
+            }
+
             String prespecsql = selectbuilder.toString();
-            
+
             // Modify select statement for export as json
             if (unique != null) {
                 StringBuilder newsqlsb = new StringBuilder();
@@ -306,15 +308,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 newsqlsb.append(") as t");
                 selectbuilder = newsqlsb;
             }
-            
+
             // Remove null values
             StringBuilder rnullsqlsb = new StringBuilder();
             rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");
             rnullsqlsb.append(prespecsql);
             rnullsqlsb.append(") t");
             selectbuilder = rnullsqlsb;
-            
-            if(geojsonattr != null) {
+
+            if (geojsonattr != null) {
                 // Get geojsonattr information
                 Attribute geoattr = attributes.get(geojsonattr);
                 StringBuilder newsqlsb = new StringBuilder();
@@ -327,26 +329,26 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 // Add geometry information
                 newsqlsb.append(", ST_AsGeoJSON(");
                 // Add transformation if needed
-                if(geoattr.getDimension() == 2 && geoattr.getSrid() != 4326) {
+                if (geoattr.getDimension() == 2 && geoattr.getSrid() != 4326) {
                     newsqlsb.append("ST_Transform(");
                 }
-                if(geoattr.getDimension() == 3 && geoattr.getSrid() != 4979) {
+                if (geoattr.getDimension() == 3 && geoattr.getSrid() != 4979) {
                     newsqlsb.append("ST_Transform(");
                 }
                 newsqlsb.append("\"");
                 newsqlsb.append(geojsonattr);
                 newsqlsb.append("\"");
-                
+
                 // Add transformation if needed
-                if(geoattr.getDimension() == 2 && geoattr.getSrid() != 4326) {
+                if (geoattr.getDimension() == 2 && geoattr.getSrid() != 4326) {
                     newsqlsb.append(",4326)");
                 }
-                if(geoattr.getDimension() == 3 && geoattr.getSrid() != 4979) {
+                if (geoattr.getDimension() == 3 && geoattr.getSrid() != 4979) {
                     newsqlsb.append(",4979)");
                 }
-                
+
                 newsqlsb.append(")::json as geometry");
-                
+
                 // Add properties attribute
                 newsqlsb.append(", (");
                 // Filter null values
@@ -369,12 +371,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
         return stmtId;
     }
-    
+
     @Override
     public PreparedStatement setQueryClauses(String stmtid, Collection<Filter> filters, int size, String page) throws DynException {
         String stmt = this.preparedStatements.get(stmtid);
         Map<String, Integer> placeholders = this.preparedPlaceholders.get(stmtid);
-        
+
         try {
             PreparedStatement pstmt = this.con.prepareStatement(stmt);
 
@@ -392,8 +394,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Adding offset if given
             if (page != null) {
                 int pageno;
-                if(size < 1)
+                if (size < 1) {
                     size = 20;
+                }
                 if (page.contains(",")) {
                     pageno = Integer.parseInt(page.split(",")[0]);
                     size = Integer.parseInt(page.split(",")[1]);
@@ -420,28 +423,29 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException {
         // Reset warnings for new get
         this.warnings = new ArrayList<>();
-        
+
         Configuration conf = new Configuration();
         String hardLimitStr = conf.getProperty("hardLimit");
-        if(hardLimitStr != null) {
+        if (hardLimitStr != null) {
             int hardLimit = Integer.parseInt(hardLimitStr);
-            if(size <= 0 || size > hardLimit)
+            if (size <= 0 || size > hardLimit) {
                 size = hardLimit;
+            }
             // Add warning message
-            if(size > hardLimit) {
+            if (size > hardLimit) {
                 this.warnings.add("The given limit of >" + size + "< exeeds the maximum of >" + hardLimit + "<. You will recive a maximum of >" + hardLimit + "< datasets.");
             }
         }
         // Prepare query or get allready prepeared one
         String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
         // Fill prepared query with data
-        try(PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page); ResultSet rs = pstmt.executeQuery()) {
+        try ( PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page);  ResultSet rs = pstmt.executeQuery()) {
             String json = "{}";
             if (rs.next()) {
                 String dbjson = rs.getString("json");
                 if (dbjson != null && !dbjson.isEmpty()) {
                     json = dbjson;
-                    if(deflatt) {
+                    if (deflatt) {
                         json = this.deflatt(json);
                     }
                 }
@@ -453,8 +457,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             de.addSuppressed(ex);
             ex.printStackTrace();
             throw de;
-        } catch(Exception ex) {
-            if(ex.getLocalizedMessage().contains("connection has been closed")) {
+        } catch (Exception ex) {
+            if (ex.getLocalizedMessage().contains("connection has been closed")) {
                 // Try reconnect
                 this.connect();
                 return this.get(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
@@ -464,21 +468,21 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         }
     }
-    
+
     /**
      * Creates deflatted json representation of flatted datasets
-     * 
-     * @return 
+     *
+     * @return
      */
     private String deflatt(String json) {
-        Map<Integer,Map<String,JsonValue>> newdatamap = new HashMap<>();
+        Map<Integer, Map<String, JsonValue>> newdatamap = new HashMap<>();
         // Parse json
         JsonParser parser = Json.createParser(new StringReader(json));
         parser.next();
         JsonArray dataArr = parser.getArray();
-        for(JsonValue curVal : dataArr) {
+        for (JsonValue curVal : dataArr) {
             JsonObject curDataset = (JsonObject) curVal;
-            for(Entry<String, JsonValue> curAttr : curDataset.entrySet()) {
+            for (Entry<String, JsonValue> curAttr : curDataset.entrySet()) {
                 String attrcall = curAttr.getKey();
                 // Get last digit position from the end
                 int i = attrcall.length();
@@ -490,7 +494,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     String attrname = attrcall.substring(0, i);
                     int deflattedId = Integer.parseInt(attrcall.substring(i));
                     // Create place for dataset in map if not exists
-                    if(!newdatamap.containsKey(deflattedId)) {
+                    if (!newdatamap.containsKey(deflattedId)) {
                         newdatamap.put(deflattedId, new HashMap<>());
                     }
                     Map<String, JsonValue> setmap = newdatamap.get(deflattedId);
@@ -498,33 +502,33 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 }
             }
         }
-        
+
         // New json array
         JsonArrayBuilder newdataarr = Json.createArrayBuilder();
-        for(Entry<Integer,Map<String,JsonValue>> curVal : newdatamap.entrySet()) {
+        for (Entry<Integer, Map<String, JsonValue>> curVal : newdatamap.entrySet()) {
             JsonObjectBuilder newdataset = Json.createObjectBuilder();
             newdataset.add("id", curVal.getKey());
-            for(Entry<String,JsonValue> curAttr : curVal.getValue().entrySet()) {
+            for (Entry<String, JsonValue> curAttr : curVal.getValue().entrySet()) {
                 newdataset.add(curAttr.getKey(), curAttr.getValue());
             }
             newdataarr.add(newdataset);
         }
-        
+
         Map<String, Object> properties = new HashMap<>(1);
         properties.put(JsonGenerator.PRETTY_PRINTING, false);
         JsonWriterFactory writerFactory = Json.createWriterFactory(properties);
         StringWriter sw = new StringWriter();
-        try (JsonWriter jsonWriter = writerFactory.createWriter(sw)) {
+        try ( JsonWriter jsonWriter = writerFactory.createWriter(sw)) {
             jsonWriter.writeArray(newdataarr.build());
         }
         return sw.toString();
     }
-    
+
     @Override
     public String getPreparedInsert(JsonObject json) throws DynException {
         String pstmtid = "insert_" + String.join("_", json.keySet());
         this.lastStmtId = pstmtid;
-        
+
         if (!this.preparedStatements.containsKey(pstmtid)) {
             this.preparedWarnings.put(pstmtid, new ArrayList<>());
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
@@ -553,7 +557,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 }
                 // Get definition for current column
                 Attribute attr = columns.get(curKey);
-                
+
                 if (foundCols > 0) {
                     colsstr.append("\",\"");
                     valuestr.append(",");
@@ -561,26 +565,26 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 colsstr.append(curKey);
 
                 // Add placeholder depending on type
-                switch(attr.getType()) {
+                switch (attr.getType()) {
                     case "json":
                         valuestr.append("to_json(?::json)");
                         break;
                     case "geometry":
                         valuestr.append("ST_GeomFromText(?)");
                         break;
-                        default:
-                            valuestr.append("?");
+                    default:
+                        valuestr.append("?");
                 }
-                
+
                 foundCols++;
                 // Note placeholder
                 placeholders.put(curKey, foundCols);
             }
             // Check if there is no data to insert
-            if(foundCols<1) {
+            if (foundCols < 1) {
                 throw new DynException("There is no data to insert");
             }
-            
+
             // Put together
             sqlbuilder.append(colsstr);
             sqlbuilder.append("\") VALUES (");
@@ -588,7 +592,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sqlbuilder.append(")");
 
             String sql = sqlbuilder.toString();
-            Message msg = new Message("SQL: " + sql,MessageLevel.INFO);
+            Message msg = new Message("SQL: " + sql, MessageLevel.INFO);
             Logger.addDebugMessage(msg);
 
             // Build up primary key query
@@ -624,7 +628,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sqlbuilderid.append(firstidColumn);
             sqlbuilderid.append("\"");
             sqlbuilderid.append(" DESC LIMIT 1");
-            
+
             this.preparedStatements.put(pstmtid, sql);
             this.preparedPlaceholders.put(pstmtid, placeholders);
             if (firstidColumn != null) {
@@ -642,24 +646,24 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         JsonReader jsonReader = Json.createReader(new StringReader(json));
         List<Object> ids = new ArrayList<>();
         // Records, geojson, array or Single mode
-        if(json.startsWith("{\"type\":\"FeatureCollection\"")) {
+        if (json.startsWith("{\"type\":\"FeatureCollection\"")) {
             JsonObject jsonobject = jsonReader.readObject();
             jsonReader.close();
             JsonArray featurearray = jsonobject.getJsonArray("features");
-            for(int i=0; i < featurearray.size(); i++) {
-                    ids.add(this.createFromGeojson(featurearray.getJsonObject(i)));
+            for (int i = 0; i < featurearray.size(); i++) {
+                ids.add(this.createFromGeojson(featurearray.getJsonObject(i)));
             }
-        } else if(json.startsWith("{\"records\":")) {
+        } else if (json.startsWith("{\"records\":")) {
             JsonObject jsonobject = jsonReader.readObject();
             jsonReader.close();
             JsonArray jsonarray = jsonobject.getJsonArray("records");
-            for(int i=0; i < jsonarray.size(); i++) {
+            for (int i = 0; i < jsonarray.size(); i++) {
                 ids.add(this.create(jsonarray.getJsonObject(i)));
             }
-        } else if(json.startsWith("[")) {
+        } else if (json.startsWith("[")) {
             JsonArray jsonarray = jsonReader.readArray();
             jsonReader.close();
-            for(int i=0; i < jsonarray.size(); i++) {
+            for (int i = 0; i < jsonarray.size(); i++) {
                 ids.add(this.create(jsonarray.getJsonObject(i)));
             }
         } else {
@@ -671,103 +675,108 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     /**
-     * Converts a geosjon Feature into one simple json dataset, converting geo 
+     * Converts a geosjon Feature into one simple json dataset, converting geo
      * informations into WKT.
-     * 
+     *
      * @param geojsonobj Geojson Feature object
      * @return Result of the insertion
-     * @throws DynException 
+     * @throws DynException
      */
     public Object createFromGeojson(JsonObject geojsonobj) throws DynException {
         JsonObjectBuilder databuilder = Json.createObjectBuilder();
         // Check if geojson is valid
         String featurestring = geojsonobj.getString("type");
-        if(featurestring == null || !featurestring.equals("Feature"))
+        if (featurestring == null || !featurestring.equals("Feature")) {
             throw new DynException("Given json is not valid geojson");
+        }
         JsonObject geom = geojsonobj.getJsonObject("geometry");
         // Check if there is a geometry
-        if(geom==null)
+        if (geom == null) {
             throw new DynException("Given json has no geometry information");
+        }
         // Check if geometry has no type
-        if(geom.getString("type") == null)
+        if (geom.getString("type") == null) {
             throw new DynException("Given geometry has no type");
-        
+        }
+
         List<JsonObject> geometries = new ArrayList<>();
         // Check if geometry is collection
-        if(geom.getString("type").equals("GeometryCollection")) {
+        if (geom.getString("type").equals("GeometryCollection")) {
             // Get all geometries
-            for(JsonValue curGeom : geom.getJsonArray("geometries")) {
+            for (JsonValue curGeom : geom.getJsonArray("geometries")) {
                 geometries.add(curGeom.asJsonObject());
             }
         } else {
             // If its not a collection its a single geometry (of any kind)
             geometries.add(geom);
         }
-        
+
         // Add all geometrie informations to geometry fields in given order (because there is no nameing mechanism in geojson)
-        for(JsonValue curGeom : geometries) {
+        for (JsonValue curGeom : geometries) {
             // Search matching attribute
-            for(Attribute curAttr : this.dyncollection.getGeoAttributes()) {
+            for (Attribute curAttr : this.dyncollection.getGeoAttributes()) {
                 // Create WKT from geojson geometty
                 String wktsql = "SELECT ST_AsText(";
                 // Adding coordinate system transformation if its different
-                if(curAttr.getSrid() != 4326) {
+                if (curAttr.getSrid() != 4326) {
                     wktsql += "ST_Transform(";
                 }
                 // Check if geometry type is matching
-                if(!curGeom.asJsonObject().getString("type").equalsIgnoreCase(curAttr.getSubtype()))
+                if (!curGeom.asJsonObject().getString("type").equalsIgnoreCase(curAttr.getSubtype())) {
                     continue;
-                
-                wktsql += "ST_GeomFromGeoJSON('"+curGeom.toString()+"')";
-                if(curAttr.getSrid() != 4326) {
-                    wktsql += ","+curAttr.getSrid()+")";
+                }
+
+                wktsql += "ST_GeomFromGeoJSON('" + curGeom.toString() + "')";
+                if (curAttr.getSrid() != 4326) {
+                    wktsql += "," + curAttr.getSrid() + ")";
                 }
                 wktsql += ") AS geom";
 
                 String wkt;
-                try(Statement wktstmt = this.con.createStatement();
-                    ResultSet wktrs = wktstmt.executeQuery(wktsql)) {
+                try ( Statement wktstmt = this.con.createStatement();  ResultSet wktrs = wktstmt.executeQuery(wktsql)) {
                     wktrs.next();
                     // No other reference system awaited from geojson (removed from geojson specification)
-                    wkt = "SRID="+curAttr.getSrid()+";" + wktrs.getString("geom");
+                    wkt = "SRID=" + curAttr.getSrid() + ";" + wktrs.getString("geom");
                     // Add WKT to import object
                     databuilder.add(curAttr.getName(), wkt);
                     break;
                 } catch (SQLException ex) {
                     String msg = "Could not get WKT from geojson: " + ex.getLocalizedMessage();
-                    if(ex.getLocalizedMessage().contains("proj_crs_get_coordinate_system returned NULL"))
+                    if (ex.getLocalizedMessage().contains("proj_crs_get_coordinate_system returned NULL")) {
                         msg = "Given coordinates and target coordinate system are not compatible";
+                    }
                     this.warnings.add(msg);
                 }
             }
         }
-        
+
         JsonObject props = geojsonobj.getJsonObject("properties");
-        if(props != null) {
-            for(Entry<String,JsonValue> curProp : props.entrySet()) {
+        if (props != null) {
+            for (Entry<String, JsonValue> curProp : props.entrySet()) {
                 databuilder.add(curProp.getKey(), curProp.getValue());
             }
         }
-        
+
         return this.create(databuilder.build());
     }
-    
+
     @Override
     public Object create(JsonObject json) throws DynException {
-        if(json.isEmpty()) {
+        if (json.isEmpty()) {
             throw new DynException("Given json is empty");
         }
         String pstmtid = this.getPreparedInsert(json);
         String stmt = this.preparedStatements.get(pstmtid);
-        
-        try(PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
+
+        try ( PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
             Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
+            List<String> ignoredCols = new ArrayList<>();
             for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
                 String jkey = curEntry.getKey();
                 // Check if table expects that data
                 if (!placeholders.containsKey(jkey)) {
-                    this.warnings.add("Table >" + this.table + "< does not expect data for >" + jkey + "<");
+                    ignoredCols.add(jkey);
                     continue;
                 }
 
@@ -775,20 +784,30 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
                 // Get column information
                 Attribute curColumn = columns.get(jkey);
-                this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
+                this.setPlaceholder(pstmt, pindex, curColumn, curEntry.getValue());
+            }
+            if (!ignoredCols.isEmpty()) {
+                String ignoredColStr = String.join(",", ignoredCols);
+                String warning = "Table >" + this.table + "< does not expect data for >" + ignoredColStr + "<";
+                if(!this.warnings.contains(warning))
+                    this.warnings.add(warning);
             }
             // Prevent process form accessing manual comit mode, if other process
             // is in manual comit mode (on any other location)
             commitlock.acquire();
             this.con.setAutoCommit(false);
-            pstmt.executeUpdate();
+            try {
+                pstmt.executeUpdate();
+            } catch (Exception e) {
+                System.out.println(e.getClass().getSimpleName() + " " + e.getLocalizedMessage());
+            }
             pstmt.close();
             this.con.commit();
             // Request primary key
             String idstmt = this.preparedStatements.get("id_" + pstmtid);
-            try(PreparedStatement idpstmt = this.con.prepareStatement(idstmt)) {
+            try ( PreparedStatement idpstmt = this.con.prepareStatement(idstmt)) {
                 if (idpstmt != null) {
-                    try (ResultSet prs = idpstmt.executeQuery()) {
+                    try ( ResultSet prs = idpstmt.executeQuery()) {
                         if (prs.next()) {
                             return prs.getObject(1);
                         }
@@ -798,11 +817,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             return null;
         } catch (SQLException ex) {
             try {
-                Message msg = new Message("Error mesage: " + ex.getLocalizedMessage(),MessageLevel.ERROR);
+                Message msg = new Message("Error mesage: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
                 ex.printStackTrace();
                 this.con.rollback();
-            } catch(SQLException ex1) {
+            } catch (SQLException ex1) {
                 Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
                         MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
@@ -812,11 +831,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         } catch (Exception ex) {
             try {
-                Message msg = new Message("Catched an unexpected >" + ex.getClass().getSimpleName() 
-                                + "< exception:" + ex.getLocalizedMessage(),MessageLevel.ERROR);
+                Message msg = new Message("Catched an unexpected >" + ex.getClass().getSimpleName()
+                        + "< exception:" + ex.getLocalizedMessage(), MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
                 this.con.rollback();
-            } catch(SQLException ex1) {
+            } catch (SQLException ex1) {
                 Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
                         MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
@@ -827,7 +846,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         } finally {
             try {
                 this.con.setAutoCommit(true);
-            } catch(SQLException ex) {
+            } catch (SQLException ex) {
                 Message msg = new Message("Could not reset autocomit mode to true!",
                         MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
@@ -835,12 +854,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             commitlock.release();
         }
     }
-    
+
     @Override
     public String getPreparedUpdate(JsonObject json, Long id) throws DynException {
         String pstmtid = "update_" + String.join("_", json.keySet());
         this.lastStmtId = pstmtid;
-        
+
         if (!this.preparedStatements.containsKey(pstmtid)) {
             this.preparedWarnings.put(pstmtid, new ArrayList<>());
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
@@ -867,7 +886,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     continue;
                 }
                 // Check if column is identity column                
-                if(columns.get(curKey).isIdentity()) {
+                if (columns.get(curKey).isIdentity()) {
                     identitycol = curKey;
                     continue;
                 }
@@ -879,9 +898,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 }
                 sqlbuilder.append("\"");
                 sqlbuilder.append(curKey);
-                
+
                 // Add placeholder depending on type
-                switch(attr.getType()) {
+                switch (attr.getType()) {
                     case "json":
                         sqlbuilder.append("\" = to_json(?::json)");
                         break;
@@ -897,32 +916,32 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 placeholders.put(curKey, foundCols);
             }
 
-            if(identitycol == null && id != null) {
+            if (identitycol == null && id != null) {
                 // Autodetect identity column
                 List<Attribute> idcolumns = this.dyncollection.getIdentityAttributes();
-                if(columns.isEmpty()) {
+                if (columns.isEmpty()) {
                     throw new DynException("There is no identity column in table. Could not update datasets.");
                 }
                 identitycol = idcolumns.get(0).getName();
-            } else if(identitycol == null) {
+            } else if (identitycol == null) {
                 throw new DynException("There was no identity column given to identify the set to update.");
             }
             sqlbuilder.append(" WHERE ");
             sqlbuilder.append(identitycol);
             sqlbuilder.append(" = ?");
             foundCols++;
-            placeholders.put(identitycol,foundCols);
-            
+            placeholders.put(identitycol, foundCols);
+
             String sql = sqlbuilder.toString();
-            Message msg = new Message("SQL: " + sql,MessageLevel.INFO);
+            Message msg = new Message("SQL: " + sql, MessageLevel.INFO);
             Logger.addDebugMessage(msg);
-            
+
             this.preparedStatements.put(pstmtid, sql);
             this.preparedPlaceholders.put(pstmtid, placeholders);
         }
         return pstmtid;
     }
-    
+
     @Override
     public Long update(String json, Long id) throws DynException {
         // Reset warnings for new create
@@ -930,45 +949,46 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         JsonReader jsonReader = Json.createReader(new StringReader(json));
         // Detect array content
         JsonArray jsonarray;
-        if(json.startsWith("[")) {
+        if (json.startsWith("[")) {
             jsonarray = jsonReader.readArray();
             jsonReader.close();
-        } else if(json.contains("\"records\"")) {
+        } else if (json.contains("\"records\"")) {
             JsonObject jsonobject = jsonReader.readObject();
             jsonReader.close();
             jsonarray = jsonobject.getJsonArray("records");
-        } else if(json.contains("\"list\"")) {
+        } else if (json.contains("\"list\"")) {
             JsonObject jsonobject = jsonReader.readObject();
             jsonReader.close();
             jsonarray = jsonobject.getJsonArray("list");
         } else {
             JsonObject jsonobject = jsonReader.readObject();
-            jsonReader.close();            
-            return this.update(jsonobject,id);
+            jsonReader.close();
+            return this.update(jsonobject, id);
         }
-        
+
         Long lastid = null;
-        for(int i=0; i < jsonarray.size(); i++) {
+        for (int i = 0; i < jsonarray.size(); i++) {
             lastid = this.update(jsonarray.getJsonObject(i), null);
         }
         return lastid;
     }
-    
+
     @Override
     public Long update(JsonObject json, Long id) throws DynException {
         String pstmtid = this.getPreparedUpdate(json, id);
         String stmt = this.preparedStatements.get(pstmtid);
-        
-        try(PreparedStatement pstmt = this.con.prepareStatement(stmt)) {
+
+        try ( PreparedStatement pstmt = this.con.prepareStatement(stmt)) {
             Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
 
             int usedPlaceholders = 1;
+            List<String> ignoredCols = new ArrayList<>();
             for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
                 String jkey = curEntry.getKey();
                 // Check if table expects that data
                 if (!placeholders.containsKey(jkey)) {
-                    this.warnings.add("Table >" + this.table + "< does not expect data for >" + jkey + "<");
+                    ignoredCols.add(jkey);
                     continue;
                 }
 
@@ -976,30 +996,36 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
                 // Get column information
                 Attribute curColumn = columns.get(jkey);
-                this.setPlaceholder(pstmt,pindex,curColumn,curEntry.getValue());
+                this.setPlaceholder(pstmt, pindex, curColumn, curEntry.getValue());
                 usedPlaceholders++;
+            }
+            if (!ignoredCols.isEmpty()) {
+                String ignoredColsStr = String.join(",", ignoredCols);
+                String warning = "Table >" + this.table + "< does not expect data for >" + ignoredColsStr + "<";
+                if(!this.warnings.contains(warning))
+                    this.warnings.add(warning);
             }
 
             // If there is a placeholder left it will be the id
-            if(usedPlaceholders <= placeholders.size()) {
+            if (usedPlaceholders <= placeholders.size()) {
                 try {
                     int nextId = usedPlaceholders++;
                     pstmt.setLong(nextId, id);
-                } catch(SQLException ex) {
+                } catch (SQLException ex) {
                     DynException de = new DynException("Could set id to update statement: " + ex.getLocalizedMessage());
                     de.addSuppressed(ex);
                     throw de;
                 }
             }
             int modifieds = pstmt.executeUpdate();
-            if(modifieds == 0) {
+            if (modifieds == 0) {
                 DynException de = new DynException("Dataset with id >" + id + "< not found.");
                 throw de;
             }
             return id;
         } catch (SQLException ex) {
             String msg = "Could not update dataset: " + ex.getLocalizedMessage();
-            Message msga = new Message(msg,MessageLevel.ERROR);
+            Message msga = new Message(msg, MessageLevel.ERROR);
             Logger.addMessage(msga);
             ex.printStackTrace();
             DynException de = new DynException(msg);
@@ -1007,178 +1033,178 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         }
     }
-    
+
     /**
      * Set values to a placeholder
-     * 
+     *
      * @param pstmt Prepared statement where to set the value
      * @param pindex Index of the parameter to set
      * @param col Parameters column
      * @param value Parameters value
-     * @throws DynException 
+     * @throws DynException
      */
     private void setPlaceholder(PreparedStatement pstmt, int pindex, Attribute col, JsonValue value) throws DynException {
         try {
-                switch (col.getType()) {
-                    case "text":
-                    case "varchar":
-                        if (value.getValueType() == ValueType.NUMBER) {
-                            pstmt.setString(pindex, value.toString());
-                        } else {
-                            JsonString jstr = (JsonString) value;
-                            pstmt.setString(pindex, jstr.getString());
-                        }
-                        break;
-                    case "bool":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.BOOLEAN);
-                        } else {
-                            // Isn't there a better method to get the boolean value?
-                            boolean bool = Boolean.parseBoolean(value.toString());
-                            pstmt.setBoolean(pindex, bool);
-                        }
-                        break;
-                    case "float4":
-                    case "float8":
-                    case "numeric":
-                    case "decimal":
-                    case "real":
-                    case "double precision":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.DOUBLE);
-                        } else {
-                            JsonNumber jdoub = (JsonNumber) value;
-                            pstmt.setDouble(pindex, jdoub.doubleValue());
-                        }
-                        break;
-                    case "int2":
-                    case "int4":
-                    case "smallint":
-                    case "integer":
-                    case "bigint":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.INTEGER);
-                        } else {
-                            JsonNumber jint = (JsonNumber) value;
-                            pstmt.setInt(pindex, jint.intValue());
-                        }
-                        break;
-                    case "int8":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.BIGINT);
-                        } else {
-                            JsonNumber jbint = (JsonNumber) value;
-                            pstmt.setLong(pindex, jbint.longValue());
-                        }
-                        break;
-                    case "timestamp":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.TIMESTAMP);
-                        } else {
-                            JsonString jts = (JsonString) value;
-                            LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
-                            pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
-                        }
-                        break;
-                    case "date":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.DATE);
-                        } else {
-                            JsonString jdate = (JsonString) value;
-                            LocalDate ldate = DataConverter.objectToLocalDate(jdate.getString());
-                            pstmt.setDate(pindex, Date.valueOf(ldate));
-                        }
-                        break;
-                    case "json":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.LONGVARCHAR);
-                        } else if(value.getValueType() == ValueType.OBJECT || value.getValueType() == ValueType.ARRAY) {
-                            // Given value is json
-                            pstmt.setString(pindex, value.toString());
-                        } else {
-                            // Given value is string
-                            JsonString jjson = (JsonString) value;
-                            pstmt.setString(pindex, jjson.getString());
-                        }
-                        break;
-                    case "geometry":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.OTHER);
-                        } else {
-                            JsonString jgeom = (JsonString) value;
-                            pstmt.setObject(pindex, jgeom.getString());
-                        }
-                        break;
-                    case "bytea":
-                        if(value == null || value.toString().equals("null")) {
-                            pstmt.setNull(pindex, java.sql.Types.BLOB);
-                        } else {
-                            JsonString jbytea = (JsonString) value;
-                            String sbytea = jbytea.getString();
+            switch (col.getType()) {
+                case "text":
+                case "varchar":
+                    if (value.getValueType() == ValueType.NUMBER) {
+                        pstmt.setString(pindex, value.toString());
+                    } else {
+                        JsonString jstr = (JsonString) value;
+                        pstmt.setString(pindex, jstr.getString());
+                    }
+                    break;
+                case "bool":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.BOOLEAN);
+                    } else {
+                        // Isn't there a better method to get the boolean value?
+                        boolean bool = Boolean.parseBoolean(value.toString());
+                        pstmt.setBoolean(pindex, bool);
+                    }
+                    break;
+                case "float4":
+                case "float8":
+                case "numeric":
+                case "decimal":
+                case "real":
+                case "double precision":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.DOUBLE);
+                    } else {
+                        JsonNumber jdoub = (JsonNumber) value;
+                        pstmt.setDouble(pindex, jdoub.doubleValue());
+                    }
+                    break;
+                case "int2":
+                case "int4":
+                case "smallint":
+                case "integer":
+                case "bigint":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.INTEGER);
+                    } else {
+                        JsonNumber jint = (JsonNumber) value;
+                        pstmt.setInt(pindex, jint.intValue());
+                    }
+                    break;
+                case "int8":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.BIGINT);
+                    } else {
+                        JsonNumber jbint = (JsonNumber) value;
+                        pstmt.setLong(pindex, jbint.longValue());
+                    }
+                    break;
+                case "timestamp":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.TIMESTAMP);
+                    } else {
+                        JsonString jts = (JsonString) value;
+                        LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
+                        pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                    }
+                    break;
+                case "date":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.DATE);
+                    } else {
+                        JsonString jdate = (JsonString) value;
+                        LocalDate ldate = DataConverter.objectToLocalDate(jdate.getString());
+                        pstmt.setDate(pindex, Date.valueOf(ldate));
+                    }
+                    break;
+                case "json":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.LONGVARCHAR);
+                    } else if (value.getValueType() == ValueType.OBJECT || value.getValueType() == ValueType.ARRAY) {
+                        // Given value is json
+                        pstmt.setString(pindex, value.toString());
+                    } else {
+                        // Given value is string
+                        JsonString jjson = (JsonString) value;
+                        pstmt.setString(pindex, jjson.getString());
+                    }
+                    break;
+                case "geometry":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.OTHER);
+                    } else {
+                        JsonString jgeom = (JsonString) value;
+                        pstmt.setObject(pindex, jgeom.getString());
+                    }
+                    break;
+                case "bytea":
+                    if (value == null || value.toString().equals("null")) {
+                        pstmt.setNull(pindex, java.sql.Types.BLOB);
+                    } else {
+                        JsonString jbytea = (JsonString) value;
+                        String sbytea = jbytea.getString();
 
-                            // Handle encoded media (from html elements like canvas)
-                            byte bytes[];
-                            String[] basecode = sbytea.split(";base64,",2);
-                            if (basecode.length > 1) {
-                                String encodedImg = basecode[1];
-                                bytes = java.util.Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
-                                InputStream targetStream = new ByteArrayInputStream(bytes);
-                                pstmt.setBinaryStream(pindex, targetStream);
-                            } else {
-                                Message msg = new Message(
+                        // Handle encoded media (from html elements like canvas)
+                        byte bytes[];
+                        String[] basecode = sbytea.split(";base64,", 2);
+                        if (basecode.length > 1) {
+                            String encodedImg = basecode[1];
+                            bytes = java.util.Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
+                            InputStream targetStream = new ByteArrayInputStream(bytes);
+                            pstmt.setBinaryStream(pindex, targetStream);
+                        } else {
+                            Message msg = new Message(
                                     "Write to database does not support type >" + col.getType() + "< without base64 encodeing.", MessageLevel.WARNING);
-                                Logger.addDebugMessage(msg);
-                                this.warnings.add("Could not save value for >" + col.getName() + "<: Please provide binary data in base64 encoded form.");
-                            }
+                            Logger.addDebugMessage(msg);
+                            this.warnings.add("Could not save value for >" + col.getName() + "<: Please provide binary data in base64 encoded form.");
                         }
-                        break;
-                    default:
-                        Message msg = new Message(
-                                "Write to database does not support type >" + col.getType() + "<", MessageLevel.WARNING);
-                        Logger.addDebugMessage(msg);
-                        this.warnings.add("Could not save value for >" + col.getName() + "<: Datatype >" + col.getType() + "< is not supported.");
-                }
-            } catch (SQLException ex) {
-                this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage());
-            } catch (ClassCastException ex) {
-                DynException dye = new DynException("Could not interpret >" 
-                        + col.getName() + "< with value >"+value.toString()
-                        +"< from type >"+value.getClass().getSimpleName()
-                        +"< to type >"+col.getType()+"< because of ("
-                        +ex.getClass().getSimpleName()+"): " + ex.getLocalizedMessage());
-                dye.addSuppressed(ex);
-                throw dye;
+                    }
+                    break;
+                default:
+                    Message msg = new Message(
+                            "Write to database does not support type >" + col.getType() + "<", MessageLevel.WARNING);
+                    Logger.addDebugMessage(msg);
+                    this.warnings.add("Could not save value for >" + col.getName() + "<: Datatype >" + col.getType() + "< is not supported.");
             }
+        } catch (SQLException ex) {
+            this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage());
+        } catch (ClassCastException ex) {
+            DynException dye = new DynException("Could not interpret >"
+                    + col.getName() + "< with value >" + value.toString()
+                    + "< from type >" + value.getClass().getSimpleName()
+                    + "< to type >" + col.getType() + "< because of ("
+                    + ex.getClass().getSimpleName() + "): " + ex.getLocalizedMessage());
+            dye.addSuppressed(ex);
+            throw dye;
+        }
     }
-    
+
     @Override
     public Long delete(String idstr) throws DynException {
         String[] ids = idstr.split(",");
         String sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\" WHERE ";
-        
+
         // Get name of first id column
         List<Attribute> columns = this.dyncollection.getIdentityAttributes();
-        if(columns.isEmpty()) {
+        if (columns.isEmpty()) {
             throw new DynException("Could not delete from >" + this.schema + "." + this.table + " because there is no identity column.");
         }
         // Get first column
         Attribute idcol = columns.get(0);
-        
+
         sql += "\"" + idcol.getName() + "\" = ";
-        if(idcol.getType().equalsIgnoreCase("varchar")) {
+        if (idcol.getType().equalsIgnoreCase("varchar")) {
             sql += "\"";
             sql += String.join("\" OR \"" + idcol.getName() + "\" = \"", ids);
             sql += "\"";
         } else {
             sql += String.join(" OR \"" + idcol.getName() + "\" = ", ids);
         }
-        
-        try(Statement stmt = this.con.createStatement()) {
+
+        try ( Statement stmt = this.con.createStatement()) {
             stmt.executeUpdate(sql);
             return null;
         } catch (SQLException ex) {
             String msg = "Could not update dataset: " + ex.getLocalizedMessage();
-            Message msga = new Message(msg,MessageLevel.ERROR);
+            Message msga = new Message(msg, MessageLevel.ERROR);
             Logger.addMessage(msga);
             ex.printStackTrace();
             DynException de = new DynException(msg);
@@ -1186,13 +1212,14 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         }
     }
-    
+
     @Override
     public List<String> getWarnings() {
         List<String> allwarns = this.warnings;
         List<String> stmtwarns = this.preparedWarnings.get(this.lastStmtId);
-        if(stmtwarns != null)
+        if (stmtwarns != null) {
             allwarns.addAll(stmtwarns);
+        }
         return allwarns;
     }
 }
