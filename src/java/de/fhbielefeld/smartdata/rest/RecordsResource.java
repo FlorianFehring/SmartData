@@ -128,10 +128,12 @@ public class RecordsResource {
                 rob.setStatus(Response.Status.CREATED);
             } else {
                 if (!dynr.getWarnings().isEmpty()) {
-                    System.out.println("Warnings occured, that can't be deliverd");
+                    String msgtxt = "Warnings occured, that can't be deliverd";
                     for (String curWarning : dynr.getWarnings()) {
-                        System.out.println(curWarning);
+                        msgtxt += System.lineSeparator() + "- " + curWarning;
                     }
+                    Message msg = new Message(msgtxt, MessageLevel.WARNING);
+                    Logger.addDebugMessage(msg);
                 }
                 Response.ResponseBuilder rb = Response.status(Response.Status.CREATED);
                 String idstr = ids.toString().replace("[", "").replace("]", "").replace(" ", "");
