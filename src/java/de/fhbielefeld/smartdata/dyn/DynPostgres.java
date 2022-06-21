@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -22,7 +21,6 @@ import javax.sql.DataSource;
 public class DynPostgres implements Dyn {
 
     protected Connection con;
-    protected static Semaphore commitlock;
     protected List<String> warnings = new ArrayList<>();
 
     @Override
@@ -40,8 +38,6 @@ public class DynPostgres implements Dyn {
                     InitialContext ctx = new InitialContext();
                     DataSource ds = (DataSource) ctx.lookup(jndi);
                     this.con = ds.getConnection();
-                    // Create semaphore
-                    commitlock = new Semaphore(1);
                 } catch (NamingException ex) {
                     Message msg = new Message("", MessageLevel.ERROR, "Could not access connection pool: " + ex.getLocalizedMessage());
                     Logger.addMessage(msg);
