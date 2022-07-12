@@ -595,6 +595,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             Message msg = new Message("SQL: " + sql, MessageLevel.INFO);
             Logger.addDebugMessage(msg);
 
+            this.preparedStatements.put(pstmtid, sql);
+            this.preparedPlaceholders.put(pstmtid, placeholders);
+
             // Build up primary key query
             StringBuilder sqlbuilderid = new StringBuilder();
             sqlbuilderid.append("SELECT ");
@@ -615,23 +618,20 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 }
             }
 
-            sqlbuilderid.append("\" FROM ");
-            sqlbuilderid.append("\"");
-            sqlbuilderid.append(this.schema);
-            sqlbuilderid.append("\"");
-            sqlbuilderid.append(".");
-            sqlbuilderid.append("\"");
-            sqlbuilderid.append(this.table);
-            sqlbuilderid.append("\"");
-            sqlbuilderid.append(" ORDER BY ");
-            sqlbuilderid.append("\"");
-            sqlbuilderid.append(firstidColumn);
-            sqlbuilderid.append("\"");
-            sqlbuilderid.append(" DESC LIMIT 1");
-
-            this.preparedStatements.put(pstmtid, sql);
-            this.preparedPlaceholders.put(pstmtid, placeholders);
             if (firstidColumn != null) {
+                sqlbuilderid.append("\" FROM ");
+                sqlbuilderid.append("\"");
+                sqlbuilderid.append(this.schema);
+                sqlbuilderid.append("\"");
+                sqlbuilderid.append(".");
+                sqlbuilderid.append("\"");
+                sqlbuilderid.append(this.table);
+                sqlbuilderid.append("\"");
+                sqlbuilderid.append(" ORDER BY ");
+                sqlbuilderid.append("\"");
+                sqlbuilderid.append(firstidColumn);
+                sqlbuilderid.append("\"");
+                sqlbuilderid.append(" DESC LIMIT 1");
                 String idsql = sqlbuilderid.toString();
                 this.preparedStatements.put("id_" + pstmtid, idsql);
             }
@@ -766,10 +766,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw new DynException("Given json is empty");
         }
         String pstmtid = this.getPreparedInsert(json);
-        String stmt = this.preparedStatements.get(pstmtid);
-
+        String stmt = preparedStatements.get(pstmtid);
         try ( PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
-            Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
+            Map<String, Integer> placeholders = preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
             List<String> ignoredCols = new ArrayList<>();
             for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
@@ -789,37 +788,40 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (!ignoredCols.isEmpty()) {
                 String ignoredColStr = String.join(",", ignoredCols);
                 String warning = "Table >" + this.table + "< does not expect data for >" + ignoredColStr + "<";
-                if(!this.warnings.contains(warning))
+                if (!this.warnings.contains(warning)) {
                     this.warnings.add(warning);
+                }
             }
             // Prevent process form accessing manual comit mode, if other process
             // is in manual comit mode (on any other location)
             commitlock.acquire();
             this.con.setAutoCommit(false);
-            try {
-                pstmt.executeUpdate();
-            } catch (Exception e) {
-                System.out.println(e.getClass().getSimpleName() + " " + e.getLocalizedMessage());
-            }
+            pstmt.executeUpdate();
             pstmt.close();
             this.con.commit();
             // Request primary key
-            String idstmt = this.preparedStatements.get("id_" + pstmtid);
-            try ( PreparedStatement idpstmt = this.con.prepareStatement(idstmt)) {
-                if (idpstmt != null) {
-                    try ( ResultSet prs = idpstmt.executeQuery()) {
-                        if (prs.next()) {
-                            return prs.getObject(1);
+            String idstmt = preparedStatements.get("id_" + pstmtid);
+            if (idstmt != null) {
+                try ( PreparedStatement idpstmt = this.con.prepareStatement(idstmt)) {
+                    if (idpstmt != null) {
+                        try ( ResultSet prs = idpstmt.executeQuery()) {
+                            if (prs.next()) {
+                                return prs.getObject(1);
+                            }
                         }
                     }
+                }
+            } else {
+                String warning = "Table >" + this.table + "< does not have a primary key. You should add a primary key to get id in response when creating new datasets.";
+                if (!this.warnings.contains(warning)) {
+                    this.warnings.add(warning);
+                    Message msg = new Message(warning,MessageLevel.WARNING);
+                    Logger.addDebugMessage(msg);
                 }
             }
             return null;
         } catch (SQLException ex) {
             try {
-                Message msg = new Message("Error mesage: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
-                Logger.addDebugMessage(msg);
-                ex.printStackTrace();
                 this.con.rollback();
             } catch (SQLException ex1) {
                 Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
@@ -830,17 +832,18 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             de.addSuppressed(ex);
             throw de;
         } catch (Exception ex) {
+            String msgtxt = "Could not save dataset: Unexpected >" + ex.getClass().getSimpleName()
+                    + "< exception:" + ex.getLocalizedMessage();
             try {
-                Message msg = new Message("Catched an unexpected >" + ex.getClass().getSimpleName()
-                        + "< exception:" + ex.getLocalizedMessage(), MessageLevel.ERROR);
-                Logger.addDebugMessage(msg);
                 this.con.rollback();
             } catch (SQLException ex1) {
                 Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
                         MessageLevel.ERROR);
                 Logger.addDebugMessage(msg);
             }
-            DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
+            Message msg = new Message(msgtxt, MessageLevel.ERROR);
+            Logger.addDebugMessage(msg);
+            DynException de = new DynException(msgtxt);
             de.addSuppressed(ex);
             throw de;
         } finally {
@@ -1002,8 +1005,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (!ignoredCols.isEmpty()) {
                 String ignoredColsStr = String.join(",", ignoredCols);
                 String warning = "Table >" + this.table + "< does not expect data for >" + ignoredColsStr + "<";
-                if(!this.warnings.contains(warning))
+                if (!this.warnings.contains(warning)) {
                     this.warnings.add(warning);
+                }
             }
 
             // If there is a placeholder left it will be the id
