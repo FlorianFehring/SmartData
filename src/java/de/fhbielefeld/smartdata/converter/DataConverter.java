@@ -231,8 +231,24 @@ public class DataConverter {
                 pex.addSuppressed(ex);
                 exs.add(pex);
             }
+            
+            // Try parse as file name date
+            // 2022 07 08 14 11 18
+            try {
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy MM dd HH mm ss");
+                LocalDateTime datetime = LocalDateTime.parse(datetimestring, dtf);
+                return datetime;
+            } catch (DateTimeParseException ex) {
+                DynException pex = new DynException(
+                        "Could not parse >" + datetimestring 
+                                + "< as LocalDateTime after DE pattern (30.12.2011 10:15:30)"
+                        + ex.getLocalizedMessage());
+                pex.addSuppressed(ex);
+                exs.add(pex);
+            }
 
-            DynException nex = new DynException("Could not parse date");
+            DynException nex = new DynException("Could not parse datetime");
+            nex.printStackTrace();
             for(Exception curEx : exs) {
                 nex.addSuppressed(curEx);
                 System.out.println(curEx.getLocalizedMessage());
