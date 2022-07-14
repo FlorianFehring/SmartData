@@ -795,10 +795,31 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Prevent process form accessing manual comit mode, if other process
             // is in manual comit mode (on any other location)
             commitlock.acquire();
-            this.con.setAutoCommit(false);
-            pstmt.executeUpdate();
-            pstmt.close();
-            this.con.commit();
+            try {
+                this.con.setAutoCommit(false);
+                pstmt.executeUpdate();
+                pstmt.close();
+                this.con.commit();
+            } catch (SQLException ex) {
+                try {
+                    this.con.rollback();
+                } catch (SQLException ex1) {
+                    Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
+                            MessageLevel.ERROR);
+                    Logger.addDebugMessage(msg);
+                }
+                DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
+                de.addSuppressed(ex);
+                throw de;
+            } finally {
+                try {
+                    this.con.setAutoCommit(true);
+                } catch (SQLException ex) {
+                    Message msg = new Message("Could not reset autocomit mode to true!",
+                            MessageLevel.ERROR);
+                    Logger.addDebugMessage(msg);
+                }
+            }
             // Request primary key
             String idstmt = preparedStatements.get("id_" + pstmtid);
             if (idstmt != null) {
@@ -815,45 +836,20 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 String warning = "Table >" + this.table + "< does not have a primary key. You should add a primary key to get id in response when creating new datasets.";
                 if (!this.warnings.contains(warning)) {
                     this.warnings.add(warning);
-                    Message msg = new Message(warning,MessageLevel.WARNING);
+                    Message msg = new Message(warning, MessageLevel.WARNING);
                     Logger.addDebugMessage(msg);
                 }
             }
             return null;
-        } catch (SQLException ex) {
-            try {
-                this.con.rollback();
-            } catch (SQLException ex1) {
-                Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
-                        MessageLevel.ERROR);
-                Logger.addDebugMessage(msg);
-            }
-            DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
-            de.addSuppressed(ex);
-            throw de;
         } catch (Exception ex) {
             String msgtxt = "Could not save dataset: Unexpected >" + ex.getClass().getSimpleName()
                     + "< exception:" + ex.getLocalizedMessage();
-            try {
-                this.con.rollback();
-            } catch (SQLException ex1) {
-                Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
-                        MessageLevel.ERROR);
-                Logger.addDebugMessage(msg);
-            }
             Message msg = new Message(msgtxt, MessageLevel.ERROR);
             Logger.addDebugMessage(msg);
             DynException de = new DynException(msgtxt);
             de.addSuppressed(ex);
             throw de;
         } finally {
-            try {
-                this.con.setAutoCommit(true);
-            } catch (SQLException ex) {
-                Message msg = new Message("Could not reset autocomit mode to true!",
-                        MessageLevel.ERROR);
-                Logger.addDebugMessage(msg);
-            }
             commitlock.release();
         }
     }
