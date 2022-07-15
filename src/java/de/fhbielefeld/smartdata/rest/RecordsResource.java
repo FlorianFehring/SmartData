@@ -296,7 +296,7 @@ public class RecordsResource {
             @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
-            @Parameter(description = "Definition of an filter <a href=\"http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/Funktionen/Uebersicht\" target=\"_new\">See filter documentation</a>", example = "id,eq,1") @QueryParam("filter") List<String> filterList,
+            @Parameter(description = "Definition of an filter <a href=\"http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/Funktionen/Uebersicht\" target=\"_new\">See filter documentation</a>", example = "id,eq,1") @QueryParam("filter") List<String> filtersStrings,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
@@ -321,41 +321,46 @@ public class RecordsResource {
         try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             // Check if there is a request context and user has restricted rights
             if (requestContext != null) {
+                boolean max_right = false;
                 String contextInfo = null;
                 SecurityContext sc = requestContext.getSecurityContext();
                 if (sc != null) {
                     SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
+                    System.out.println("## TEST RecordsResource 1");
                     if (sp != null) {
                         StringJoiner sb = new StringJoiner(",");
                         for (Long curSet : sp.getContextRight().getIds()) {
                             if (curSet == Long.MAX_VALUE) {
+                                max_right = true;
                                 break;
                             }
                             sb.add(curSet.toString());
                         }
+                        // Get identity column (only first identity supported)
+                        Attribute idattr = dync.getIdentityAttributes().get(0);
                         if (sb.length() > 0) {
-                            Attribute idattr;
-                            // Get identity column (only first identity supported)
-                            idattr = dync.getIdentityAttributes().get(0);
+                            System.out.println("## TEST RecordsResource 2");
                             // Write filter
-                            filterList.add(idattr.getName() + ",in," + sb.toString());
+                            filtersStrings.add(idattr.getName() + ",in," + sb.toString());
+                        } else if(!max_right) {
+                            System.out.println("## TEST RecordsResource 3");
+                            // User has no right so shold get a empty list
+                            filtersStrings.add(idattr.getName() + ",in,-1");
                         }
                     }
                 } else {
                     contextInfo = "No SecurityContext in Requestcontext found!";
-                }
-
-                if (contextInfo != null) {
                     Message msg = new Message(contextInfo, MessageLevel.INFO);
                     Logger.addDebugMessage(msg);
                     rob.setStatus(Response.Status.UNAUTHORIZED);
                     return rob.toResponse();
                 }
             } // End security check
-            if (filterList != null) {
+            // Build filters from strings given by parameter or by security context
+            if (filtersStrings != null && !filtersStrings.isEmpty()) {
                 try {
                     // Build filter objects
-                    for (String curFilterStr : filterList) {
+                    for (String curFilterStr : filtersStrings) {
                         Filter filt = FilterParser.parse(curFilterStr, dync);
                         if (filt != null) {
                             filters.add(filt);
@@ -363,7 +368,7 @@ public class RecordsResource {
                     }
                 } catch (FilterException ex) {
                     rob.setStatus(Response.Status.BAD_REQUEST);
-                    rob.addErrorMessage("Could not parse filter rule >" + filterList + "<: " + ex.getLocalizedMessage());
+                    rob.addErrorMessage("Could not parse filter rule >" + filtersStrings + "<: " + ex.getLocalizedMessage());
                     rob.addException(ex);
                     return rob.toResponse();
                 }
