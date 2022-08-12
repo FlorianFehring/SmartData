@@ -326,7 +326,6 @@ public class RecordsResource {
                 SecurityContext sc = requestContext.getSecurityContext();
                 if (sc != null) {
                     SmartPrincipal sp = (SmartPrincipal) sc.getUserPrincipal();
-                    System.out.println("## TEST RecordsResource 1");
                     if (sp != null) {
                         StringJoiner sb = new StringJoiner(",");
                         for (Long curSet : sp.getContextRight().getIds()) {
@@ -339,11 +338,9 @@ public class RecordsResource {
                         // Get identity column (only first identity supported)
                         Attribute idattr = dync.getIdentityAttributes().get(0);
                         if (sb.length() > 0) {
-                            System.out.println("## TEST RecordsResource 2");
                             // Write filter
                             filtersStrings.add(idattr.getName() + ",in," + sb.toString());
                         } else if(!max_right) {
-                            System.out.println("## TEST RecordsResource 3");
                             // User has no right so shold get a empty list
                             filtersStrings.add(idattr.getName() + ",in,-1");
                         }
