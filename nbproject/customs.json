@@ -1,6 +1,12 @@
 {
     "elements": {},
     "attributes": {
+        "uk-grid": {
+            "context": "div"
+        },
+        "uk-accordion": {
+            "context": "ul"
+        },
         "swa": {
             "context": "div"
         }

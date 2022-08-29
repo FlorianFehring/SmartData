@@ -177,6 +177,11 @@ public class DataConverter {
         } else {
             List<DynException> exs = new ArrayList<>();
             String datetimestring = (String) value;
+            // correct format 2022-08-27 to 2022-08-27 00:00:00
+            if(datetimestring != null && datetimestring.contains("-") && datetimestring.length() == 10) {
+                datetimestring = datetimestring + " 00:00:00";
+            }
+            
             // Try parse string to long
             try {
                 Long timestamp = Long.parseLong(datetimestring);
