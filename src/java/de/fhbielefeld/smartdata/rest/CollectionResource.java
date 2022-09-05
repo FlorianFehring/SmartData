@@ -10,7 +10,12 @@ import de.fhbielefeld.smartdata.dyn.DynFactory;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
+import java.io.StringReader;
 import java.util.List;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.stream.JsonParser;
 import javax.naming.NamingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
@@ -47,7 +52,7 @@ public class CollectionResource {
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
-            Configuration conf = new Configuration(); 
+            Configuration conf = new Configuration();
             Logger.getInstance("SmartData", moduleName);
             Logger.setDebugMode(Boolean.parseBoolean(conf.getProperty("debugmode")));
         } catch (LoggerException | NamingException ex) {
@@ -79,14 +84,58 @@ public class CollectionResource {
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
                     example = "myschema") @QueryParam("storage") String storage,
-            DataCollection collectiondef) {
+            String collectiondefstr) {
 
         if (storage == null) {
             storage = "public";
         }
 
+        JsonParser parser = Json.createParser(new StringReader(collectiondefstr));
+        parser.next();
+        JsonObject root = parser.getObject();
+        
         // Set collections name from path param (do not use evtl. given name in json)
-        collectiondef.setName(name);
+        DataCollection collectiondef = new DataCollection(name);
+        
+        JsonArray attrs = root.getJsonArray("attributes");
+        for (int i = 0; i < attrs.size(); i++) {
+            JsonObject attrdef = attrs.getJsonObject(i);
+            if(attrdef == null)
+                continue;
+            Attribute attr = new Attribute();
+            if (attrdef.containsKey("defaultValue")) {
+                attr.setDefaultvalue(attrdef.getString("defaultValue"));
+            }
+            if (attrdef.containsKey("dimension")) {
+                attr.setDimension(attrdef.getJsonNumber("dimension").intValue());
+            }
+            if (attrdef.containsKey("isAutoIncrement")) {
+                attr.setIsAutoIncrement(attrdef.getBoolean("isAutoIncrement"));
+            }
+            if (attrdef.containsKey("isNullable")) {
+                attr.setIsIdentity(attrdef.getBoolean("isNullable"));
+            }
+            attr.setName(attrdef.getString("name"));
+            if (attrdef.containsKey("refAttribute")) {
+                attr.setRefAttribute(attrdef.getString("refAttribute"));
+            }
+            if (attrdef.containsKey("refCollection")) {
+                attr.setRefCollection(attrdef.getString("refCollection"));
+            }
+            if (attrdef.containsKey("refStorage")) {
+                attr.setRefStorage(attrdef.getString("refStorage"));
+            }
+            if (attrdef.containsKey("srid")) {
+                attr.setSrid(attrdef.getJsonNumber("srid").intValue());
+            }
+            if (attrdef.containsKey("subtype")) {
+                attr.setSubtype(attrdef.getString("subtype"));
+            }
+            if (attrdef.containsKey("type")) {
+                attr.setType(attrdef.getString("type"));
+            }
+            collectiondef.addAttribute(attr);
+        }
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
@@ -96,7 +145,7 @@ public class CollectionResource {
             return rob.toResponse();
         }
 
-        try(DynCollection dync = DynFactory.getDynCollection(storage, collectiondef.getName())) {
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collectiondef.getName())) {
             // Get attributes
             boolean created = dync.create(collectiondef);
             if (created) {
@@ -149,10 +198,10 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             // Get attributes
-            rob.add("name",collection);
-            rob.add("storage",storage);
+            rob.add("name", collection);
+            rob.add("storage", storage);
             rob.add("attributes", dync.getAttributes().values());
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
@@ -203,7 +252,7 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             if (dync.addAttributes(attributes)) {
                 rob.setStatus(Response.Status.CREATED);
             } else {
@@ -249,7 +298,7 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             dync.changeAttributes(attributes);
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
@@ -289,7 +338,7 @@ public class CollectionResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try(DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             dync.delete();
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
