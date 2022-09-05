@@ -93,15 +93,16 @@ public class CollectionResource {
         JsonParser parser = Json.createParser(new StringReader(collectiondefstr));
         parser.next();
         JsonObject root = parser.getObject();
-        
+
         // Set collections name from path param (do not use evtl. given name in json)
         DataCollection collectiondef = new DataCollection(name);
-        
+
         JsonArray attrs = root.getJsonArray("attributes");
         for (int i = 0; i < attrs.size(); i++) {
             JsonObject attrdef = attrs.getJsonObject(i);
-            if(attrdef == null)
+            if (attrdef == null) {
                 continue;
+            }
             Attribute attr = new Attribute();
             if (attrdef.containsKey("defaultValue")) {
                 attr.setDefaultvalue(attrdef.getString("defaultValue"));
@@ -113,7 +114,10 @@ public class CollectionResource {
                 attr.setIsAutoIncrement(attrdef.getBoolean("isAutoIncrement"));
             }
             if (attrdef.containsKey("isNullable")) {
-                attr.setIsIdentity(attrdef.getBoolean("isNullable"));
+                attr.setIsNullable(attrdef.getBoolean("isNullable"));
+            }
+            if (attrdef.containsKey("isIdentity")) {
+                attr.setIsIdentity(attrdef.getBoolean("isIdentity"));
             }
             attr.setName(attrdef.getString("name"));
             if (attrdef.containsKey("refAttribute")) {

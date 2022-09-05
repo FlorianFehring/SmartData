@@ -102,6 +102,9 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 for (Attribute curCol : table.getAttributes()) {
                     if (!curCol.isIdentity()) {
                         sql += ", \"" + curCol.getName() + "\" " + curCol.getType();
+                        if(curCol.getName().equalsIgnoreCase("id")) {
+                            System.err.println("There is an column defined named id, but without beeing a identity column (set: isIdentity: true)");
+                        }
                     }
                 }
                 sql += ")";
