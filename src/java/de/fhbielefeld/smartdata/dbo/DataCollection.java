@@ -17,9 +17,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class DataCollection {
     
     private String name;
-    @XmlElementWrapper(name = "attributes")
-    @XmlElement(name = "attributes")
-    private ArrayList<Attribute> attributes;
+//    @XmlElementWrapper(name = "attributes")
+//    @XmlElement(name = "attributes")
+    private ArrayList<Attribute> attributes = new ArrayList<>();
     
     public DataCollection() {
         
