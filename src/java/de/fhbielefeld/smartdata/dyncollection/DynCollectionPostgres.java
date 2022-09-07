@@ -379,7 +379,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public void delete() throws DynException {
         try ( Statement stmt = this.con.createStatement()) {
-            stmt.executeUpdate("DROP TABLE IF EXISTS \"" + this.name + "\"");
+            stmt.executeUpdate("DROP TABLE IF EXISTS \""+ this.schema + "\".\"" + this.name + "\"");
         } catch (SQLException ex) {
             DynException de = new DynException("Could not delete collection: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
