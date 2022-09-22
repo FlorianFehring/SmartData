@@ -61,9 +61,6 @@ public class RecordsResource {
     private static Map<String, DynCollection> dynColCache = new HashMap<>();
     private static Map<String, DynRecords> dynRecCache = new HashMap<>();
 
-    /**
-     * Creates a new instance of RootResource
-     */
     public RecordsResource() {
         // Init logging
         try {
