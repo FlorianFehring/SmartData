@@ -7,7 +7,7 @@
 
      Author: Christophe Weis
 -->
-<project name="IncludeLibrariesSmartMonitoring" default="default" basedir=".">
+<project name="IncludeLibrariesSmartData" default="default" basedir=".">
     <description>Includes dependent libraries in projects using class-library projects.</description>
     <dirname property="IncludeLibraries.basedir" file="${ant.file.IncludeLibraries}"/>
     <target name="copy-files">
