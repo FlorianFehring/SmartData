@@ -45,9 +45,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Collection", description = "Create and modify collections")
 public class CollectionResource {
 
-    /**
-     * Creates a new instance of RootResource
-     */
     public CollectionResource() {
         // Init logging
         try {
