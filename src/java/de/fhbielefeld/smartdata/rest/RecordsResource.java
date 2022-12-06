@@ -292,7 +292,7 @@ public class RecordsResource {
             @Parameter(description = "Name of the storage to look at (public, smartdata_xyz, ...)",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Attributes to include, comata separated", example = "id,value") @QueryParam("includes") String includes,
-            @Parameter(description = "Definition of an filter <a href=\"http://git01-ifm-min.ad.fh-bielefeld.de/Forschung/smartmonitoring/smartdata/-/wikis/Funktionen/Uebersicht\" target=\"_new\">See filter documentation</a>", example = "id,eq,1") @QueryParam("filter") List<String> filtersStrings,
+            @Parameter(description = "Definition of an filter <a href=\"http://git04-ifm-min.ad.fh-bielefeld.de/forschung/smartecosystem/smartdata/-/wikis/Funktionen/Uebersicht\" target=\"_new\">See filter documentation</a>", example = "id,eq,1") @QueryParam("filter") List<String> filtersStrings,
             @Parameter(description = "Maximum number of datasets", example = "1") @QueryParam("size") int size,
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
@@ -300,7 +300,7 @@ public class RecordsResource {
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr,
             @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
-            @Parameter(description = "Names of join tables, to make natural join.", example = "bindtable,endtable") List<String> joins,
+            @Parameter(description = "Names of join tables, to make natural join.", example = "bindtable,endtable") @QueryParam("join") List<String> joins,
             @Context ContainerRequestContext requestContext) {
 
         if (storage == null) {
