@@ -245,6 +245,19 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
         return column;
     }
+    
+    @Override
+    public Attribute getReferenceTo(String collection) throws DynException {
+        Attribute ref = null;
+        for(Attribute curAttr : this.attributes.values()) {
+            String col = curAttr.getRefCollection();
+            if(col != null && col.equals(collection)) {
+                ref = curAttr;
+                break;
+            }
+        }
+        return ref;
+    }
 
     /**
      * Creates a column object from an result set

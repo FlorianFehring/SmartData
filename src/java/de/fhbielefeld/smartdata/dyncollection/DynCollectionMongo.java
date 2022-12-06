@@ -59,6 +59,11 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
     }
 
     @Override
+    public Attribute getReferenceTo(String collection) throws DynException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
     public List<Attribute> getIdentityAttributes() throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

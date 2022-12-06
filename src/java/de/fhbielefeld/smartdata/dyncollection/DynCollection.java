@@ -60,6 +60,15 @@ public interface DynCollection extends Dyn {
     public abstract Attribute getAttribute(String name) throws DynException;
     
     /**
+     * Searches a reference attribute to the given collection
+     * 
+     * @param collection    Name of the collection the reference should point to
+     * @return Referencing attribute or null if none found
+     * @throws DynException 
+     */
+    public abstract Attribute getReferenceTo(String collection) throws DynException;
+    
+    /**
      * Gets the collumns that are uses for identity
      * 
      * @return List of identifying attributes
