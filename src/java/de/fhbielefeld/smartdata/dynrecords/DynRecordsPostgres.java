@@ -420,7 +420,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException {
+    public String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform, Collection<String> joins) throws DynException {
         // Reset warnings for new get
         this.warnings = new ArrayList<>();
 
@@ -461,7 +461,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (ex.getLocalizedMessage().contains("connection has been closed")) {
                 // Try reconnect
                 this.connect();
-                return this.get(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
+                return this.get(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform, joins);
             }
             DynException de = new DynException("Exception fetching data: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);

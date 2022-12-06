@@ -65,11 +65,12 @@ public interface DynRecords extends Dyn {
      * datasets
      * @param geojsonattr Attribut that holds data for geo location
      * @param geotransform Type of the transform that should be applied to geometry columns (EPSG code or 'latlon')
+     * @param joins Join expressions
      *
      * @return JSON representation of the data
      * @throws DynException
      */
-    public abstract String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException;
+    public abstract String get(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform, Collection<String> joins) throws DynException;
 
     /**
      * Prepares the code for insertion of data

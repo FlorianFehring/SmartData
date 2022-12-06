@@ -227,7 +227,7 @@ public class RecordsResource {
 //        long startBuildResponse=0;
 //        long startGetData = System.nanoTime();
         try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
-            String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform);
+            String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform, new ArrayList<>());
 //            long finishGetData = System.nanoTime();
 //            double neededTimes = finishGetData - startGetData;
 //            double needetGetData = neededTimes / 1000 / 1000;
@@ -300,6 +300,7 @@ public class RecordsResource {
             @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr,
             @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
+            @Parameter(description = "Names of join tables, to make natural join.", example = "bindtable,endtable") List<String> joins,
             @Context ContainerRequestContext requestContext) {
 
         if (storage == null) {
@@ -373,7 +374,7 @@ public class RecordsResource {
         }
 
         try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
-            String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr, geotransform);
+            String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr, geotransform, joins);
             if (json.equals("{}")) {
                 json = "[]";
             }
