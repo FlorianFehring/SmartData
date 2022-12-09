@@ -62,6 +62,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     protected static final Map<String, String> preparedStatements = new HashMap<>();
     protected static final Map<String, Map<String, Integer>> preparedPlaceholders = new HashMap<>();
     protected static final Map<String, List<String>> preparedWarnings = new HashMap<>();
+    protected static final Map<String, DynCollection> usedDynCollections = new HashMap<>();
 
     public DynRecordsPostgres(String schema, String table) throws DynException {
         this.schema = schema;
@@ -73,7 +74,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     }
 
     @Override
-    public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform) throws DynException {
+    public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform, Collection<String> joins) throws DynException {
         // Build statement id string
         String stmtId = "";
         stmtId += this.schema + '_' + this.table;
@@ -100,9 +101,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         if (geotransform != null) {
             stmtId += "_geot" + geotransform;
         }
+        if (joins != null) {
+            stmtId += joins;
+        }
 
         stmtId += countOnly;
         this.lastStmtId = stmtId;
+
+        // List of references
+        Map<String, Attribute> referenceAttrs = new HashMap<>();
 
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
@@ -205,7 +212,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                                     + curColumn.getName() + "\"," + geotransform + ") " + curColumn.getName());
                         }
                     } else {
-                        queryColExpressions.add("\"" + curColumn.getName() + "\"");
+                        queryColExpressions.add("\"" + this.table + "\".\"" + curColumn.getName() + "\"");
+                    }
+                    // Note reference columns
+                    if (curColumn.getRefAttribute() != null) {
+                        referenceAttrs.put(curColumn.getRefCollection(), curColumn);
                     }
                     // Remove from requesteds list
                     requestedAttr.remove(curColumn.getName());
@@ -236,6 +247,88 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             frombuilder.append("\"");
             frombuilder.append(this.table);
             frombuilder.append("\"");
+
+            // Create join
+            if (joins != null && !joins.isEmpty()) {
+                for (String curJoins : joins) {
+                    String[] curJoinCols = curJoins.split(",");
+                    // Get collection that should joined
+                    for (String curJoinCol : curJoinCols) {
+                        // Get information about second collection
+                        DynCollection sc = this.usedDynCollections.get(curJoinCol);
+                        if (sc == null) {
+                            sc = new DynCollectionPostgres(this.schema, curJoinCol);
+                            this.usedDynCollections.put(curJoinCol, sc);
+                        }
+
+                        Attribute refAttr = referenceAttrs.get(curJoinCol);
+                        String fromCol;
+                        String fromAttr;
+                        String toCol;
+                        String toAttr;
+                        // If from main collection is no connection to second collection
+                        if (refAttr == null) {
+                            // Search connection on first collection
+                            refAttr = sc.getReferenceTo(this.table);
+                            if (refAttr == null) {
+                                this.preparedWarnings.get(stmtId).add("Could not join >" + this.table + "< with >" + curJoinCol + "< there is no binding attribute.");
+                                continue;
+                            } else {
+                                fromCol = curJoinCol;
+                                fromAttr = refAttr.getName();
+                                toCol = this.table;
+                                toAttr = refAttr.getRefAttribute();
+                            }
+                        } else {
+                            fromCol = this.table;
+                            fromAttr = referenceAttrs.get(curJoinCol).getName();
+                            toCol = curJoinCol;
+                            toAttr = referenceAttrs.get(curJoinCol).getRefAttribute();
+                        }
+                        frombuilder.append(" INNER JOIN \"");
+                        frombuilder.append(this.schema);
+                        frombuilder.append("\"");
+                        frombuilder.append(".");
+                        frombuilder.append("\"");
+                        frombuilder.append(curJoinCol);
+                        frombuilder.append("\" ON \"");
+                        frombuilder.append(fromCol);
+                        frombuilder.append("\".");
+                        frombuilder.append(fromAttr);
+                        frombuilder.append(" = \"");
+                        frombuilder.append(toCol);
+                        frombuilder.append("\".");
+                        frombuilder.append(toAttr);
+                        frombuilder.append(" GROUP BY ");
+                        frombuilder.append("\"");
+                        frombuilder.append(this.table);
+                        frombuilder.append("\".\"");
+                        frombuilder.append(sc.getIdentityAttributes().get(0).getName());
+                        frombuilder.append("\"");
+
+                        // Create select names for joined tables
+                        StringBuilder subSelectBuilder = new StringBuilder();
+                        subSelectBuilder.append(", json_agg(json_build_object(");
+                        int i = 0;
+                        for(Attribute curAttr : sc.getAttributes().values()) {
+                            if(i > 0)
+                                subSelectBuilder.append(", ");
+                            subSelectBuilder.append("'");
+                            subSelectBuilder.append(curAttr.getName());
+                            subSelectBuilder.append("', ");
+                            subSelectBuilder.append("\"");
+                            subSelectBuilder.append(curJoinCol);
+                            subSelectBuilder.append("\".\"");
+                            subSelectBuilder.append(curAttr.getName());
+                            subSelectBuilder.append("\"");
+                            i++;
+                        }
+                        subSelectBuilder.append(")) as ");
+                        subSelectBuilder.append(curJoinCol);
+                        selectbuilder.append(subSelectBuilder);
+                    }
+                }
+            }
 
             if (filters != null && !filters.isEmpty()) {
                 frombuilder.append(" WHERE ");
@@ -437,7 +530,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
         }
         // Prepare query or get allready prepeared one
-        String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform);
+        String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform, joins);
         // Fill prepared query with data
         try ( PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page);  ResultSet rs = pstmt.executeQuery()) {
             String json = "{}";
