@@ -268,7 +268,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                             // Search connection on first collection
                             refAttr = sc.getReferenceTo(lastCol);
                             if (refAttr == null) {
-                                System.out.println("Could not join " + lastCol + " with " + curJoinCol);
                                 this.preparedWarnings.get(stmtId).add("Could not join >" + lastCol + "< with >" + curJoinCol + "< there is no binding attribute.");
                                 continue;
                             } else {

@@ -248,10 +248,8 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     
     @Override
     public Attribute getReferenceTo(String collection) throws DynException {
-        System.out.println("getReferenceTo " + collection + " has " + this.attributes.size() + " attributes");
         Attribute ref = null;
         for(Attribute curAttr : this.getAttributes().values()) {
-            System.out.println("CurAttr: " + curAttr.getName() + " toCol: " + curAttr.getRefCollection() + " toAttr: " + curAttr.getRefAttribute());
             String col = curAttr.getRefCollection();
             if(col != null && col.equals(collection)) {
                 ref = curAttr;
