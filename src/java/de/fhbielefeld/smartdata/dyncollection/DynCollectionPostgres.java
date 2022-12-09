@@ -182,6 +182,50 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
         return created;
     }
+    
+    @Override
+    public boolean delAttributes(List<Attribute> attributes) throws DynException {
+        boolean deleted = false;
+        String sql = "ALTER TABLE \"" + this.schema + "\".\"" + this.name + "\"";
+        int i = 0;
+        for (Attribute curCol : attributes) {
+            if (i > 0) {
+                sql += ",";
+            }
+            sql += " DROP COLUMN \"" + curCol.getName() + "\"";
+            i++;
+        }
+        try {
+            commitlock.acquire();
+            this.con.setAutoCommit(true);
+            try ( Statement stmt = this.con.createStatement()) {
+                stmt.executeUpdate(sql);
+            }
+            this.con.setAutoCommit(false);
+            deleted = true;
+        } catch (SQLException ex) {
+            Message msg = new Message("Could not delete columns to >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+            msg.addException(ex);
+            Logger.addMessage(msg);
+        } catch (Exception ex) {
+            Message msg = new Message("Could not delAttributes >" + this.schema
+                    + "." + this.name + "< an >" + ex.getClass().getSimpleName()
+                    + "< occured: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+            msg.addException(ex);
+            Logger.addMessage(msg);
+        } finally {
+            try {
+                this.con.setAutoCommit(true);
+            } catch (SQLException ex) {
+                Message msg = new Message("DynCollectionPostgres/delAttributes",
+                        MessageLevel.ERROR, "Could not reset autocomit mode to true!");
+                Logger.addDebugMessage(msg);
+            }
+            commitlock.release();
+        }
+
+        return deleted;
+    }
 
     @Override
     public Map<String, Attribute> getAttributes() throws DynException {

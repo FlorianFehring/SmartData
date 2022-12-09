@@ -42,6 +42,15 @@ public interface DynCollection extends Dyn {
     public abstract boolean addAttributes(List<Attribute> attributes) throws DynException;
     
     /**
+     * Delets attributes from the collection
+     * 
+     * @param attributes List of attributes with at least the name
+     * @return true if all attributes where deleted, false if no attribute was deleted
+     * @throws DynException 
+     */
+    public abstract boolean delAttributes(List<Attribute> attributes) throws DynException;
+    
+    /**
      * Gets all available attributes for this table
      * 
      * @return List of collumns

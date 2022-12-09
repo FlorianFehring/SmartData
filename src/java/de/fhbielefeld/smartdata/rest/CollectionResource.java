@@ -275,6 +275,51 @@ public class CollectionResource {
     }
 
     @PUT
+    @Path("{collection}/delAttributes")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
+    @Operation(summary = "Deletes attributes",
+            description = "Delets attributes from a collection.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Number of deleted attributes",
+            content = @Content(
+                    mediaType = "text/plain",
+                    example = "1"
+            ))
+    @APIResponse(
+            responseCode = "500",
+            description = "Error mesage",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
+    public Response delAttributes(
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
+            List<Attribute> attributes) {
+
+        if (storage == null) {
+            storage = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+            if (dync.delAttributes(attributes)) {
+                rob.setStatus(Response.Status.CREATED);
+            } else {
+                rob.setStatus(Response.Status.CONFLICT);
+            }
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+        }
+
+        return rob.toResponse();
+    }
+    
+    @PUT
     @Path("{collection}/changeAttribute")
     @SmartUserAuth
     @Operation(summary = "Changes the srid of a attribute",

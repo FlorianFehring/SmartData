@@ -47,6 +47,11 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
     public boolean addAttributes(List<Attribute> attributes) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    @Override
+    public boolean delAttributes(List<Attribute> attributes) throws DynException {
+        throw new UnsupportedOperationException("Not supported yet."); 
+    }
 
     @Override
     public Map<String, Attribute> getAttributes() throws DynException {
