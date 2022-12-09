@@ -87,6 +87,8 @@ public class CollectionResource {
             storage = "public";
         }
 
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        
         JsonParser parser = Json.createParser(new StringReader(collectiondefstr));
         parser.next();
         JsonObject root = parser.getObject();
@@ -116,6 +118,12 @@ public class CollectionResource {
             if (attrdef.containsKey("isIdentity")) {
                 attr.setIsIdentity(attrdef.getBoolean("isIdentity"));
             }
+            // Check for missing name
+            if(!attrdef.containsKey("name") || attrdef.getString("name").isEmpty()) {
+                rob.setStatus(Response.Status.BAD_REQUEST);
+                rob.addErrorMessage("Name is missing for column.");
+                return rob.toResponse();
+            }
             attr.setName(attrdef.getString("name"));
             if (attrdef.containsKey("refAttribute")) {
                 attr.setRefAttribute(attrdef.getString("refAttribute"));
@@ -137,8 +145,6 @@ public class CollectionResource {
             }
             collectiondef.addAttribute(attr);
         }
-
-        ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         if (collectiondef.getAttributes() == null || collectiondef.getAttributes().isEmpty()) {
             rob.setStatus(Response.Status.BAD_REQUEST);
