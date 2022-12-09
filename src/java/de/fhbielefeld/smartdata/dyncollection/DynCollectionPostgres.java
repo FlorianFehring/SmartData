@@ -68,7 +68,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             DynStorage db = new DynStoragePostgres(this.con);
             if (!db.storageExists(this.schema)) {
                 String msg = "Schema >" + this.schema + "< for table >" + this.name + "< does not exists.";
-                Message dmsg = new Message(msg,MessageLevel.ERROR);
+                Message dmsg = new Message(msg, MessageLevel.ERROR);
                 Logger.addDebugMessage(dmsg);
                 DynException dex = new DynException(msg);
                 throw dex;
@@ -102,7 +102,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 for (Attribute curCol : table.getAttributes()) {
                     if (!curCol.isIdentity()) {
                         sql += ", \"" + curCol.getName() + "\" " + curCol.getType();
-                        if(curCol.getName().equalsIgnoreCase("id")) {
+                        if (curCol.getName().equalsIgnoreCase("id")) {
                             System.err.println("There is an column defined named id, but without beeing a identity column (set: isIdentity: true)");
                         }
                     }
@@ -182,7 +182,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
         return created;
     }
-    
+
     @Override
     public boolean delAttributes(List<Attribute> attributes) throws DynException {
         boolean deleted = false;
@@ -281,7 +281,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         // If the column was not found, check if the table is available
         if (column == null & !this.exists()) {
             String msg = "Table >" + this.schema + "." + this.name + "< does not exists.";
-            Message dmsg = new Message(msg,MessageLevel.ERROR);
+            Message dmsg = new Message(msg, MessageLevel.ERROR);
             Logger.addDebugMessage(dmsg);
             DynException dex = new DynException(msg);
             throw dex;
@@ -289,13 +289,13 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
         return column;
     }
-    
+
     @Override
     public Attribute getReferenceTo(String collection) throws DynException {
         Attribute ref = null;
-        for(Attribute curAttr : this.getAttributes().values()) {
+        for (Attribute curAttr : this.getAttributes().values()) {
             String col = curAttr.getRefCollection();
-            if(col != null && col.equals(collection)) {
+            if (col != null && col.equals(collection)) {
                 ref = curAttr;
                 break;
             }
@@ -422,9 +422,17 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     public void changeAttributes(List<Attribute> columns) throws DynException {
         for (Attribute curCol : columns) {
             try ( Statement stmt = this.con.createStatement()) {
-                stmt.executeQuery(
-                        "SELECT UpdateGeometrySRID('" + this.schema + "', '"
-                        + this.name + "','" + curCol.getName() + "'," + curCol.getSrid() + ")");
+                // Update type
+                if (curCol.getType() != null) {
+                    stmt.executeUpdate("ALTER TABLE \"" + this.schema + "\".\"" + this.name
+                            + "\" ALTER COLUMN \"" + curCol.getName() + "\" TYPE " + curCol.getType());
+                }
+                // Update SRID
+                if (curCol.getSrid() != null) {
+                    stmt.executeQuery(
+                            "SELECT UpdateGeometrySRID('" + this.schema + "', '"
+                            + this.name + "','" + curCol.getName() + "'," + curCol.getSrid() + ")");
+                }
             } catch (SQLException ex) {
                 DynException dex = new DynException("Could not change attributes: Could not get schema information: " + ex.getLocalizedMessage());
                 dex.addSuppressed(ex);
@@ -436,7 +444,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public void delete() throws DynException {
         try ( Statement stmt = this.con.createStatement()) {
-            stmt.executeUpdate("DROP TABLE IF EXISTS \""+ this.schema + "\".\"" + this.name + "\"");
+            stmt.executeUpdate("DROP TABLE IF EXISTS \"" + this.schema + "\".\"" + this.name + "\"");
         } catch (SQLException ex) {
             DynException de = new DynException("Could not delete collection: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
