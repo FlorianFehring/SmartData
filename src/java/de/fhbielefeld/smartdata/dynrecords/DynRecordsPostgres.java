@@ -108,9 +108,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         stmtId += countOnly;
         this.lastStmtId = stmtId;
 
-        // List of references
-        Map<String, Attribute> referenceAttrs = new HashMap<>();
-
         // Create sql statement
         if (!this.preparedStatements.containsKey(stmtId)) {
             this.preparedWarnings.put(stmtId, new ArrayList<>());
@@ -214,10 +211,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     } else {
                         queryColExpressions.add("\"" + this.table + "\".\"" + curColumn.getName() + "\"");
                     }
-                    // Note reference columns
-                    if (curColumn.getRefAttribute() != null) {
-                        referenceAttrs.put(curColumn.getRefCollection(), curColumn);
-                    }
                     // Remove from requesteds list
                     requestedAttr.remove(curColumn.getName());
                 }
@@ -253,11 +246,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 for (String curJoins : joins) {
                     String[] curJoinCols = curJoins.split(",");
                     // Notice last collection (this one is where we want data from)
-                    String lastCol = null;
+                    String lastCol = this.table;
+                    DynCollection lastDynCol = this.dyncollection;
                     DynCollection sc = null;
                     // Get collection that should joined
                     for (String curJoinCol : curJoinCols) {
-                        lastCol = curJoinCol;
                         // Get information about second collection
                         sc = this.usedDynCollections.get(curJoinCol);
                         if (sc == null) {
@@ -265,7 +258,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                             this.usedDynCollections.put(curJoinCol, sc);
                         }
 
-                        Attribute refAttr = referenceAttrs.get(curJoinCol);
+                        Attribute refAttr = lastDynCol.getReferenceTo(curJoinCol);
                         String fromCol;
                         String fromAttr;
                         String toCol;
@@ -273,21 +266,22 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         // If from main collection is no connection to second collection
                         if (refAttr == null) {
                             // Search connection on first collection
-                            refAttr = sc.getReferenceTo(this.table);
+                            refAttr = sc.getReferenceTo(lastCol);
                             if (refAttr == null) {
-                                this.preparedWarnings.get(stmtId).add("Could not join >" + this.table + "< with >" + curJoinCol + "< there is no binding attribute.");
+                                System.out.println("Could not join " + lastCol + " with " + curJoinCol);
+                                this.preparedWarnings.get(stmtId).add("Could not join >" + lastCol + "< with >" + curJoinCol + "< there is no binding attribute.");
                                 continue;
                             } else {
                                 fromCol = curJoinCol;
                                 fromAttr = refAttr.getName();
-                                toCol = this.table;
+                                toCol = lastCol;
                                 toAttr = refAttr.getRefAttribute();
                             }
                         } else {
-                            fromCol = this.table;
-                            fromAttr = referenceAttrs.get(curJoinCol).getName();
+                            fromCol = lastCol;
+                            fromAttr = refAttr.getName();
                             toCol = curJoinCol;
-                            toAttr = referenceAttrs.get(curJoinCol).getRefAttribute();
+                            toAttr = refAttr.getRefAttribute();
                         }
                         frombuilder.append(" INNER JOIN \"");
                         frombuilder.append(this.schema);
@@ -297,20 +291,25 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         frombuilder.append(curJoinCol);
                         frombuilder.append("\" ON \"");
                         frombuilder.append(fromCol);
-                        frombuilder.append("\".");
-                        frombuilder.append(fromAttr);
-                        frombuilder.append(" = \"");
-                        frombuilder.append(toCol);
-                        frombuilder.append("\".");
-                        frombuilder.append(toAttr);
-                        frombuilder.append(" GROUP BY ");
-                        frombuilder.append("\"");
-                        frombuilder.append(this.table);
                         frombuilder.append("\".\"");
-                        frombuilder.append(sc.getIdentityAttributes().get(0).getName());
+                        frombuilder.append(fromAttr);
+                        frombuilder.append("\" = \"");
+                        frombuilder.append(toCol);
+                        frombuilder.append("\".\"");
+                        frombuilder.append(toAttr);
                         frombuilder.append("\"");
-
+                        
+                        lastCol = curJoinCol;
+                        lastDynCol = sc;
                     }
+
+                    // group by for sub joins
+                    frombuilder.append(" GROUP BY ");
+                    frombuilder.append("\"");
+                    frombuilder.append(this.table);
+                    frombuilder.append("\".\"");
+                    frombuilder.append(sc.getIdentityAttributes().get(0).getName());
+                    frombuilder.append("\"");
 
                     // Create select names for joined tables
                     StringBuilder subSelectBuilder = new StringBuilder();
