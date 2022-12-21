@@ -19,9 +19,12 @@ public class Attribute {
     private boolean isIdentity = false;
     private String defaultvalue = null;
     private boolean isAutoIncrement = false;
+    private String refName = null;
     private String refCollection = null;
     private String refStorage = null;
     private String refAttribute = null;
+    private String refOnUpdate = null;
+    private String refOnDelete = null;
     
     public Attribute() {
         
@@ -104,6 +107,14 @@ public class Attribute {
         this.isAutoIncrement = isAutoIncrement;
     }
 
+    public String getRefName() {
+        return refName;
+    }
+
+    public void setRefName(String refName) {
+        this.refName = refName;
+    }
+
     public String getRefCollection() {
         return refCollection;
     }
@@ -126,5 +137,21 @@ public class Attribute {
 
     public void setRefAttribute(String refAttribute) {
         this.refAttribute = refAttribute;
+    }
+
+    public String getRefOnUpdate() {
+        return refOnUpdate;
+    }
+
+    public void setRefOnUpdate(String refOnUpdate) {
+        this.refOnUpdate = refOnUpdate;
+    }
+
+    public String getRefOnDelete() {
+        return refOnDelete;
+    }
+
+    public void setRefOnDelete(String refOnDelete) {
+        this.refOnDelete = refOnDelete;
     }
 }

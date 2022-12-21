@@ -99,6 +99,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 } else {
                     sql += "id bigserial PRIMARY KEY";
                 }
+                String foreignKeys = "";
                 for (Attribute curCol : table.getAttributes()) {
                     if (!curCol.isIdentity()) {
                         sql += ", \"" + curCol.getName() + "\" " + curCol.getType();
@@ -106,6 +107,39 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                             System.err.println("There is an column defined named id, but without beeing a identity column (set: isIdentity: true)");
                         }
                     }
+                    // Create forign key
+                    if (curCol.getRefAttribute() != null) {
+                        foreignKeys += ",";
+                        foreignKeys += "CONSTRAINT " + this.name + "_" + curCol.getRefCollection() + "_" + curCol.getRefAttribute();
+                        foreignKeys += " FOREIGN KEY(" + curCol.getName() + ") ";
+                        foreignKeys += "REFERENCES ";
+                        if (curCol.getRefStorage() != null) {
+                            foreignKeys += "\"" + curCol.getRefStorage() + "\".";
+                        }
+                        foreignKeys += "\"" + curCol.getRefCollection() + "\"(" + curCol.getRefAttribute() + ")";
+                        if (curCol.getRefOnDelete() != null) {
+                            switch (curCol.getRefOnDelete()) {
+                                case "CASCADE":
+                                    foreignKeys += " ON DELETE CASCADE";
+                                    break;
+                                case "SET NULL":
+                                    foreignKeys += " ON DELETE SET NULL";
+                                    break;
+                                case "SET DEFAULT":
+                                    foreignKeys += " ON DELETE SET DEFAULT";
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        if (curCol.getRefOnUpdate() != null && curCol.getRefOnUpdate().equals("CASCADE")) {
+                            foreignKeys += " ON UPDATE CASCADE";
+                        }
+                    }
+                }
+                // Add foreign keys
+                if (!foreignKeys.isEmpty()) {
+                    sql += foreignKeys;
                 }
                 sql += ")";
                 commitlock.acquire();
@@ -344,6 +378,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             }
             // Get if column is a reference
             String rquery = "SELECT "
+                    + "tc.constraint_name, "
                     + "tc.table_name, "
                     + "kcu.column_name, "
                     + "ccu.table_schema AS foreign_table_schema, "
@@ -362,9 +397,33 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     + "' and kcu.column_name='" + curCol.getName() + "';";
             try ( Statement rstmt = this.con.createStatement();  ResultSet rrs = rstmt.executeQuery(rquery)) {
                 if (rrs.next()) {
+                    curCol.setRefName(rrs.getString("constraint_name"));
                     curCol.setRefCollection(rrs.getString("foreign_table_name"));
                     curCol.setRefStorage(rrs.getString("foreign_table_schema"));
                     curCol.setRefAttribute(rrs.getString("foreign_column_name"));
+                }
+            }
+            // Get enhanced information about reference
+            if (curCol.getRefName() != null) {
+                String rtquery = "SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = '" + curCol.getRefName() + "'";
+                try ( Statement rstmt = this.con.createStatement();  ResultSet rrs = rstmt.executeQuery(rtquery)) {
+                    if (rrs.next()) {
+                        String def = rrs.getString("def");
+                        // Search onUpdate
+                        if (def.contains("ON UPDATE CASCADE")) {
+                            curCol.setRefOnUpdate("CASCADE");
+                        }
+                        // Search onDelete
+                        if (def.contains("ON DELETE CASCADE")) {
+                            curCol.setRefOnDelete("CASCADE");
+                        }
+                        if (def.contains("ON DELETE SET NULL")) {
+                            curCol.setRefOnDelete("SET NULL");
+                        }
+                        if (def.contains("ON DELETE SET DEFAULT")) {
+                            curCol.setRefOnDelete("SET DEFAULT");
+                        }
+                    }
                 }
             }
 
