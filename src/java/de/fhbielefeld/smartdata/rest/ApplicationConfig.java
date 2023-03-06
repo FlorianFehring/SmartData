@@ -1,14 +1,14 @@
 package de.fhbielefeld.smartdata.rest;
 
+import jakarta.ws.rs.core.Application;
 import java.util.Set;
-import javax.ws.rs.core.Application;
 
 /**
  * Configuaration for REST interfaces
  * 
  * @author Florian Fehring
  */
-@javax.ws.rs.ApplicationPath("smartdata")
+@jakarta.ws.rs.ApplicationPath("smartdata")
 public class ApplicationConfig extends Application {
 
     @Override

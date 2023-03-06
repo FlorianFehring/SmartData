@@ -3,10 +3,10 @@ package de.fhbielefeld.smartdata.dynrecords;
 import de.fhbielefeld.smartdata.dyn.DynMongo;
 import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.exceptions.DynException;
+import jakarta.json.JsonObject;
 import java.sql.PreparedStatement;
 import java.util.Collection;
 import java.util.List;
-import javax.json.JsonObject;
 
 /**
  * Methods for accessing data from a mongodb..

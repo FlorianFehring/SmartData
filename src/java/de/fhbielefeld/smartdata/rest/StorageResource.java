@@ -7,14 +7,6 @@ import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dyn.DynFactory;
 import de.fhbielefeld.smartdata.exceptions.DynException;
 import javax.naming.NamingException;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import static org.eclipse.microprofile.openapi.annotations.enums.SchemaType.STRING;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -24,6 +16,14 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import de.fhbielefeld.smartdata.dynstorage.DynStorage;
 import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Resource for accessing database informations
