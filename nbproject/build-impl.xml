@@ -838,6 +838,9 @@ exists or setup the property manually. For example like this:
                 COMPILATION SECTION
             -->
     <target depends="init" if="no.dist.ear.dir" name="deps-module-jar" unless="no.deps">
+        <ant antfile="${project.NGI_AdvancedReflection}/build.xml" inheritall="false" target="jar">
+            <property name="deploy.on.save" value="false"/>
+        </ant>
         <ant antfile="${project.NGI_Logger}/build.xml" inheritall="false" target="jar">
             <property name="deploy.on.save" value="false"/>
         </ant>
@@ -849,6 +852,9 @@ exists or setup the property manually. For example like this:
         </ant>
     </target>
     <target depends="init" if="dist.ear.dir" name="deps-ear-jar" unless="no.deps">
+        <ant antfile="${project.NGI_AdvancedReflection}/build.xml" inheritall="false" target="jar">
+            <property name="deploy.on.save" value="false"/>
+        </ant>
         <ant antfile="${project.NGI_Logger}/build.xml" inheritall="false" target="jar">
             <property name="deploy.on.save" value="false"/>
         </ant>
@@ -1004,6 +1010,7 @@ exists or setup the property manually. For example like this:
     <target depends="init" if="dist.ear.dir" name="library-inclusion-in-manifest">
         <copyfiles files="${reference.NGI_Logger.jar}" iftldtodir="${build.web.dir}/WEB-INF" todir="${dist.ear.dir}/lib"/>
         <copyfiles files="${reference.NGI_RestUtils.jar}" iftldtodir="${build.web.dir}/WEB-INF" todir="${dist.ear.dir}/lib"/>
+        <copyfiles files="${reference.NGI_AdvancedReflection.jar}" iftldtodir="${build.web.dir}/WEB-INF" todir="${dist.ear.dir}/lib"/>
         <copyfiles files="${reference.SmartUserAuth.jar}" iftldtodir="${build.web.dir}/WEB-INF" todir="${dist.ear.dir}/lib"/>
         <copyfiles files="${libs.jakartaee-api-10.0.classpath}" iftldtodir="${build.web.dir}/WEB-INF" todir="${dist.ear.dir}/lib"/>
         <copyfiles files="${file.reference.jaxb-impl-4.0.2.jar}" iftldtodir="${build.web.dir}/WEB-INF" todir="${dist.ear.dir}/lib"/>
@@ -1016,6 +1023,7 @@ exists or setup the property manually. For example like this:
     <target depends="init" name="library-inclusion-in-archive" unless="dist.ear.dir">
         <copyfiles files="${reference.NGI_Logger.jar}" todir="${build.web.dir}/WEB-INF/lib"/>
         <copyfiles files="${reference.NGI_RestUtils.jar}" todir="${build.web.dir}/WEB-INF/lib"/>
+        <copyfiles files="${reference.NGI_AdvancedReflection.jar}" todir="${build.web.dir}/WEB-INF/lib"/>
         <copyfiles files="${reference.SmartUserAuth.jar}" todir="${build.web.dir}/WEB-INF/lib"/>
         <copyfiles files="${libs.jakartaee-api-10.0.classpath}" todir="${build.web.dir}/WEB-INF/lib"/>
         <copyfiles files="${file.reference.jaxb-impl-4.0.2.jar}" todir="${build.web.dir}/WEB-INF/lib"/>
@@ -1436,6 +1444,7 @@ exists or setup the property manually. For example like this:
                 CLEANUP SECTION
             -->
     <target depends="init" name="deps-clean" unless="no.deps">
+        <ant antfile="${project.NGI_AdvancedReflection}/build.xml" inheritall="false" target="clean"/>
         <ant antfile="${project.NGI_Logger}/build.xml" inheritall="false" target="clean"/>
         <ant antfile="${project.NGI_RestUtils}/build.xml" inheritall="false" target="clean"/>
         <ant antfile="${project.SmartUserAuth}/build.xml" inheritall="false" target="clean"/>
