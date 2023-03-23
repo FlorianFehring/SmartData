@@ -105,7 +105,7 @@ public class RecordsResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         Configuration conf = new Configuration();
-        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             List<Object> ids = dynr.create(json);
             // Use TreeQL specification extension
             if (conf.getProperty("spec.version") != null
@@ -192,7 +192,7 @@ public class RecordsResource {
         List<Filter> filters = new ArrayList<>();
         // Init collection access
 //        long startIdFilter = System.nanoTime();
-        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+        try (DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             List<Attribute> idattrs = dync.getIdentityAttributes();
 
             if (idattrs.isEmpty()) {
@@ -226,7 +226,7 @@ public class RecordsResource {
 
 //        long startBuildResponse=0;
 //        long startGetData = System.nanoTime();
-        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform, new ArrayList<>());
 //            long finishGetData = System.nanoTime();
 //            double neededTimes = finishGetData - startGetData;
@@ -315,7 +315,7 @@ public class RecordsResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
         List<Filter> filters = new ArrayList<>();
 
-        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+        try (DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             // Check if there is a request context and user has restricted rights
             if (requestContext != null) {
                 boolean max_right = false;
@@ -337,7 +337,7 @@ public class RecordsResource {
                         if (sb.length() > 0) {
                             // Write filter
                             filtersStrings.add(idattr.getName() + ",in," + sb.toString());
-                        } else if(!max_right) {
+                        } else if (!max_right) {
                             // User has no right so shold get a empty list
                             filtersStrings.add(idattr.getName() + ",in,-1");
                         }
@@ -373,7 +373,7 @@ public class RecordsResource {
             return rob.toResponse();
         }
 
-        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             String json = dynr.get(includes, filters, size, page, order, countonly, unique, false, geojsonattr, geotransform, joins);
             if (json.equals("{}")) {
                 json = "[]";
@@ -392,9 +392,19 @@ public class RecordsResource {
             }
         } catch (DynException ex) {
             String msg = ex.getLocalizedMessage();
-            if (msg.contains("Table") && msg.contains("does not exist")) {
+            if ((msg.contains("Tabelle") && msg.contains("existiert nicht"))
+                    || (msg.contains("Table") && msg.contains("does not exist"))) {
                 rob.setStatus(Response.Status.NOT_FOUND);
-                Message msge = new Message(msg+ " Check table ownership.",MessageLevel.ERROR);
+                String msg1 = msg + " Check table ownership.";
+                rob.addErrorMessage(msg1);
+                Message msge = new Message(msg1, MessageLevel.ERROR);
+                Logger.addDebugMessage(msge);
+            } else if ((msg.contains("Spalte") && msg.contains(" existiert nicht"))
+                    || (msg.contains("Column") && msg.contains("does not exist"))) {
+                rob.setStatus(Response.Status.NOT_FOUND);
+                String msg1 = msg + " Did you deleted a column from database? Than restart of SmartData is requeired.";
+                rob.addErrorMessage(msg1);
+                Message msge = new Message(msg1, MessageLevel.ERROR);
                 Logger.addDebugMessage(msge);
             } else {
                 rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -442,7 +452,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -488,7 +498,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, null);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
@@ -532,7 +542,7 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        try ( DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+        try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.delete(id);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
