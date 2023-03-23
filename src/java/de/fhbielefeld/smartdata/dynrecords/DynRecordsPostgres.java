@@ -550,7 +550,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             rs.close();
             return json;
         } catch (SQLException ex) {
-            DynException de = new DynException("Exception fetching data: " + ex.getLocalizedMessage());
+            DynException de = new DynException("SQL error fetching data: " + ex.getLocalizedMessage().replaceAll("\\p{Cc}", ""));
             de.addSuppressed(ex);
             ex.printStackTrace();
             throw de;
@@ -560,7 +560,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 this.connect();
                 return this.get(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform, joins);
             }
-            DynException de = new DynException("Exception fetching data: " + ex.getLocalizedMessage());
+            DynException de = new DynException("Exception fetching data: " + ex.getLocalizedMessage().replaceAll("\\p{Cc}", ""));
             de.addSuppressed(ex);
             throw de;
         }
@@ -1142,10 +1142,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
      */
     private void setPlaceholder(PreparedStatement pstmt, int pindex, Attribute col, JsonValue value) throws DynException {
         try {
+            // Check if value is empty
+            boolean isEmpty = false;
+            if (value == null || value.toString().equals("null") || value.toString().isEmpty() || value.toString().equals("\"\"")) {
+                isEmpty = true;
+            }
             switch (col.getType()) {
                 case "text":
                 case "varchar":
-                    if (value.getValueType() == ValueType.NUMBER) {
+                    if (value == null) {
+                        pstmt.setNull(pindex, java.sql.Types.VARCHAR);
+                    } else if(value.getValueType() == ValueType.NUMBER) {
                         pstmt.setString(pindex, value.toString());
                     } else {
                         JsonString jstr = (JsonString) value;
@@ -1153,7 +1160,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "bool":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.BOOLEAN);
                     } else {
                         // Isn't there a better method to get the boolean value?
@@ -1167,7 +1174,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 case "decimal":
                 case "real":
                 case "double precision":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.DOUBLE);
                     } else {
                         JsonNumber jdoub = (JsonNumber) value;
@@ -1179,7 +1186,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 case "smallint":
                 case "integer":
                 case "bigint":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.INTEGER);
                     } else {
                         JsonNumber jint = (JsonNumber) value;
@@ -1187,7 +1194,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "int8":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.BIGINT);
                     } else {
                         JsonNumber jbint = (JsonNumber) value;
@@ -1195,7 +1202,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "timestamp":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.TIMESTAMP);
                     } else {
                         JsonString jts = (JsonString) value;
@@ -1204,7 +1211,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "date":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.DATE);
                     } else {
                         JsonString jdate = (JsonString) value;
@@ -1213,7 +1220,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "json":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.LONGVARCHAR);
                     } else if (value.getValueType() == ValueType.OBJECT || value.getValueType() == ValueType.ARRAY) {
                         // Given value is json
@@ -1225,15 +1232,29 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "geometry":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.OTHER);
                     } else {
                         JsonString jgeom = (JsonString) value;
                         pstmt.setObject(pindex, jgeom.getString());
                     }
                     break;
+                case "point":
+                    System.out.println("WARNING: Support for point type is experimental. Use geometry type instead.");
+                    if (value == null || isEmpty) {
+                        pstmt.setNull(pindex, java.sql.Types.OTHER);
+                    } else {
+                        JsonString jgeom = (JsonString) value;
+                        pstmt.setObject(pindex, jgeom.getString());
+                    }
+//                case "line":
+//                case "lseg":
+//                case "box":
+//                case "path":
+//                case "polygon":
+//                case "cirlce":
                 case "bytea":
-                    if (value == null || value.toString().equals("null")) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.BLOB);
                     } else {
                         JsonString jbytea = (JsonString) value;
@@ -1257,8 +1278,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     break;
                 default:
                     Message msg = new Message(
-                            "Write to database does not support type >" + col.getType() + "<", MessageLevel.WARNING);
-                    Logger.addDebugMessage(msg);
+                            "Write to database does not support type >" + col.getType() + "<", MessageLevel.ERROR);
+                    Logger.addMessage(msg);
                     this.warnings.add("Could not save value for >" + col.getName() + "<: Datatype >" + col.getType() + "< is not supported.");
             }
         } catch (SQLException ex) {
