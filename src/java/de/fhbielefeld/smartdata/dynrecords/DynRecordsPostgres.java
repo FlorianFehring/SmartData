@@ -484,7 +484,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     pstmt = curFilter.setFilterValue(pstmt);
                     this.warnings.addAll(curFilter.getWarnings());
                 } catch (FilterException ex) {
-                    this.warnings.add("Filter >" + curFilter.getFiltercode() + "< could not be applied: " + ex.getLocalizedMessage());
+                    this.warnings.add("Filter >" + curFilter.getFiltercode() + "< could not be applied: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
                 }
             }
 
@@ -510,7 +510,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
             return pstmt;
         } catch (SQLException ex) {
-            DynException de = new DynException("Could not execute query: " + ex.getLocalizedMessage());
+            DynException de = new DynException("Could not execute query: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
             de.addSuppressed(ex);
             throw de;
         }
@@ -905,7 +905,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                             MessageLevel.ERROR);
                     Logger.addDebugMessage(msg);
                 }
-                DynException de = new DynException("Could not save dataset: " + ex.getLocalizedMessage());
+                DynException de = new DynException(ex.getLocalizedMessage());
                 de.addSuppressed(ex);
                 throw de;
             } finally {
@@ -940,7 +940,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             return null;
         } catch (Exception ex) {
             String msgtxt = "Could not save dataset: Unexpected >" + ex.getClass().getSimpleName()
-                    + "< exception:" + ex.getLocalizedMessage();
+                    + "< exception:" + ex.getLocalizedMessage().replaceAll("[\\r\\n]", "");
             Message msg = new Message(msgtxt, MessageLevel.ERROR);
             Logger.addDebugMessage(msg);
             DynException de = new DynException(msgtxt);
@@ -1109,7 +1109,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     int nextId = usedPlaceholders++;
                     pstmt.setLong(nextId, id);
                 } catch (SQLException ex) {
-                    DynException de = new DynException("Could set id to update statement: " + ex.getLocalizedMessage());
+                    DynException de = new DynException("Could set id to update statement: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
                     de.addSuppressed(ex);
                     throw de;
                 }
@@ -1121,7 +1121,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
             return id;
         } catch (SQLException ex) {
-            String msg = "Could not update dataset: " + ex.getLocalizedMessage();
+            String msg = "Could not update dataset: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", "");
             Message msga = new Message(msg, MessageLevel.ERROR);
             Logger.addMessage(msga);
             ex.printStackTrace();
@@ -1283,13 +1283,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     this.warnings.add("Could not save value for >" + col.getName() + "<: Datatype >" + col.getType() + "< is not supported.");
             }
         } catch (SQLException ex) {
-            this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage());
+            this.warnings.add("Could not save value for >" + col.getName() + "<: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
         } catch (ClassCastException ex) {
             DynException dye = new DynException("Could not interpret >"
                     + col.getName() + "< with value >" + value.toString()
                     + "< from type >" + value.getClass().getSimpleName()
                     + "< to type >" + col.getType() + "< because of ("
-                    + ex.getClass().getSimpleName() + "): " + ex.getLocalizedMessage());
+                    + ex.getClass().getSimpleName() + "): " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
             dye.addSuppressed(ex);
             throw dye;
         }
@@ -1321,7 +1321,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             stmt.executeUpdate(sql);
             return null;
         } catch (SQLException ex) {
-            String msg = "Could not update dataset: " + ex.getLocalizedMessage();
+            String msg = "Could not update dataset: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", "");
             Message msga = new Message(msg, MessageLevel.ERROR);
             Logger.addMessage(msga);
             ex.printStackTrace();
