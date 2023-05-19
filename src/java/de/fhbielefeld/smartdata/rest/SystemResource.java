@@ -82,7 +82,7 @@ public class SystemResource {
     }
 
     @GET
-    @Path("sysinfo")
+    @Path("info")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get system information",
             description = "Gets information about the SmartData system and environment.")
@@ -98,13 +98,13 @@ public class SystemResource {
             description = "Error mesage",
             content = @Content(mediaType = "application/json",
                     example = "{\"errors\" : [ \" Could not get system informations: Because of ... \"]}"))
-    public Response getSysinfo() {
+    public Response info() {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         // Init config
         Configuration conf = new Configuration();
 
-        rob.add("version", "23.11.2021");
+        rob.add("version", "19.05.2023");
         // IP adress
         try {
             rob.add("publicip", InetAddress.getLocalHost().getHostAddress());
