@@ -297,7 +297,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         frombuilder.append("\".\"");
                         frombuilder.append(toAttr);
                         frombuilder.append("\"");
-                        
+
                         lastCol = curJoinCol;
                         lastDynCol = sc;
                     }
@@ -536,7 +536,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         // Prepare query or get allready prepeared one
         String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform, joins);
         // Fill prepared query with data
-        try ( PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page);  ResultSet rs = pstmt.executeQuery()) {
+        try (PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page); ResultSet rs = pstmt.executeQuery()) {
             String json = "{}";
             if (rs.next()) {
                 String dbjson = rs.getString("json");
@@ -615,7 +615,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         properties.put(JsonGenerator.PRETTY_PRINTING, false);
         JsonWriterFactory writerFactory = Json.createWriterFactory(properties);
         StringWriter sw = new StringWriter();
-        try ( JsonWriter jsonWriter = writerFactory.createWriter(sw)) {
+        try (JsonWriter jsonWriter = writerFactory.createWriter(sw)) {
             jsonWriter.writeArray(newdataarr.build());
         }
         return sw.toString();
@@ -830,7 +830,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 wktsql += ") AS geom";
 
                 String wkt;
-                try ( Statement wktstmt = this.con.createStatement();  ResultSet wktrs = wktstmt.executeQuery(wktsql)) {
+                try (Statement wktstmt = this.con.createStatement(); ResultSet wktrs = wktstmt.executeQuery(wktsql)) {
                     wktrs.next();
                     // No other reference system awaited from geojson (removed from geojson specification)
                     wkt = "SRID=" + curAttr.getSrid() + ";" + wktrs.getString("geom");
@@ -864,7 +864,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         String pstmtid = this.getPreparedInsert(json);
         String stmt = preparedStatements.get(pstmtid);
-        try ( PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
+        try (PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
             Map<String, Integer> placeholders = preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
             List<String> ignoredCols = new ArrayList<>();
@@ -920,9 +920,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Request primary key
             String idstmt = preparedStatements.get("id_" + pstmtid);
             if (idstmt != null) {
-                try ( PreparedStatement idpstmt = this.con.prepareStatement(idstmt)) {
+                try (PreparedStatement idpstmt = this.con.prepareStatement(idstmt)) {
                     if (idpstmt != null) {
-                        try ( ResultSet prs = idpstmt.executeQuery()) {
+                        try (ResultSet prs = idpstmt.executeQuery()) {
                             if (prs.next()) {
                                 return prs.getObject(1);
                             }
@@ -1074,7 +1074,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String pstmtid = this.getPreparedUpdate(json, id);
         String stmt = this.preparedStatements.get(pstmtid);
 
-        try ( PreparedStatement pstmt = this.con.prepareStatement(stmt)) {
+        try (PreparedStatement pstmt = this.con.prepareStatement(stmt)) {
             Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
 
@@ -1152,7 +1152,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 case "varchar":
                     if (value == null) {
                         pstmt.setNull(pindex, java.sql.Types.VARCHAR);
-                    } else if(value.getValueType() == ValueType.NUMBER) {
+                    } else if (value.getValueType() == ValueType.NUMBER) {
                         pstmt.setString(pindex, value.toString());
                     } else {
                         JsonString jstr = (JsonString) value;
@@ -1176,9 +1176,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 case "double precision":
                     if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.DOUBLE);
-                    } else {
+                    } else if (value.getValueType() == ValueType.NUMBER) {
                         JsonNumber jdoub = (JsonNumber) value;
                         pstmt.setDouble(pindex, jdoub.doubleValue());
+                    } else {
+                        String jval = value.toString().replace("\"", "").trim();
+                        pstmt.setDouble(pindex, Double.parseDouble(jval));
                     }
                     break;
                 case "int2":
@@ -1188,17 +1191,23 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 case "bigint":
                     if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.INTEGER);
-                    } else {
+                    } else if (value.getValueType() == ValueType.NUMBER) {
                         JsonNumber jint = (JsonNumber) value;
                         pstmt.setInt(pindex, jint.intValue());
+                    } else {
+                        String jval = value.toString().replace("\"", "").trim();
+                        pstmt.setInt(pindex, Integer.parseInt(jval));
                     }
                     break;
                 case "int8":
                     if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.BIGINT);
-                    } else {
+                    } else if (value.getValueType() == ValueType.NUMBER) {
                         JsonNumber jbint = (JsonNumber) value;
                         pstmt.setLong(pindex, jbint.longValue());
+                    } else {
+                        String jval = value.toString().replace("\"", "").trim();
+                        pstmt.setLong(pindex, Long.parseLong(jval));
                     }
                     break;
                 case "timestamp":
@@ -1317,7 +1326,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             sql += String.join(" OR \"" + idcol.getName() + "\" = ", ids);
         }
 
-        try ( Statement stmt = this.con.createStatement()) {
+        try (Statement stmt = this.con.createStatement()) {
             stmt.executeUpdate(sql);
             return null;
         } catch (SQLException ex) {
