@@ -136,6 +136,12 @@ public class CollectionResource {
             if (attrdef.containsKey("refStorage")) {
                 attr.setRefStorage(attrdef.getString("refStorage"));
             }
+            if (attrdef.containsKey("refOnDelete")) {
+                attr.setRefOnDelete(attrdef.getString("refOnDelete"));
+            }
+            if (attrdef.containsKey("refOnUpdate")) {
+                attr.setRefOnUpdate(attrdef.getString("refOnUpdate"));
+            }
             if (attrdef.containsKey("srid")) {
                 attr.setSrid(attrdef.getJsonNumber("srid").intValue());
             }
