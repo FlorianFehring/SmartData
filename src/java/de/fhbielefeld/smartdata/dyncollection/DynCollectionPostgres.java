@@ -113,7 +113,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     // Create forign key
                     if (curCol.getRefAttribute() != null) {
                         foreignKeys += ",";
-                        foreignKeys += "CONSTRAINT " + this.name + "_" + curCol.getRefCollection() + "_" + curCol.getRefAttribute();
+                        foreignKeys += "CONSTRAINT " + this.name + "_" + curCol.getRefCollection() + "_" + curCol.getRefAttribute() + "_" + curCol.getName();
                         foreignKeys += " FOREIGN KEY(" + curCol.getName() + ") ";
                         foreignKeys += "REFERENCES ";
                         if (curCol.getRefStorage() != null) {
