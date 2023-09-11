@@ -495,9 +495,15 @@ public class RecordsResource {
         if (storage == null) {
             storage = "public";
         }
-
+        
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        if (json == null || json.isEmpty()) {
+            rob.setStatus(Response.Status.NOT_ACCEPTABLE);
+            rob.addErrorMessage("No data to update.");
+            return rob.toResponse();
+        }
+         
         try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, null);
         } catch (DynException ex) {
