@@ -45,9 +45,9 @@ public class IsNullFilter extends Filter {
     @Override
     public String getPrepareCode() {
         if (this.negative) {
-            return this.attribute + " IS NOT NULL";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " IS NOT NULL";
         } else {
-            return this.attribute + " IS NULL";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " IS NULL";
         }
     }
 

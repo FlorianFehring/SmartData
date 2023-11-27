@@ -24,6 +24,10 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
         this.name = name;
     }
 
+	public String getName() {
+		return this.name;
+	}
+
     @Override
     public boolean exists() throws DynException {
         for (String tbname : this.client.getDatabase(this.src).listCollectionNames()) {

@@ -70,7 +70,7 @@ public class RadiusFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_DWithin(geography(ST_Transform("+ this.attribute +",4326)),geography(ST_Transform(ST_SetSRID(ST_MakePoint(?, ?), ?),4326)), ?)";
+        return "ST_DWithin(geography(ST_Transform("+ "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ",4326)),geography(ST_Transform(ST_SetSRID(ST_MakePoint(?, ?), ?),4326)), ?)";
     }
 
     @Override

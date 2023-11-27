@@ -118,4 +118,11 @@ public interface DynCollection extends Dyn {
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
     public abstract void delete() throws DynException;
+
+	/**
+	 * Name of the table 
+	 * 
+	 * @return 
+	 */
+	public abstract String getName();
 }

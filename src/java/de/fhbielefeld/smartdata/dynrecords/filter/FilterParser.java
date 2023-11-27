@@ -4,6 +4,9 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.smartdata.dyncollection.DynCollection;
+import de.fhbielefeld.smartdata.dyn.DynFactory;
+import de.fhbielefeld.smartdata.exceptions.DynException;
+import java.util.List;
 
 /**
  *
@@ -11,13 +14,49 @@ import de.fhbielefeld.smartdata.dyncollection.DynCollection;
  */
 public class FilterParser {
 
-    public static Filter parse(String filter, DynCollection table) throws FilterException {
+    public static Filter parse(String filter, DynCollection table, String storage, List<String> joins) throws FilterException {
         Filter f = null;
         String[] parts = filter.split(",");
         if(parts.length < 2) {
             throw new FilterException("Filter has less then 2 parts.");
         }
         String filtername = parts[1];
+		// check for attribute containing tablename (e.g "table.attribute")
+		String[] partsAttr = parts[0].split("\\.");
+		if (partsAttr.length == 2) {
+			String tablename = partsAttr[0];
+			String attribute = partsAttr[1];
+			// check if tablename of the attribute is from requested table or a joined table
+			boolean matchesTablenames = false;
+			if (!tablename.equals(table.getName())) {
+				if (joins != null && !joins.isEmpty()) {
+					for (String curJoins : joins) {
+						String[] curJoinCols = curJoins.split(",");
+						for (String curJoinCol : curJoinCols) {
+							if (tablename.equals(curJoinCol)) {
+								matchesTablenames = true;
+								try {
+									table = DynFactory.getDynCollection(storage, tablename);
+								}
+								catch (DynException ex) {
+									throw new FilterException("Could not get identity column of>" + partsAttr + "<.");
+								}
+							}
+						}
+					}
+				}
+			} else {
+				matchesTablenames = true;
+			}
+			// throw error is table name of is not the base table name or 
+			if (!matchesTablenames){
+				throw new FilterException("Column >" + tablename + "< of table-dot-attribute-statement >" + parts[0]+ "< must contain the requested table name or a table name from joins.");
+			}
+			// change filterstring to attribute without the tablename because
+			// we pass the table as a parameter to the filter. The filter class builds 
+			// the correct name (tablename.column) by itself.
+			filter = filter.replace(table.getName() + ".", "");
+		}
         switch (filtername) {
             case "cs":
             case "ncs":

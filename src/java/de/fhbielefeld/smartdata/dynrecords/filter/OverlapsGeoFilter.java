@@ -61,7 +61,7 @@ public class OverlapsGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_Overlaps(" + this.attribute + ", ST_GeomFromText(?))";
+        return "ST_Overlaps(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ", ST_GeomFromText(?))";
     }
 
     @Override

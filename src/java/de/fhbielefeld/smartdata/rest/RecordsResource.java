@@ -355,7 +355,7 @@ public class RecordsResource {
                 try {
                     // Build filter objects
                     for (String curFilterStr : filtersStrings) {
-                        Filter filt = FilterParser.parse(curFilterStr, dync);
+                        Filter filt = FilterParser.parse(curFilterStr, dync, storage, joins);
                         if (filt != null) {
                             filters.add(filt);
                         }
