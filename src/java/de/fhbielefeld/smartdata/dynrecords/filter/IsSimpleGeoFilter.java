@@ -48,7 +48,7 @@ public class IsSimpleGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_IsSimple(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ")";
+        return "ST_IsSimple(" + this.attribute + ")";
     }
 
     @Override

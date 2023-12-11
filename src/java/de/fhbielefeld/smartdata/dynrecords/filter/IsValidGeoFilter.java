@@ -48,7 +48,7 @@ public class IsValidGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_IsValid(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ")";
+        return "ST_IsValid(" + this.attribute + ")";
     }
 
     @Override

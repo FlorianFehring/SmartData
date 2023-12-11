@@ -35,10 +35,6 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         this.connect();
     }
 
-	public String getName() {
-		return this.name;
-	}
-
     /**
      * Create access for collections with reusing existing connection
      *

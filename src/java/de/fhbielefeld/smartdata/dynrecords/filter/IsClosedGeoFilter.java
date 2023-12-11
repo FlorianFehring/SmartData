@@ -48,7 +48,7 @@ public class IsClosedGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_IsClosed(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ")";
+        return "ST_IsClosed(" + this.attribute + ")";
     }
 
     @Override

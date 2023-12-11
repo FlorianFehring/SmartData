@@ -282,7 +282,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                             toCol = curJoinCol;
                             toAttr = refAttr.getRefAttribute();
                         }
-                        frombuilder.append(" LEFT JOIN \"");
+                        frombuilder.append(" INNER JOIN \"");
                         frombuilder.append(this.schema);
                         frombuilder.append("\"");
                         frombuilder.append(".");
@@ -300,43 +300,42 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
                         lastCol = curJoinCol;
                         lastDynCol = sc;
-
-						// Create select names for joined tables
-						StringBuilder subSelectBuilder = new StringBuilder();
-						/* 
-						  Instead of json_build_object using DISTINCT jsonb_build_object.
-						  This prevents dublicate rows (all columns with the same value) in
-						  the json_object. jsonb stands for json-better and is postgres' optimized
-						  implementation of a json object.
-						*/
-						subSelectBuilder.append(", json_agg(DISTINCT jsonb_build_object(");
-						int i = 0;
-						for (Attribute curAttr : sc.getAttributes().values()) {
-							if (i > 0) {
-								subSelectBuilder.append(", ");
-							}
-							subSelectBuilder.append("'");
-							subSelectBuilder.append(curAttr.getName());
-							subSelectBuilder.append("', ");
-							subSelectBuilder.append("\"");
-							subSelectBuilder.append(lastCol);
-							subSelectBuilder.append("\".\"");
-							subSelectBuilder.append(curAttr.getName());
-							subSelectBuilder.append("\"");
-							i++;
-						}
-						subSelectBuilder.append(")) as ");
-						subSelectBuilder.append(lastCol);
-						selectbuilder.append(subSelectBuilder);
                     }
 
+                    // group by for sub joins
+                    frombuilder.append(" GROUP BY ");
+                    frombuilder.append("\"");
+                    frombuilder.append(this.table);
+                    frombuilder.append("\".\"");
+                    frombuilder.append(sc.getIdentityAttributes().get(0).getName());
+                    frombuilder.append("\"");
 
+                    // Create select names for joined tables
+                    StringBuilder subSelectBuilder = new StringBuilder();
+                    subSelectBuilder.append(", json_agg(json_build_object(");
+                    int i = 0;
+                    for (Attribute curAttr : sc.getAttributes().values()) {
+                        if (i > 0) {
+                            subSelectBuilder.append(", ");
+                        }
+                        subSelectBuilder.append("'");
+                        subSelectBuilder.append(curAttr.getName());
+                        subSelectBuilder.append("', ");
+                        subSelectBuilder.append("\"");
+                        subSelectBuilder.append(lastCol);
+                        subSelectBuilder.append("\".\"");
+                        subSelectBuilder.append(curAttr.getName());
+                        subSelectBuilder.append("\"");
+                        i++;
+                    }
+                    subSelectBuilder.append(")) as ");
+                    subSelectBuilder.append(lastCol);
+                    selectbuilder.append(subSelectBuilder);
                 }
             }
 
-
             if (filters != null && !filters.isEmpty()) {
-				frombuilder.append(" WHERE ");
+                frombuilder.append(" WHERE ");
                 int i = 0;
                 for (Filter curFilter : filters) {
                     if (i > 0) {
@@ -349,17 +348,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     i++;
                 }
             }
-
-			// group by after flilter statements
-			if (joins != null && !joins.isEmpty()) {
-				// group by for sub joins
-				frombuilder.append(" GROUP BY ");
-				frombuilder.append("\"");
-				frombuilder.append(this.table);
-				frombuilder.append("\".\"");
-				frombuilder.append(this.dyncollection.getIdentityAttributes().get(0).getName());
-				frombuilder.append("\"");
-			}
 
             // Adding order by
             if (orderby != null && !orderby.isEmpty() && countOnly == false) {

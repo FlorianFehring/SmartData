@@ -63,9 +63,9 @@ public class StartsWithFilter extends Filter {
     @Override
     public String getPrepareCode() {
         if (this.negative) {
-            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " NOT LIKE ? || '%' OR " + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " IS NULL";
+            return  this.attribute + " NOT LIKE ? || '%' OR " + this.attribute + " IS NULL";
         } else {
-            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " LIKE ? || '%' ";
+            return this.attribute + " LIKE ? || '%' ";
         }
     }
 

@@ -21,7 +21,6 @@ import de.fhbielefeld.smartdata.dyncollection.DynCollection;
 public class EqualsFilter extends Filter {
 
     private Object eqvalue;
-//	private String tableName;
 
     public EqualsFilter(DynCollection table) {
         super(table);
@@ -32,8 +31,8 @@ public class EqualsFilter extends Filter {
         this.filtercode = filtercode;
         try {
             String[] parts = filtercode.split(",");
-			// First element is the name of the attribute wanted to filter
-			this.attribute = parts[0];
+            // First element is the name of the attribute wanted to filter
+            this.attribute = parts[0];
             // Check if the collection contains such a attribute
             Attribute col = this.collection.getAttribute(this.attribute);
 
@@ -91,9 +90,9 @@ public class EqualsFilter extends Filter {
     @Override
     public String getPrepareCode() {
         if (this.negative) {
-            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " != ?";
+            return this.attribute + " != ?";
         } else {
-            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " = ?";
+            return this.attribute + " = ?";
         }
     }
 

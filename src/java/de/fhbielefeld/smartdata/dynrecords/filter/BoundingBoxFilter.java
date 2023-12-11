@@ -73,7 +73,7 @@ public class BoundingBoxFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + "@ ST_Transform((ST_MakeEnvelope( ?, ?, ?, ?, ?)), ?)";
+        return this.attribute +"@ ST_Transform((ST_MakeEnvelope( ?, ?, ?, ?, ?)), ?)";
     }
 
     @Override

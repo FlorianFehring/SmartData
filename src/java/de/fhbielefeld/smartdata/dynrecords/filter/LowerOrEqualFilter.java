@@ -82,9 +82,9 @@ public class LowerOrEqualFilter extends Filter {
     @Override
     public String getPrepareCode() {
         if (this.negative) {
-            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " > ?";
+            return this.attribute + " > ?";
         } else {
-            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " <= ?";
+            return this.attribute + " <= ?";
         }
     }
 

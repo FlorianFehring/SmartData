@@ -61,7 +61,7 @@ public class CrossesGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_Crosses(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ", ST_GeomFromText(?))";
+        return "ST_Crosses(" + this.attribute + ", ST_GeomFromText(?))";
     }
 
     @Override
