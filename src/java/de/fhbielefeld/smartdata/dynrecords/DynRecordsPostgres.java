@@ -192,6 +192,25 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         continue;
                     }
 
+					// Exclude attributes that referencing a join table
+            		if (joins != null && !joins.isEmpty()) {
+						boolean attributeReferencingJoinTable = false;
+						for (String curJoins : joins) {
+							String[] curJoinCols = curJoins.split(",");
+							if (curJoinCols.length > 0) {
+								String curJoinCol = curJoinCols[0];
+								Attribute ref = this.dyncollection.getReferenceTo(curJoinCol);
+								if (ref != null && curColumn.getName().equals(ref.getName())) {
+									attributeReferencingJoinTable = true;
+									break;
+								}
+							}
+						}
+						if (attributeReferencingJoinTable) {
+							continue;
+						}
+					}
+
                     // Create selection expression
                     if (curColumn.getType().equalsIgnoreCase("bytea")) {
                         // binary data should be fetched base64 encoded
