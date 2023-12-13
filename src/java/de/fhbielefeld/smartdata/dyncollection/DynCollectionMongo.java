@@ -98,4 +98,14 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
     public void delete() throws DynException {
         this.client.getDatabase(this.src).getCollection(this.name).drop();
     }
+
+	@Override
+	public List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	@Override
+	public String getName() {
+		throw new UnsupportedOperationException("Not supported yet."); 
+	}
 }

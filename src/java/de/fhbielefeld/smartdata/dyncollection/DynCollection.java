@@ -118,4 +118,19 @@ public interface DynCollection extends Dyn {
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
     public abstract void delete() throws DynException;
+
+	/**
+	 * Name of the table 
+	 * 
+	 * @return 
+	 */
+	public abstract String getName();
+
+	/**
+	 * Return all collections that references the attribute.
+	 * @param attribute of a collection
+	 * @return List of collection names that references the attribute.
+	 * @throws DynException 
+	 */
+	public abstract List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException;
 }

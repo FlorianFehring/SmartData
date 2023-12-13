@@ -35,6 +35,10 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         this.connect();
     }
 
+	public String getName() {
+		return this.name;
+	}
+
     /**
      * Create access for collections with reusing existing connection
      *
@@ -513,4 +517,25 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             throw de;
         }
     }
+
+	@Override
+	public List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException {
+		List<String> tables = new ArrayList();
+		try (Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
+       			"SELECT DISTINCT conrelid::regclass AS referencing_table\n" +
+				"FROM pg_constraint\n" +
+				"WHERE confrelid = "+ "'"+ this.name +"'" + "::regclass\n" +
+				"AND confkey = ARRAY(SELECT attnum FROM pg_attribute WHERE attname = " + "'" + attribute.getName() + "'" + " AND attrelid =  " + "'" + this.name + "'" + "::regclass);"         
+			); ) {
+			while (rs.next()) {
+				tables.add(rs.getString("referencing_table"));
+			}
+
+		} catch (SQLException ex) {
+			DynException de = new DynException("Could not get referencing tables of attributes" + ex.getLocalizedMessage());
+			de.addSuppressed(ex);
+			throw de;
+		}
+		return tables;
+	}
 }
