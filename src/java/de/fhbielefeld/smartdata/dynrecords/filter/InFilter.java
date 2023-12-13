@@ -104,9 +104,9 @@ public class InFilter extends Filter {
             }
         }
         if (this.negative) {
-            return this.attribute + " NOT IN (" + placeholders + ")";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " NOT IN (" + placeholders + ")";
         } else {
-            return this.attribute + " IN (" + placeholders + ")";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " IN (" + placeholders + ")";
         }
     }
 

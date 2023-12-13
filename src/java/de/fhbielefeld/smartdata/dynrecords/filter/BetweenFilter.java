@@ -85,9 +85,9 @@ public class BetweenFilter extends Filter {
     @Override
     public String getPrepareCode() {
         if (this.negative) {
-            return this.attribute + " NOT BETWEEN ? AND ?";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " NOT BETWEEN ? AND ?";
         } else {
-            return this.attribute + " BETWEEN ? AND ?";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " BETWEEN ? AND ?";
         }
     }
 

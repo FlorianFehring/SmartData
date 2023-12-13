@@ -61,7 +61,7 @@ public class EqualsGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_Equals(" + this.attribute + ", ST_GeomFromText(?))";
+        return "ST_Equals(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ", ST_GeomFromText(?))";
     }
 
     @Override

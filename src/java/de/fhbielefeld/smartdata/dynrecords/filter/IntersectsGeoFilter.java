@@ -61,7 +61,7 @@ public class IntersectsGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_Intersects(" + this.attribute + ", ST_GeomFromText(?))";
+        return "ST_Intersects(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ", ST_GeomFromText(?))";
     }
 
     @Override

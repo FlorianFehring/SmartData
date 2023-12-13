@@ -61,7 +61,7 @@ public class WithinGeoFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        return "ST_Within(" + this.attribute + ", ST_GeomFromText(?))";
+        return "ST_Within(" + "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + ", ST_GeomFromText(?))";
     }
 
     @Override

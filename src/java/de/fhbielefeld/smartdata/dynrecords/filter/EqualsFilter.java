@@ -90,9 +90,9 @@ public class EqualsFilter extends Filter {
     @Override
     public String getPrepareCode() {
         if (this.negative) {
-            return this.attribute + " != ?";
+            return "\"" + this.collection.getName() + "\".\"" +this.attribute + "\"" + " != ?";
         } else {
-            return this.attribute + " = ?";
+            return "\"" + this.collection.getName() + "\".\"" +this.attribute + "\"" + " = ?";
         }
     }
 
