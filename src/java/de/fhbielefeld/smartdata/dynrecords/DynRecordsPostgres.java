@@ -269,7 +269,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 					stmt = joinBuilder(stmt, curJoinCols, 0, this.dyncollection, null);
 
 					if (curJoinCols.length > 0) {
-						selectbuilder.append(", ").append(curJoinCols[0]);
+						// Adopt the naming to relation: belongTo/hasMany
+						Attribute belongToAttr = this.dyncollection.getReferenceTo(curJoinCols[0]);
+						if (belongToAttr != null) {
+							// belongTo Relation (name of the attribute)
+							selectbuilder.append(", ").append(curJoinCols[0]).append(" as ").append(belongToAttr.getName());
+						} else {
+							// hasMany Relation (name of the column)
+							selectbuilder.append(", ").append(curJoinCols[0]);
+						}
 					}
 					frombuilder.append(stmt);
 				}
@@ -1316,7 +1324,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 			this.usedDynCollections.put(curJoinCols[index], joinCol);
 		}
 
-		boolean checkIntermediateCollection = false;
+		boolean hasAndBelongsToMany = false;
 		DynCollectionPostgres intermediateCol = null;
 		Attribute sourceColRefAttr = null;
 		Attribute joinColRefAttr = null;
@@ -1381,7 +1389,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 				}
 
 				// indicator that defines if a collection is an intermediate collection
-				checkIntermediateCollection = true;
+				hasAndBelongsToMany = true;
 
 			} else {
 				fromCol = curJoinCols[index];
@@ -1403,8 +1411,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 			nestedCol = curJoinCols[index + 1];
 		}
 
-		// build sql query with intermediate collection
-		if (checkIntermediateCollection) {
+		// build sql query for hasAndBelongToMany relation (intermediate table)
+		if (hasAndBelongsToMany) {
 			/* Example structure of sql query with intermediate collection
 			SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json
 			FROM (
@@ -1472,6 +1480,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
 
 		} else {
+			// hasMany or belongTo Relation
 			/* Build sql query with standad ref collection
 			 * 
 			 *	SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from 
@@ -1505,7 +1514,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 			 * 
 			 */
 			stmt += " LEFT JOIN (";
-			stmt += joinSelectBuilder(joinCol, nestedCol ,joinAttr, index, curJoinCols, sourceCol.getName());
+			stmt += joinSelectBuilder(joinCol, nestedCol ,joinAttr, index, curJoinCols, sourceCol);
 
 			// next nested join col
 			stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, joinAttr);
@@ -1528,21 +1537,22 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 	/*
 	 * Buils the select statement part of a joined query	
 	 */
-	private String joinSelectBuilder(DynCollection joinCol, String nestedCol, String joinAttribute, int index, String[] curJoinCols, String outerColName ) throws DynException {
+	private String joinSelectBuilder(DynCollection joinCol, String nestedCol, String joinAttr, int index, String[] curJoinCols, DynCollection outerCol) throws DynException {
+		Attribute belongTo = outerCol.getReferenceTo(joinCol.getName());
 		String stmt = "";
 		stmt += "SELECT ";
-		stmt += joinAttribute;
-		stmt += ", json_agg(json_build_object(";
+		stmt += joinAttr;
+		stmt += belongTo != null ? ", json_build_object(" : ", json_agg(json_build_object(";
 
 		int i = 0;
 		for (Attribute curAttr : joinCol.getAttributes().values()) {
 			if (index < curJoinCols.length - 1) {
 				Attribute ref = joinCol.getReferenceTo(curJoinCols[index + 1]);
-				if (curAttr.getName().equals(ref.getName())){
+				if (curAttr.getName().equals(ref.getName())) {
 					continue;
 				}
-				ref = joinCol.getReferenceTo(outerColName);
-				if (curAttr.getName().equals(ref.getName())){
+				ref = joinCol.getReferenceTo(outerCol.getName());
+				if (curAttr.getName().equals(ref.getName())) {
 					continue;
 				}
 
@@ -1550,18 +1560,20 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 			if (i > 0) {
 				stmt += ", ";
 			}
-			stmt += "'"+ curAttr.getName() + "', ";
+			stmt += "'" + curAttr.getName() + "', ";
 			stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
 			i++;
 		}
 		// nested Join
 		if (nestedCol != null) {
+			Attribute belongToJoin = joinCol.getReferenceTo(nestedCol);
 			stmt += ", ";
-			stmt += "'" + nestedCol + "', ";
+			stmt += belongToJoin != null ? "'" + belongToJoin.getName() + "', " : "'" + nestedCol + "', ";
 			stmt += "\"" + nestedCol + "\"";
 		}
 
-		stmt += ")) as " + "\"" + joinCol.getName() + "\"";
+		stmt += belongTo != null ? ")" : "))";
+		stmt += " as " + "\"" + joinCol.getName() + "\"";
 		stmt += " FROM " + "\"" + joinCol.getName() + "\"";
 
 		return stmt;
