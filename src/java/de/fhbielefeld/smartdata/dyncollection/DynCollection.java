@@ -133,4 +133,23 @@ public interface DynCollection extends Dyn {
 	 * @throws DynException 
 	 */
 	public abstract List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException;
+
+	/**
+	 * Returns the relationship between the collections.
+	 * If no relationship exists, throws error.
+	 * @param collection
+	 * @return 
+	 * @throws DynException 
+	 */
+	public abstract CollectionRelationship getRelationship(DynCollection collection) throws DynException;
+
+	/**
+	 * Return name of the collection that joins this collection and the parameter collection.
+	 * If no collection exists, return null.
+	 * @param collection
+	 * @return String or null
+	 * @throws DynException 
+	 */
+	public abstract String getIntermediateCollection(DynCollection collection) throws DynException;
+
 }

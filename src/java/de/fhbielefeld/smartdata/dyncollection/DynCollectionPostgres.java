@@ -524,18 +524,90 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 		try (Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
        			"SELECT DISTINCT conrelid::regclass AS referencing_table\n" +
 				"FROM pg_constraint\n" +
-				"WHERE confrelid = "+ "'"+ this.name +"'" + "::regclass\n" +
-				"AND confkey = ARRAY(SELECT attnum FROM pg_attribute WHERE attname = " + "'" + attribute.getName() + "'" + " AND attrelid =  " + "'" + this.name + "'" + "::regclass);"         
+				"WHERE confrelid = "+ "'"+ this.schema + "." + this.name +"'" + "::regclass\n" +
+				"AND confkey = ARRAY(SELECT attnum FROM pg_attribute WHERE attname = " + "'" + attribute.getName() + "'" + " AND attrelid =  " + "'" + this.schema + "." + this.name + "'" + "::regclass);"         
 			); ) {
 			while (rs.next()) {
-				tables.add(rs.getString("referencing_table"));
+				String referencingTable = rs.getString("referencing_table");
+				if (referencingTable.contains(".")) {
+					/**
+					 * default schema public: referencingTable contains {tablename}
+					 * custom schema: referencintTable contains {schema.tablename}
+					 * in that case we have to split the string to get the tablename
+					 */
+					String[] schemaAndTableName = referencingTable.split("\\.");
+					if (schemaAndTableName.length != 2) {
+						DynException de = new DynException("getRefercingTablesAttribute, error with finding reference table \n");
+						throw de;
+					}
+					referencingTable = schemaAndTableName[1];
+				}
+				tables.add(referencingTable);
 			}
 
 		} catch (SQLException ex) {
-			DynException de = new DynException("Could not get referencing tables of attributes" + ex.getLocalizedMessage());
+			DynException de = new DynException("Could not get referencing tables of attributes\n" + ex.getLocalizedMessage());
 			de.addSuppressed(ex);
 			throw de;
 		}
 		return tables;
+	}
+
+
+	@Override
+	public CollectionRelationship getRelationship(DynCollection collection) throws DynException {
+		// Check OneToMany
+		Attribute attr = this.getReferenceTo(collection.getName());
+		if (attr != null) {
+			return CollectionRelationship.ManyToOne;
+		}
+		// Check ManyToOne
+		attr = collection.getReferenceTo(this.getName());
+		if (attr != null) {
+			return CollectionRelationship.OneToMany;
+		}
+		// Check ManyToMany	
+		String intermediateCollection = this.getIntermediateCollection(collection);
+		if (intermediateCollection != null) {
+			return CollectionRelationship.ManyToMany;
+		}
+		throw new DynException("OneToMany-, ManyToOne,- or ManyToMany-Relationship does not exist for collection > " + collection.getName() + " <.");
+	}
+
+	@Override
+	public String getIntermediateCollection(DynCollection collection) throws DynException {
+		String joinCollectionName = null;
+		// Get idenity attributes of source Col
+		List<Attribute> attributes = this.getIdentityAttributes();
+		if (attributes.isEmpty()) {
+			throw new DynException("getNameOfManyToManyRelationshipJoinCollection, no identity attribute for collection > "+ this.getName() + " <.");
+		}
+		Attribute identityAttribute = attributes.get(0);
+		// Get all collection that references the source col identity attribute
+		List<String> identityAttributeCols = this.getRefercingTablesOfAttribute(identityAttribute);
+
+		// Get idenity attributes of join Col
+		List<Attribute> collectionAttributes = collection.getIdentityAttributes();
+		if (collectionAttributes.isEmpty()) {
+			throw new DynException("getNameOfManyToManyRelationshipJoinCollection, no identity attribute for collection > "+ collection.getName() + " <.");
+		}
+		Attribute collectionIdentityAttribute = collectionAttributes.get(0);
+		// Get all collection that references the join col identity attribute
+		List<String> collectionIdentityAttributeCols = collection.getRefercingTablesOfAttribute(collectionIdentityAttribute);
+
+		
+		// Check if both attributes are referenced from the same collection -> intermediate table
+		for (String col : identityAttributeCols) {
+			for (String collectionCol : collectionIdentityAttributeCols) {
+				if (col.equals(collectionCol)) {
+					joinCollectionName = col;
+					break;
+				}
+			}
+			if (joinCollectionName != null) {
+				break;
+			}
+		}
+		return joinCollectionName;
 	}
 }

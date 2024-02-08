@@ -7,6 +7,10 @@ import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.converter.DataConverter;
 import de.fhbielefeld.smartdata.dbo.Attribute;
 import de.fhbielefeld.smartdata.dyn.DynPostgres;
+import de.fhbielefeld.smartdata.dyncollection.CollectionRelationship;
+import static de.fhbielefeld.smartdata.dyncollection.CollectionRelationship.ManyToMany;
+import static de.fhbielefeld.smartdata.dyncollection.CollectionRelationship.ManyToOne;
+import static de.fhbielefeld.smartdata.dyncollection.CollectionRelationship.OneToMany;
 import de.fhbielefeld.smartdata.dynrecords.filter.Filter;
 import de.fhbielefeld.smartdata.dynrecords.filter.FilterException;
 import de.fhbielefeld.smartdata.dyncollection.DynCollectionPostgres;
@@ -1311,251 +1315,484 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 	 * @throws DynException 
 	 */
 
+//	private String joinBuilder(String stmt, String[] curJoinCols, int index, DynCollection sourceCol, String groupByAttr) throws DynException {
+//		if (index > curJoinCols.length - 1) {
+//			return "";
+//		}
+//
+//		DynCollection joinCol = this.usedDynCollections.getOrDefault(this.schema, new DynCollectionPostgres(this.schema, curJoinCols[index]));	
+//
+//		CollectionRelationship relationship = sourceCol.getRelationship(joinCol);
+//
+//		switch (relationship) {
+//			case OneToMany:
+//				break;
+//			case ManyToOne:
+//				break;
+//			case ManyToMany:
+//		}
+//
+//		boolean hasAndBelongsToMany = false;
+//		DynCollectionPostgres intermediateCol = null;
+//		Attribute sourceColRefAttr = null;
+//		Attribute joinColRefAttr = null;
+//		String fromCol = null;
+//		String fromAttr = null;
+//		String toCol = null;
+//		String toAttr = null;
+//		String joinAttr = null;
+//		String nestedCol = null;
+//
+//		// Check if there is a reference between the source collection and the join collection
+//		Attribute refAttr = sourceCol.getReferenceTo(curJoinCols[index]);
+//		if (refAttr == null) {
+//			// Check if there is a reference between the join collection and the source collection
+//			refAttr = joinCol.getReferenceTo(sourceCol.getName());
+//			if (refAttr == null) {
+//				// Check if there is a reference between the collection in form of an intermediate table	
+//
+//				// Get idenity attributes of source Col
+//				List<Attribute> sourceColIdentities = sourceCol.getIdentityAttributes();
+//				if (sourceColIdentities.size() < 1) {
+//					throw new DynException("nested join error, no identity attribute in column: " + sourceCol.getName());
+//				}
+//				Attribute sourceColIdentityAttribute = sourceColIdentities.get(0);
+//				// Get all collection that references the source col identity attribute
+//				List<String> sourceColIdentityAttributeCols = sourceCol.getRefercingTablesOfAttribute(sourceColIdentityAttribute);
+//
+//				// Get idenity attributes of join Col
+//				List<Attribute> joinColIdentities = joinCol.getIdentityAttributes();
+//				if (joinColIdentities.size() < 1) {
+//					throw new DynException("nested join error, no identity attribute in column: " + joinCol.getName());
+//				}
+//				Attribute joinColIdentityAttribute = joinColIdentities.get(0);
+//				// Get all collection that references the join col identity attribute
+//				List<String> joinColIdentityAttributeCols = joinCol.getRefercingTablesOfAttribute(joinColIdentityAttribute);
+//
+//				
+//				// Check if both attributes are referenced from the same collection -> intermediate table
+//				String intermediateColName = null;
+//				for (String jCol : joinColIdentityAttributeCols) {
+//					for (String sCol : sourceColIdentityAttributeCols) {
+//						if (jCol.equals(sCol)) {
+//							intermediateColName = jCol;
+//							break;
+//						}
+//					}
+//					if (!intermediateColName.isEmpty() || intermediateColName != null) {
+//						break;
+//					}
+//				}
+//
+//				if (intermediateColName == null) {
+//					throw new DynException("Could not join, there is no intermediate table.");
+//				}
+//
+//				// Get infos of intermediate collection
+//				intermediateCol = new DynCollectionPostgres(this.schema, intermediateColName, this.con);
+//
+//				sourceColRefAttr = intermediateCol.getReferenceTo(sourceCol.getName());
+//				if (sourceColRefAttr == null) {
+//					throw new DynException("nested join error, no ref1 attribute found.");
+//				}
+//				joinColRefAttr = intermediateCol.getReferenceTo(joinCol.getName());
+//				if (joinColRefAttr == null) {
+//					throw new DynException("nested join error, no ref2 attribute found.");
+//				}
+//
+//				// indicator that defines if a collection is an intermediate collection
+//				hasAndBelongsToMany = true;
+//
+//			} else {
+//				fromCol = curJoinCols[index];
+//				fromAttr = refAttr.getName();
+//				toCol = sourceCol.getName();
+//				toAttr = refAttr.getRefAttribute();
+//				joinAttr = fromAttr;
+//			}
+//		} else {
+//			fromCol = sourceCol.getName();
+//			fromAttr = refAttr.getName();
+//			toCol = curJoinCols[index];
+//			toAttr = refAttr.getRefAttribute();
+//			joinAttr = toAttr;
+//		}
+//
+//		// set nestedCol if one exists
+//		if (index + 1 <= curJoinCols.length - 1) {
+//			nestedCol = curJoinCols[index + 1];
+//		}
+//
+//		// build sql query for hasAndBelongToMany relation (intermediate table)
+//		/**
+//		 * Example database 
+//	  	 *	## Table Definitions
+//		 *
+//		 *	### student
+//		 *
+//		 *	| Column     | Data Type    | Constraints |
+//		 *	|------------|--------------|-------------|
+//		 *	| id         | SERIAL       | PRIMARY KEY |
+//		 *	| first_name | VARCHAR(100) |             |
+//		 *	| last_name  | VARCHAR(100) |             |
+//		 *
+//		 *	### enrollment
+//		 *
+//		 *	| Column     | Data Type | Constraints            |
+//		 *	|------------|-----------|------------------------|
+//		 *	| id         | SERIAL    | PRIMARY KEY            |
+//		 *	| student_id | INTEGER   | REFERENCES student(id) |
+//		 *	| course_id  | INTEGER   | REFERENCES course(id)  |
+//		 *	| grade      | FLOAT     |                        |
+//		 *
+//		 *	### course
+//		 *
+//		 *	| Column  | Data Type    | Constraints         |
+//		 *	|---------|--------------|---------------------|
+//		 *	| id      | SERIAL       | PRIMARY KEY         |
+//		 *	| name    | VARCHAR(100) |                     |
+//		 *	| year_id | INTEGER      | REFERENCES year(id) |
+//		 */
+//		if (hasAndBelongsToMany) {
+//			/* Example structure of sql query with intermediate collection
+//			SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json
+//			FROM (
+//			  SELECT
+//				student.*,
+//				course
+//			  FROM students
+//			============= example of intermediate table join query -> this stucture gets build in the following section.
+//			  LEFT JOIN (
+//				SELECT
+//				  student_id,
+//				  json_agg(json_build_object('id', courses.course_id, 'course_name', courses.course_name)) AS course
+//				FROM student_courses
+//				LEFT JOIN course ON course.id = enrollment.course_id
+//				GROUP BY student_id
+//			  ) AS enrollment ON enrollment.student_id = student.id
+//			==============
+//			) AS t;
+//			*/
+//			stmt += " LEFT JOIN (";
+//			// select statement
+//			stmt += " SELECT ";
+//			stmt += "\"" + sourceColRefAttr.getName() + "\"";
+//			stmt += ", json_agg(json_build_object(";
+//
+//			int i = 0;
+//			for (Attribute curAttr : joinCol.getAttributes().values()) {
+//				// remove nested join reference attribute
+//				if (index < curJoinCols.length - 1) {
+//					Attribute ref = joinCol.getReferenceTo(curJoinCols[index + 1]);
+//					if (ref != null && curAttr.getName().equals(ref.getName())){
+//						continue;
+//					}
+//				}
+//				if (i > 0) {
+//					stmt += ", ";
+//				}
+//				stmt += "'"+ curAttr.getName() + "', ";
+//				stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
+//				i++;
+//			}
+//
+//			// if there is a nested join collection, add the nestedCol in the select statement
+//			if (nestedCol != null) {
+//				stmt += ", ";
+//				stmt += "'" + nestedCol + "', ";
+//				stmt += nestedCol;
+//			}
+//
+//			stmt += ")) as " + joinCol.getName();
+//			stmt += " FROM ";
+//			stmt += "\"" + this.schema + "\".\"" + intermediateCol.getName() + "\"";
+//			stmt += " LEFT JOIN ";
+//			stmt += "\"" + this.schema + "\".\"" + joinCol.getName() + "\"";
+//			stmt += " ON ";
+//			stmt += "\"" + intermediateCol.getName() + "\".\"" + joinColRefAttr.getName() + "\" = \"" + joinCol.getName() + "\".\"" + joinColRefAttr.getRefAttribute() + "\"";
+//
+//			// next nested join col
+//			stmt += joinBuilder("", curJoinCols, index + 1, joinCol, joinAttr);
+//
+//			stmt += " group by " + "\"" + sourceColRefAttr.getName() + "\"";
+//			stmt += " ) as " + "\"" + intermediateCol.getName() + "\"";
+//			stmt += " ON ";
+//			stmt += "\"" + intermediateCol.getName() + "\".\"" + sourceColRefAttr.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + sourceColRefAttr.getRefAttribute() + "\""; 	
+//			
+//		} else {
+//			// hasMany or belongTo Relation
+//			/* Build sql query with standad ref collection
+//			 * 
+//			 *	SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from 
+//			 *		SELECT "student"."club_id","student"."last_name","student"."id","student"."first_name", grade FROM "public"."student" 
+//			 * ============== building this stucture in this section
+//			 *			LEFT JOIN 
+//			 *			(
+//			 *				SELECT "grade"."student_id", json_agg(json_build_object('grade', "grade"."grade", 'student_id', "grade"."student_id", 'id', "grade"."id", 'course_id', "course")) as "grade" 
+//			 *				FROM "public"."grade" 
+//			 *				LEFT JOIN 
+//			 *				(
+//			 *					SELECT "course"."id", json_build_object('name', "course"."name", 'year_id', "course"."year_id", 'id', "course"."id", 'year_id', "year") as "course" 
+//			 *					FROM "public"."course" 
+//			 *				) as "course" on "grade"."course_id" = "course"."id" group by "grade"."student_id"
+//			 *			) as "grade" on "grade"."student_id" = "student"."id"
+//			 * ===============
+//			 *	as t
+//			 * 
+//			 * ============== this structure gets build in the following section
+//			 *		LEFT JOIN
+//			 *			(SELECT attributeReferencingSourceTable, json_agg(json_build_object('column1', 'joinTable.column1', ..., 'nestedTable1', nestedTable1)) as joinTable from joinTable		
+//			 *				LEFT JOIN
+//			 *					(SELECT attributeReferencingNestedTable1, json_agg(json_build_object('column1', 'nestedTable1.column1', ... (optional nestedTable2))) as nestedTable1 from nestedTable1
+//			 *						GROUP BY groupByAttr (nestedTable1.attributeReferencingNestedTable)
+//			 *					) as nestedTable1
+//			 *				on nestedTable1.attributeReferecingNestedTable1 = joinTable.attributeReferencingNestedTable1FROMJoinTable GROUP BY groupByAttr (joinTable.attributeReferencingSourceTable)
+//			 *			) as joinTable
+//			 *		on sourceTable.attributeReferencingJoinTableFROMsourceTable = joinTable.attributeReferencingSourceTable
+//			 *	where sourceTbl = 1)
+//			 * ===============
+//			 * 
+//			 */
+//			Attribute belongTo = sourceCol.getReferenceTo(joinCol.getName());
+//			stmt += " LEFT JOIN (";
+//			stmt += joinSelectBuilder(joinCol, nestedCol ,joinAttr, index, curJoinCols, sourceCol);
+//
+//			// next nested join col
+//			if (belongTo != null) {
+//				stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, null);
+//			} else {
+//				stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, joinAttr);
+//			}
+//
+////			if (index == curJoinCols.length - 1 && belongTo != null) {
+////				stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + joinAttr + "\""; 
+////			}
+//
+//			stmt += " ) as " + "\"" + joinCol.getName() + "\"";
+//			stmt += " on " + "\"" + fromCol + "\".\"" + fromAttr + "\" = \"" + toCol + "\".\"" + toAttr + "\""; 
+//
+//			if (groupByAttr != null) {
+//				stmt += " group by " + "\"" + fromCol + "\".\"" + groupByAttr + "\" ";
+//			}
+//
+//		}
+//		return stmt;
+//	}
+	
+	/**
+	 * Builds the an sql query part for the collection of one join parameter
+	 * @param stmt query
+	 * @param curJoinCols joinCols
+	 * @param index index of joinCol
+	 * @param sourceCol sourceCol
+	 * @param groupByAttr groupByAttribute
+	 * @return
+	 * @throws DynException 
+	 * 
+	 * Example: 
+	 *	## Table Definitions
+	 *
+	 *	### student
+	 *
+	 *	| Column     | Data Type    | Constraints |
+	 *	|------------|--------------|-------------|
+	 *	| id         | SERIAL       | PRIMARY KEY |
+	 *	| first_name | VARCHAR(100) |             |
+	 *	| last_name  | VARCHAR(100) |             |
+	 *
+	 *	### enrollment
+	 *
+	 *	| Column     | Data Type | Constraints            |
+	 *	|------------|-----------|------------------------|
+	 *	| id         | SERIAL    | PRIMARY KEY            |
+	 *	| student_id | INTEGER   | REFERENCES student(id) |
+	 *	| course_id  | INTEGER   | REFERENCES course(id)  |
+	 *	| grade      | FLOAT     |                        |
+	 *
+	 *	### course
+	 *
+	 *	| Column  | Data Type    | Constraints         |
+	 *	|---------|--------------|---------------------|
+	 *	| id      | SERIAL       | PRIMARY KEY         |
+	 *	| name    | VARCHAR(100) |                     |
+	 *	| year_id | INTEGER      | REFERENCES year(id) |
+	 * 
+	 * Example Query to build
+	 * 
+	 *	SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from 
+	 *		SELECT "student"."club_id","student"."last_name","student"."id","student"."first_name", grade FROM "public"."student" 
+	 * ============== building this stucture in this section
+	 *			LEFT JOIN 
+	 *			(
+	 *				SELECT "grade"."student_id", json_agg(json_build_object('grade', "grade"."grade", 'student_id', "grade"."student_id", 'id', "grade"."id", 'course_id', "course")) as "grade" 
+	 *				FROM "public"."grade" 
+	 *				LEFT JOIN 
+	 *				(
+	 *					SELECT "course"."id", json_build_object('name', "course"."name", 'year_id', "course"."year_id", 'id', "course"."id", 'year_id', "year") as "course" 
+	 *					FROM "public"."course" 
+	 *				) as "course" on "grade"."course_id" = "course"."id" group by "grade"."student_id"
+	 *			) as "grade" on "grade"."student_id" = "student"."id"
+	 * ===============
+	 *	as t
+	 * 
+	 * 
+	 * Query Example in general words
+	 * ============== 
+	 *		LEFT JOIN
+	 *			(SELECT attributeReferencingSourceTable, json_agg(json_build_object('column1', 'joinTable.column1', ..., 'nestedTable1', nestedTable1)) as joinTable from joinTable		
+	 *				LEFT JOIN
+	 *					(SELECT attributeReferencingNestedTable1, json_agg(json_build_object('column1', 'nestedTable1.column1', ... (optional nestedTable2))) as nestedTable1 from nestedTable1
+	 *						GROUP BY groupByAttr (nestedTable1.attributeReferencingNestedTable)
+	 *					) as nestedTable1
+	 *				on nestedTable1.attributeReferecingNestedTable1 = joinTable.attributeReferencingNestedTable1FROMJoinTable GROUP BY groupByAttr (joinTable.attributeReferencingSourceTable)
+	 *			) as joinTable
+	 *		on sourceTable.attributeReferencingJoinTableFROMsourceTable = joinTable.attributeReferencingSourceTable
+	 *	where sourceTbl = 1)
+	 * ===============
+	 * 
+	 * 
+	 * # Relationships
+	 * - Important to distinct between the relationships between the joined collections
+	 * - Cases: OneToMany-, ManyToOne-, ManyToMany-Relationship
+	 * - TreeQL-Specification requires to handle each case differently
+	 * 
+	 * Example Query of ManyToMany
+	 * SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json FROM (
+	 *		  SELECT student.*, course FROM student
+	 *		============= 
+	 *		  LEFT JOIN (
+	 *			SELECT
+	 *			  student_id,
+	 *			  json_agg(json_build_object('id', courses.course_id, 'course_name', courses.course_name)) AS course
+	 *			FROM student_courses
+	 *			LEFT JOIN course ON course.id = enrollment.course_id
+	 *			GROUP BY student_id
+	 *		  ) AS enrollment ON enrollment.student_id = student.id
+	 *		==============
+	 *		) AS t;
+	 *
+	 */
 	private String joinBuilder(String stmt, String[] curJoinCols, int index, DynCollection sourceCol, String groupByAttr) throws DynException {
 		if (index > curJoinCols.length - 1) {
 			return "";
 		}
 
-		// Get infos of join collection
-		DynCollection joinCol = null;	
-		joinCol = this.usedDynCollections.get(curJoinCols[index]);
-		if (joinCol == null) {
-			joinCol = new DynCollectionPostgres(this.schema, curJoinCols[index]);
-			this.usedDynCollections.put(curJoinCols[index], joinCol);
-		}
+		DynCollection joinCol = this.usedDynCollections.getOrDefault(this.schema, new DynCollectionPostgres(this.schema, curJoinCols[index]));	
 
-		boolean hasAndBelongsToMany = false;
-		DynCollectionPostgres intermediateCol = null;
-		Attribute sourceColRefAttr = null;
-		Attribute joinColRefAttr = null;
-		String fromCol = null;
-		String fromAttr = null;
-		String toCol = null;
-		String toAttr = null;
-		String joinAttr = null;
-		String nestedCol = null;
+		CollectionRelationship relationship = sourceCol.getRelationship(joinCol);
 
-		// Check if there is a reference between the source collection and the join collection
-		Attribute refAttr = sourceCol.getReferenceTo(curJoinCols[index]);
-		if (refAttr == null) {
-			// Check if there is a reference between the join collection and the source collection
-			refAttr = joinCol.getReferenceTo(sourceCol.getName());
-			if (refAttr == null) {
-				// Check if there is a reference between the collection in form of an intermediate table	
 
-				// Get idenity attributes of source Col
-				List<Attribute> sourceColIdentities = sourceCol.getIdentityAttributes();
-				if (sourceColIdentities.size() < 1) {
-					throw new DynException("nested join error, no identity attribute in column: " + sourceCol.getName());
-				}
-				Attribute sourceColIdentityAttribute = sourceColIdentities.get(0);
-				// Get all collection that references the source col identity attribute
-				List<String> sourceColIdentityAttributeCols = sourceCol.getRefercingTablesOfAttribute(sourceColIdentityAttribute);
+		DynCollection nestedJoinCol = index + 1 <= curJoinCols.length - 1 ? new DynCollectionPostgres(this.schema, curJoinCols[index + 1], this.con) : null;
 
-				// Get idenity attributes of join Col
-				List<Attribute> joinColIdentities = joinCol.getIdentityAttributes();
-				if (joinColIdentities.size() < 1) {
-					throw new DynException("nested join error, no identity attribute in column: " + joinCol.getName());
-				}
-				Attribute joinColIdentityAttribute = joinColIdentities.get(0);
-				// Get all collection that references the join col identity attribute
-				List<String> joinColIdentityAttributeCols = joinCol.getRefercingTablesOfAttribute(joinColIdentityAttribute);
-
+		switch (relationship) {
+			case OneToMany:
+				Attribute joinColAttr = joinCol.getReferenceTo(sourceCol.getName());
 				
-				// Check if both attributes are referenced from the same collection -> intermediate table
-				String intermediateColName = null;
-				for (String jCol : joinColIdentityAttributeCols) {
-					for (String sCol : sourceColIdentityAttributeCols) {
-						if (jCol.equals(sCol)) {
-							intermediateColName = jCol;
+				stmt += " LEFT JOIN (";
+
+				stmt += joinSelectBuilder(joinCol, nestedJoinCol , joinColAttr.getName(), index, curJoinCols, sourceCol, relationship);
+				stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, joinColAttr.getName());
+
+				stmt += " ) as " + "\"" + joinCol.getName() + "\"";
+				stmt += " on " + "\"" + joinCol.getName() + "\".\"" + joinColAttr.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + joinColAttr.getRefAttribute() + "\""; 
+				if (groupByAttr != null) {
+					stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + groupByAttr + "\" ";
+				}
+				break;
+
+			case ManyToOne:
+				Attribute sourceColAttr = sourceCol.getReferenceTo(joinCol.getName());
+
+				stmt += " LEFT JOIN (";
+
+				stmt += joinSelectBuilder(joinCol, nestedJoinCol , sourceColAttr.getRefAttribute(), index, curJoinCols, sourceCol, relationship);
+				stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, null);
+
+				stmt += " ) as " + "\"" + joinCol.getName() + "\"";
+				stmt += " on " + "\"" + sourceCol.getName() + "\".\"" + sourceColAttr.getName() + "\" = \"" + joinCol.getName() + "\".\"" + sourceColAttr.getRefAttribute() + "\""; 
+				if (groupByAttr != null) {
+					stmt += " group by " + "\"" + sourceCol.getName() + "\".\"" + groupByAttr + "\" ";
+				}
+				break;
+
+			case ManyToMany:
+				// With getRelationship already checked that getNameOfManyTo... will return a valid string
+				String intermediateColName = sourceCol.getIntermediateCollection(joinCol);
+				// Get infos of intermediate collection that joins sourceCol and joinCol
+				DynCollection intermediateCol = new DynCollectionPostgres(this.schema, intermediateColName, this.con);
+				Attribute intermediateColAttrThatRefersToSourceCol = intermediateCol.getReferenceTo(sourceCol.getName());
+				Attribute intermediateColAttrThatRefersToJoinCol = intermediateCol.getReferenceTo(joinCol.getName());
+
+				// Building the statement
+				stmt += " LEFT JOIN (";
+				// select statement
+				stmt += " SELECT ";
+				stmt += "\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\"";
+				stmt += ", json_agg(json_build_object(";
+
+				int i = 0;
+				for (Attribute curAttr : joinCol.getAttributes().values()) {
+					// remove nested join reference attribute
+					if (nestedJoinCol != null) {
+						Attribute ref = joinCol.getReferenceTo(nestedJoinCol.getName());
+						if (ref != null && curAttr.getName().equals(ref.getName())){
+							continue;
 						}
 					}
-				}
-
-				if (intermediateColName == null) {
-					throw new DynException("Could not join, there is no intermediate table.");
-				}
-
-				// Get infos of intermediate collection
-				intermediateCol = new DynCollectionPostgres(this.schema, intermediateColName, this.con);
-
-				sourceColRefAttr = intermediateCol.getReferenceTo(sourceCol.getName());
-				if (sourceColRefAttr == null) {
-					throw new DynException("nested join error, no ref1 attribute found.");
-				}
-				joinColRefAttr = intermediateCol.getReferenceTo(joinCol.getName());
-				if (joinColRefAttr == null) {
-					throw new DynException("nested join error, no ref2 attribute found.");
-				}
-
-				// indicator that defines if a collection is an intermediate collection
-				hasAndBelongsToMany = true;
-
-			} else {
-				fromCol = curJoinCols[index];
-				fromAttr = refAttr.getName();
-				toCol = sourceCol.getName();
-				toAttr = refAttr.getRefAttribute();
-				joinAttr = fromAttr;
-			}
-		} else {
-			fromCol = sourceCol.getName();
-			fromAttr = refAttr.getName();
-			toCol = curJoinCols[index];
-			toAttr = refAttr.getRefAttribute();
-			joinAttr = toAttr;
-		}
-
-		// set nestedCol if one exists
-		if (index + 1 <= curJoinCols.length - 1) {
-			nestedCol = curJoinCols[index + 1];
-		}
-
-		// build sql query for hasAndBelongToMany relation (intermediate table)
-		if (hasAndBelongsToMany) {
-			/* Example structure of sql query with intermediate collection
-			SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json
-			FROM (
-			  SELECT
-				students.*,
-				courses
-			  FROM students
-			============= example of intermediate table join query -> this stucture gets build in the following section.
-			  LEFT JOIN (
-				SELECT
-				  student_id,
-				  json_agg(json_build_object('id', courses.course_id, 'course_name', courses.course_name)) AS courses
-				FROM student_courses
-				LEFT JOIN courses ON courses.course_id = student_courses.course_id
-				GROUP BY student_id
-			  ) AS student_courses ON student_courses.student_id = students.student_id
-			==============
-			) AS t;
-			*/
-			stmt += " LEFT JOIN (";
-			// select statement
-			stmt += " SELECT ";
-			stmt += "\"" + sourceCol.getIdentityAttributes().get(0).getName() + "\"";
-			stmt += ", json_agg(json_build_object(";
-
-			int i = 0;
-			for (Attribute curAttr : joinCol.getAttributes().values()) {
-				// remove nested join reference attribute
-				if (index < curJoinCols.length - 1) {
-					Attribute ref = joinCol.getReferenceTo(curJoinCols[index + 1]);
-					if (ref != null && curAttr.getName().equals(ref.getName())){
-						continue;
+					if (i > 0) {
+						stmt += ", ";
 					}
+					stmt += "'"+ curAttr.getName() + "', ";
+					stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
+					i++;
 				}
-				if (i > 0) {
-					stmt += ", ";
+
+				// If there is a nested join collection, add the nestedJoinCol to the select statement
+				if (nestedJoinCol != null) {
+					if (i != 0) {
+						stmt += ", ";
+					}
+					stmt += "'" + nestedJoinCol.getName() + "', ";
+					stmt += nestedJoinCol.getName();
 				}
-				stmt += "'"+ curAttr.getName() + "', ";
-				stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
-				i++;
-			}
 
-			// if there is a nested join collection, add the nestedCol in the select statement
-			if (nestedCol != null) {
-				stmt += ", ";
-				stmt += "'" + nestedCol + "', ";
-				stmt += nestedCol;
-			}
+				stmt += ")) as " + joinCol.getName();
+				stmt += " FROM ";
+				stmt += "\"" + this.schema + "\".\"" + intermediateCol.getName() + "\"";
+				stmt += " LEFT JOIN ";
+				stmt += "\"" + this.schema + "\".\"" + joinCol.getName() + "\"";
+				stmt += " ON ";
+				stmt += "\"" + intermediateCol.getName() + "\".\"" + intermediateColAttrThatRefersToJoinCol.getName() + "\" = \"" + joinCol.getName() + "\".\"" + intermediateColAttrThatRefersToJoinCol.getRefAttribute() + "\"";
 
-			stmt += ")) as " + joinCol.getName();
-			stmt += " FROM ";
-			stmt += "\"" + intermediateCol.getName() + "\"";
-			stmt += " LEFT JOIN ";
-			stmt += "\"" + joinCol.getName() + "\"";
-			stmt += " ON ";
-			stmt += "\"" + intermediateCol.getName() + "\".\"" + joinColRefAttr.getRefAttribute() + "\" = \"" + joinCol.getName() + "\".\"" + joinColRefAttr.getName() + "\"";
+				// add next nested join collection
+				stmt += joinBuilder("", curJoinCols, index + 1, joinCol, null);
 
-			// next nested join col
-			stmt += joinBuilder("", curJoinCols, index + 1, joinCol, joinAttr);
-
-			stmt += " group by " + "\"" + sourceCol.getIdentityAttributes().get(0).getName() + "\"";
-			stmt += " ) as " + "\"" + intermediateCol.getName() + "\"";
-			stmt += " ON ";
-			stmt += "\"" + intermediateCol.getName() + "\".\"" + sourceColRefAttr.getRefAttribute() + "\" = \"" + sourceCol.getName() + "\".\"" + sourceColRefAttr.getName() + "\""; 	
-
-
-		} else {
-			// hasMany or belongTo Relation
-			/* Build sql query with standad ref collection
-			 * 
-			 *	SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from 
-			 *		(select player.*, stats from player
-			 * ============== example of sql query
-			 *			left join 
-			 *				(select player_id, json_agg(json_build_object('id', stats.id, 'contest', contest)) as stats from "stats"
-			 *					left join
-			 *						(select id, json_agg(json_build_object('id', contest.id, 'name', contest.name)) as contest from "contest"
-			 *							group by contest.id
-			 *						) as contest
-			 *					on contest.id = stats.contest_id group by stats.player_id
-			 *				) as stats
-			 *			on player.id = stats.player_id
-			 *		where player.id = 1)
-			 * ===============
-			 *	as t
-			 * 
-			 * ============== this structure gets build in the following section
-			 *		LEFT JOIN
-			 *			(SELECT attributeReferencingSourceTable, json_agg(json_build_object('column1', 'joinTable.column1', ..., 'nestedTable1', nestedTable1)) as joinTable from joinTable		
-			 *				LEFT JOIN
-			 *					(SELECT attributeReferencingNestedTable1, json_agg(json_build_object('column1', 'nestedTable1.column1', ... (optional nestedTable2))) as nestedTable1 from nestedTable1
-			 *						group by nestedTable1.attributeReferencingNestedTable1	
-			 *					) as nestedTable1
-			 *				on nestedTable1.attributeReferecingNestedTable1 = joinTable.attributeReferencingNestedTable1FROMJoinTable group by joinTable.attributeReferencingSourceTable
-			 *			) as joinTable
-			 *		on sourceTable.attributeReferencingJoinTableFROMsourceTable = joinTable.attributeReferencingSourceTable
-			 *	where sourceTbl = 1)
-			 * ===============
-			 * 
-			 */
-			stmt += " LEFT JOIN (";
-			stmt += joinSelectBuilder(joinCol, nestedCol ,joinAttr, index, curJoinCols, sourceCol);
-
-			// next nested join col
-			stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, joinAttr);
-
-			if (index == curJoinCols.length - 1) {
-				stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + joinAttr + "\""; 
-			}
-
-			stmt += " ) as " + "\"" + joinCol.getName() + "\"";
-			stmt += " on " + "\"" + fromCol + "\".\"" + fromAttr + "\" = \"" + toCol + "\".\"" + toAttr + "\""; 
-
-			if (groupByAttr != null) {
-				stmt += " group by " + "\"" + fromCol + "\".\"" + groupByAttr + "\" ";
-			}
+				stmt += " group by " + "\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\"";
+				stmt += " ) as " + "\"" + intermediateCol.getName() + "\"";
+				stmt += " ON ";
+				stmt += "\"" + intermediateCol.getName() + "\".\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + intermediateColAttrThatRefersToSourceCol.getRefAttribute() + "\""; 
+				break;
 
 		}
 		return stmt;
+
 	}
 
 	/*
 	 * Buils the select statement part of a joined query	
 	 */
-	private String joinSelectBuilder(DynCollection joinCol, String nestedCol, String joinAttr, int index, String[] curJoinCols, DynCollection outerCol) throws DynException {
-		Attribute belongTo = outerCol.getReferenceTo(joinCol.getName());
-		String stmt = "";
-		stmt += "SELECT ";
-		stmt += joinAttr;
-		stmt += belongTo != null ? ", json_build_object(" : ", json_agg(json_build_object(";
+	private String joinSelectBuilder(DynCollection joinCol, DynCollection nestedJoinCol, String joinAttr, int index, String[] curJoinCols, DynCollection outerCol, CollectionRelationship relationship) throws DynException {
+		String stmt = "SELECT ";
+		stmt += "\"" + joinCol.getName() + "\".\"" + joinAttr + "\"";
+		stmt += relationship == ManyToOne ? ", json_build_object(" : ", json_agg(json_build_object(";
 
 		int i = 0;
 		for (Attribute curAttr : joinCol.getAttributes().values()) {
-			if (index < curJoinCols.length - 1) {
-				Attribute ref = joinCol.getReferenceTo(curJoinCols[index + 1]);
+			if (relationship == OneToMany && nestedJoinCol != null) {
+				Attribute ref = joinCol.getReferenceTo(nestedJoinCol.getName());
 				if (curAttr.getName().equals(ref.getName())) {
 					continue;
 				}
-				ref = joinCol.getReferenceTo(outerCol.getName());
-				if (curAttr.getName().equals(ref.getName())) {
-					continue;
-				}
-
 			}
 			if (i > 0) {
 				stmt += ", ";
@@ -1564,18 +1801,31 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 			stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
 			i++;
 		}
-		// nested Join
-		if (nestedCol != null) {
-			Attribute belongToJoin = joinCol.getReferenceTo(nestedCol);
-			stmt += ", ";
-			stmt += belongToJoin != null ? "'" + belongToJoin.getName() + "', " : "'" + nestedCol + "', ";
-			stmt += "\"" + nestedCol + "\"";
+
+		// add nested collection
+		if (nestedJoinCol != null) {
+			if (i != 0) {
+				stmt += ", ";
+			}
+			Attribute nestedJoinColAttr = joinCol.getReferenceTo(nestedJoinCol.getName());
+			// modify key value of json based on relationship between joinCol and nestedJoinCol (nestedJoinColAttr != null -> ManyToOne-Relationship)
+			stmt += nestedJoinColAttr != null ? "'" + nestedJoinColAttr.getName() + "', " : "'" + nestedJoinCol.getName() + "', ";
+			stmt += "\"" + nestedJoinCol.getName() + "\"";
 		}
 
-		stmt += belongTo != null ? ")" : "))";
+		stmt += relationship == ManyToOne ? ")" : "))";
 		stmt += " as " + "\"" + joinCol.getName() + "\"";
-		stmt += " FROM " + "\"" + joinCol.getName() + "\"";
+		stmt += " FROM " + "\"" + this.schema + "\".\"" + joinCol.getName() + "\"";
+
+		if (index == curJoinCols.length - 1 && relationship == OneToMany) {
+			stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + joinAttr + "\""; 
+		}
 
 		return stmt;
 	}
+	
+	
+
+
 }
+

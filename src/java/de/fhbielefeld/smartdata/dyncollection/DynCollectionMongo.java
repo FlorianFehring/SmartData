@@ -108,4 +108,14 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
 	public String getName() {
 		throw new UnsupportedOperationException("Not supported yet."); 
 	}
+
+	@Override
+	public CollectionRelationship getRelationship(DynCollection collection) throws DynException {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	@Override
+	public String getIntermediateCollection(DynCollection collection) throws DynException {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
 }
