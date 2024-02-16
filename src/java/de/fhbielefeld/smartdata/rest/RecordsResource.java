@@ -33,11 +33,16 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.json.*;
+import jakarta.json.JsonValue.ValueType;
+import jakarta.json.stream.JsonParser;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringJoiner;
 import javax.naming.NamingException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -47,6 +52,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.json.CDL;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * REST Web Service for accessing the data, following the TreeQL standard with
@@ -152,7 +160,7 @@ public class RecordsResource {
 
     @GET
     @Path("{collection}/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "text/csv"})
     @SmartUserAuth
     @Operation(summary = "Gets a dataset",
             description = "Delivers a dataset from database")
@@ -177,7 +185,8 @@ public class RecordsResource {
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format",
                     schema = @Schema(type = STRING)) @QueryParam("geojsonattr") String geojsonattr,
             @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
-            @Parameter(description = "Package values into datasets") @QueryParam("deflatt") boolean deflatt) {
+            @Parameter(description = "Package values into datasets") @QueryParam("deflatt") boolean deflatt,
+            @Context ContainerRequestContext requestContext) {
 
         if (storage == null) {
             storage = "public";
@@ -228,6 +237,14 @@ public class RecordsResource {
 //        long startGetData = System.nanoTime();
         try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform, new ArrayList<>());
+
+            // Deliver text/csv if requested
+            if(requestContext.getAcceptableMediaTypes().contains(new MediaType("text","csv"))) {
+                JSONArray ja = new JSONArray(json); 
+                String csvString = CDL.toString(ja);
+                return Response.ok(csvString).build();
+            }
+
 //            long finishGetData = System.nanoTime();
 //            double neededTimes = finishGetData - startGetData;
 //            double needetGetData = neededTimes / 1000 / 1000;
@@ -268,7 +285,7 @@ public class RecordsResource {
 
     @GET
     @Path("{collection}/")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "text/csv"})
     @SmartUserAuth
     @Operation(summary = "Lists datasets from database",
             description = "Lists datasets from database that are matching the parameters.")
@@ -378,6 +395,14 @@ public class RecordsResource {
             if (json.equals("{}")) {
                 json = "[]";
             }
+            
+            // Deliver text/csv if requested
+            if(requestContext.getAcceptableMediaTypes().contains(new MediaType("text","csv"))) {
+                JSONArray ja = new JSONArray(json); 
+                String csvString = CDL.toString(ja);
+                return Response.ok(csvString).build();
+            }
+            
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
             if (geojsonattr != null) {
@@ -495,7 +520,7 @@ public class RecordsResource {
         if (storage == null) {
             storage = "public";
         }
-        
+
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         if (json == null || json.isEmpty()) {
@@ -503,7 +528,7 @@ public class RecordsResource {
             rob.addErrorMessage("No data to update.");
             return rob.toResponse();
         }
-         
+
         try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, null);
         } catch (DynException ex) {
