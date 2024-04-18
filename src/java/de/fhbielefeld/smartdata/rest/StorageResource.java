@@ -35,7 +35,7 @@ import jakarta.ws.rs.core.Response;
 public class StorageResource {
 
     /**
-     * Creates a new instance of RootResource
+     * Creates a new instance of Resource
      */
     public StorageResource() {
         // Init logging
@@ -159,7 +159,10 @@ public class StorageResource {
     public Response getCollections(
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public")
-            ) @QueryParam("name") String name) {
+            ) @QueryParam("name") String name,
+            @Parameter(description = "Collection names to exclude", required = false,
+                    schema = @Schema(type = STRING, defaultValue = "public")
+            ) @QueryParam("exclude") String exclude) {
 
         if (name == null) {
             name = "public";
@@ -168,7 +171,7 @@ public class StorageResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try(DynStorage dyns = DynFactory.getDynStorage()) {
-            rob.add("list", dyns.getCollections(name));
+            rob.add("list", dyns.getCollections(name, exclude));
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
             rob.addErrorMessage("Error retriving collection names: " + ex.getLocalizedMessage());

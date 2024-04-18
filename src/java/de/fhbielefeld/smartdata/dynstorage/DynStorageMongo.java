@@ -85,7 +85,7 @@ public class DynStorageMongo extends DynMongo implements DynStorage {
     }
 
     @Override
-    public List<DataCollection> getCollections(String name) throws DynException {
+    public List<DataCollection> getCollections(String name, String excludeCollections) throws DynException {
         List<DataCollection> collections = new ArrayList<>();
         MongoDatabase mdb = this.client.getDatabase(name);
         for (String tname : mdb.listCollectionNames()) {

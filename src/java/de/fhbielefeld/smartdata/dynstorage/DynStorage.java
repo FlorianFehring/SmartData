@@ -82,10 +82,11 @@ public interface DynStorage extends Dyn {
      * Returns a list of available collections in the given storage
      * 
      * @param name Name of the storage
+     * @param excludeCollections Names of collections to exclude from list
      * @return List of collection names
      * @throws DynException 
      */
-    public List<DataCollection> getCollections(String name) throws DynException;
+    public List<DataCollection> getCollections(String name, String excludeCollections) throws DynException;
     
     /**
      * Deletes the given storage and all its contents
