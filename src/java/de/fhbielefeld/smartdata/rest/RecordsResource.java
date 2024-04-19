@@ -33,16 +33,11 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import jakarta.json.*;
-import jakarta.json.JsonValue.ValueType;
-import jakarta.json.stream.JsonParser;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.StringJoiner;
 import javax.naming.NamingException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -54,7 +49,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.json.CDL;
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * REST Web Service for accessing the data, following the TreeQL standard with
