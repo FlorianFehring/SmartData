@@ -1255,6 +1255,14 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     + ex.getClass().getSimpleName() + "): " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
             dye.addSuppressed(ex);
             throw dye;
+        } catch(NumberFormatException ex) {
+            DynException dye = new DynException("Could not interpret >"
+                    + col.getName() + "< with value >" + value.toString()
+                    + "< from type >" + value.getClass().getSimpleName()
+                    + "< to type >" + col.getType() + "< because of ("
+                    + ex.getClass().getSimpleName() + "): " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
+            dye.addSuppressed(ex);
+            throw dye;
         }
     }
 
