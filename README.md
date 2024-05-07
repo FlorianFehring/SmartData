@@ -1,3 +1,5 @@
-SmartData stellt eine universelle Datenschnittstelle für Webanwendungen bereit.
+## SmartData Database REST-API
 
-Weitere Informationen finden Sie im Wiki.
+SmartData is a REST API for accessing databases over Java Application Serves. It implements the [TreeQL](https://www.treeql.org) spec.
+
+Further informations you can find in the wiki.
