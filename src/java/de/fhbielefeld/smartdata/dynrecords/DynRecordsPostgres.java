@@ -196,24 +196,24 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         continue;
                     }
 
-					// Exclude attributes that referencing a join table
-            		if (joins != null && !joins.isEmpty()) {
-						boolean attributeReferencingJoinTable = false;
-						for (String curJoins : joins) {
-							String[] curJoinCols = curJoins.split(",");
-							if (curJoinCols.length > 0) {
-								String curJoinCol = curJoinCols[0];
-								Attribute ref = this.dyncollection.getReferenceTo(curJoinCol);
-								if (ref != null && curColumn.getName().equals(ref.getName())) {
-									attributeReferencingJoinTable = true;
-									break;
-								}
-							}
-						}
-						if (attributeReferencingJoinTable) {
-							continue;
-						}
-					}
+                    // Exclude attributes that referencing a join table
+                    if (joins != null && !joins.isEmpty()) {
+                        boolean attributeReferencingJoinTable = false;
+                        for (String curJoins : joins) {
+                            String[] curJoinCols = curJoins.split(",");
+                            if (curJoinCols.length > 0) {
+                                String curJoinCol = curJoinCols[0];
+                                Attribute ref = this.dyncollection.getReferenceTo(curJoinCol);
+                                if (ref != null && curColumn.getName().equals(ref.getName())) {
+                                    attributeReferencingJoinTable = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (attributeReferencingJoinTable) {
+                            continue;
+                        }
+                    }
 
                     // Create selection expression
                     if (curColumn.getType().equalsIgnoreCase("bytea")) {
@@ -264,29 +264,29 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             frombuilder.append(this.table);
             frombuilder.append("\"");
 
-             // Create join
+            // Create join
             if (joins != null && !joins.isEmpty()) {
                 for (String curJoins : joins) {
-					String stmt = "";
-					String[] curJoinCols = curJoins.split(",");
+                    String stmt = "";
+                    String[] curJoinCols = curJoins.split(",");
 
-					stmt = joinBuilder(stmt, curJoinCols, 0, this.dyncollection, null);
+                    stmt = joinBuilder(stmt, curJoinCols, 0, this.dyncollection, null);
 
-					if (curJoinCols.length > 0) {
-						// Adopt the naming to relation: belongTo/hasMany
-						Attribute belongToAttr = this.dyncollection.getReferenceTo(curJoinCols[0]);
-						if (belongToAttr != null) {
-							// belongTo Relation (name of the attribute)
-							selectbuilder.append(", ").append(curJoinCols[0]).append(" as ").append(belongToAttr.getName());
-						} else {
-							// hasMany Relation (name of the column)
-							selectbuilder.append(", ").append(curJoinCols[0]);
-						}
-					}
-					frombuilder.append(stmt);
-				}
+                    if (curJoinCols.length > 0) {
+                        // Adopt the naming to relation: belongTo/hasMany
+                        Attribute belongToAttr = this.dyncollection.getReferenceTo(curJoinCols[0]);
+                        if (belongToAttr != null) {
+                            // belongTo Relation (name of the attribute)
+                            selectbuilder.append(", ").append(curJoinCols[0]).append(" as ").append(belongToAttr.getName());
+                        } else {
+                            // hasMany Relation (name of the column)
+                            selectbuilder.append(", ").append(curJoinCols[0]);
+                        }
+                    }
+                    frombuilder.append(stmt);
+                }
 
-			}
+            }
 
             if (filters != null && !filters.isEmpty()) {
                 frombuilder.append(" WHERE ");
@@ -852,16 +852,36 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 pstmt.close();
                 this.con.commit();
             } catch (SQLException ex) {
-                try {
-                    this.con.rollback();
-                } catch (SQLException ex1) {
-                    Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
-                            MessageLevel.ERROR);
-                    Logger.addDebugMessage(msg);
+                // Try fix unique constraint violation
+                if (ex.getMessage().contains("violates unique constraint")) {
+                    // Get id of existing dataset
+                    String selorig = "SELECT id FROM \"" + this.schema + "\".\"" + this.table + "\" WHERE ts=?";
+                    this.con.setAutoCommit(true);
+                    PreparedStatement selstmt = this.con.prepareStatement(selorig);
+                    Attribute curColumn = columns.get("ts");
+                    this.setPlaceholder(selstmt, placeholders.get("ts"), curColumn, json.get("ts"));
+                    ResultSet rs = selstmt.executeQuery();
+                    long id = 0;
+                    while (rs.next()) {
+                        id = rs.getLong("id");
+                    }
+                    // Create update statement
+                    if (id > 0) {
+                        this.update(json, id);
+                    }
+                } else {
+                    // Rollback
+                    try {
+                        this.con.rollback();
+                    } catch (SQLException ex1) {
+                        Message msg = new Message("Could not rollback: " + ex1.getLocalizedMessage(),
+                                MessageLevel.ERROR);
+                        Logger.addDebugMessage(msg);
+                    }
+                    DynException de = new DynException(ex.getLocalizedMessage());
+                    de.addSuppressed(ex);
+                    throw de;
                 }
-                DynException de = new DynException(ex.getLocalizedMessage());
-                de.addSuppressed(ex);
-                throw de;
             } finally {
                 try {
                     this.con.setAutoCommit(true);
@@ -1255,7 +1275,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     + ex.getClass().getSimpleName() + "): " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
             dye.addSuppressed(ex);
             throw dye;
-        } catch(NumberFormatException ex) {
+        } catch (NumberFormatException ex) {
             DynException dye = new DynException("Could not interpret >"
                     + col.getName() + "< with value >" + value.toString()
                     + "< from type >" + value.getClass().getSimpleName()
@@ -1312,17 +1332,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         return allwarns;
     }
 
-	/**
-	 * Builds the an sql query part for the collection of one join parameter
-	 * @param stmt query
-	 * @param curJoinCols joinCols
-	 * @param index index of joinCol
-	 * @param sourceCol sourceCol
-	 * @param groupByAttr groupByAttribute
-	 * @return
-	 * @throws DynException 
-	 */
-
+    /**
+     * Builds the an sql query part for the collection of one join parameter
+     *
+     * @param stmt query
+     * @param curJoinCols joinCols
+     * @param index index of joinCol
+     * @param sourceCol sourceCol
+     * @param groupByAttr groupByAttribute
+     * @return
+     * @throws DynException
+     */
 //	private String joinBuilder(String stmt, String[] curJoinCols, int index, DynCollection sourceCol, String groupByAttr) throws DynException {
 //		if (index > curJoinCols.length - 1) {
 //			return "";
@@ -1586,47 +1606,47 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 //		}
 //		return stmt;
 //	}
-	
-	/**
-	 * Builds the an sql query part for the collection of one join parameter
-	 * @param stmt query
-	 * @param curJoinCols joinCols
-	 * @param index index of joinCol
-	 * @param sourceCol sourceCol
-	 * @param groupByAttr groupByAttribute
-	 * @return
-	 * @throws DynException 
-	 * 
+    /**
+     * Builds the an sql query part for the collection of one join parameter
+     *
+     * @param stmt query
+     * @param curJoinCols joinCols
+     * @param index index of joinCol
+     * @param sourceCol sourceCol
+     * @param groupByAttr groupByAttribute
+     * @return
+     * @throws DynException
+     *
 	 * Example: 
 	 *	## Table Definitions
-	 *
+     *
 	 *	### student
-	 *
+     *
 	 *	| Column     | Data Type    | Constraints |
 	 *	|------------|--------------|-------------|
 	 *	| id         | SERIAL       | PRIMARY KEY |
 	 *	| first_name | VARCHAR(100) |             |
 	 *	| last_name  | VARCHAR(100) |             |
-	 *
+     *
 	 *	### enrollment
-	 *
+     *
 	 *	| Column     | Data Type | Constraints            |
 	 *	|------------|-----------|------------------------|
 	 *	| id         | SERIAL    | PRIMARY KEY            |
 	 *	| student_id | INTEGER   | REFERENCES student(id) |
 	 *	| course_id  | INTEGER   | REFERENCES course(id)  |
 	 *	| grade      | FLOAT     |                        |
-	 *
+     *
 	 *	### course
-	 *
+     *
 	 *	| Column  | Data Type    | Constraints         |
 	 *	|---------|--------------|---------------------|
 	 *	| id      | SERIAL       | PRIMARY KEY         |
 	 *	| name    | VARCHAR(100) |                     |
 	 *	| year_id | INTEGER      | REFERENCES year(id) |
-	 * 
-	 * Example Query to build
-	 * 
+     *
+     * Example Query to build
+     *
 	 *	SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from 
 	 *		SELECT "student"."club_id","student"."last_name","student"."id","student"."first_name", grade FROM "public"."student" 
 	 * ============== building this stucture in this section
@@ -1642,8 +1662,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 	 *			) as "grade" on "grade"."student_id" = "student"."id"
 	 * ===============
 	 *	as t
-	 * 
-	 * 
+     *
+     *
 	 * Query Example in general words
 	 * ============== 
 	 *		LEFT JOIN
@@ -1656,14 +1676,14 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 	 *			) as joinTable
 	 *		on sourceTable.attributeReferencingJoinTableFROMsourceTable = joinTable.attributeReferencingSourceTable
 	 *	where sourceTbl = 1)
-	 * ===============
-	 * 
-	 * 
+     * ===============
+     *
+     *
 	 * # Relationships
 	 * - Important to distinct between the relationships between the joined collections
 	 * - Cases: OneToMany-, ManyToOne-, ManyToMany-Relationship
 	 * - TreeQL-Specification requires to handle each case differently
-	 * 
+     *
 	 * Example Query of ManyToMany
 	 * SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json FROM (
 	 *		  SELECT student.*, course FROM student
@@ -1678,162 +1698,157 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 	 *		  ) AS enrollment ON enrollment.student_id = student.id
 	 *		==============
 	 *		) AS t;
-	 *
-	 */
-	private String joinBuilder(String stmt, String[] curJoinCols, int index, DynCollection sourceCol, String groupByAttr) throws DynException {
-		if (index > curJoinCols.length - 1) {
-			return "";
-		}
+     *
+     */
+    private String joinBuilder(String stmt, String[] curJoinCols, int index, DynCollection sourceCol, String groupByAttr) throws DynException {
+        if (index > curJoinCols.length - 1) {
+            return "";
+        }
 
-		DynCollection joinCol = this.usedDynCollections.getOrDefault(this.schema, new DynCollectionPostgres(this.schema, curJoinCols[index]));	
+        DynCollection joinCol = this.usedDynCollections.getOrDefault(this.schema, new DynCollectionPostgres(this.schema, curJoinCols[index]));
 
-		CollectionRelationship relationship = sourceCol.getRelationship(joinCol);
+        CollectionRelationship relationship = sourceCol.getRelationship(joinCol);
 
+        DynCollection nestedJoinCol = index + 1 <= curJoinCols.length - 1 ? new DynCollectionPostgres(this.schema, curJoinCols[index + 1], this.con) : null;
 
-		DynCollection nestedJoinCol = index + 1 <= curJoinCols.length - 1 ? new DynCollectionPostgres(this.schema, curJoinCols[index + 1], this.con) : null;
+        switch (relationship) {
+            case OneToMany:
+                Attribute joinColAttr = joinCol.getReferenceTo(sourceCol.getName());
 
-		switch (relationship) {
-			case OneToMany:
-				Attribute joinColAttr = joinCol.getReferenceTo(sourceCol.getName());
-				
-				stmt += " LEFT JOIN (";
+                stmt += " LEFT JOIN (";
 
-				stmt += joinSelectBuilder(joinCol, nestedJoinCol , joinColAttr.getName(), index, curJoinCols, sourceCol, relationship);
-				stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, joinColAttr.getName());
+                stmt += joinSelectBuilder(joinCol, nestedJoinCol, joinColAttr.getName(), index, curJoinCols, sourceCol, relationship);
+                stmt += joinBuilder("", curJoinCols, index + 1, joinCol, joinColAttr.getName());
 
-				stmt += " ) as " + "\"" + joinCol.getName() + "\"";
-				stmt += " on " + "\"" + joinCol.getName() + "\".\"" + joinColAttr.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + joinColAttr.getRefAttribute() + "\""; 
-				if (groupByAttr != null) {
-					stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + groupByAttr + "\" ";
-				}
-				break;
+                stmt += " ) as " + "\"" + joinCol.getName() + "\"";
+                stmt += " on " + "\"" + joinCol.getName() + "\".\"" + joinColAttr.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + joinColAttr.getRefAttribute() + "\"";
+                if (groupByAttr != null) {
+                    stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + groupByAttr + "\" ";
+                }
+                break;
 
-			case ManyToOne:
-				Attribute sourceColAttr = sourceCol.getReferenceTo(joinCol.getName());
+            case ManyToOne:
+                Attribute sourceColAttr = sourceCol.getReferenceTo(joinCol.getName());
 
-				stmt += " LEFT JOIN (";
+                stmt += " LEFT JOIN (";
 
-				stmt += joinSelectBuilder(joinCol, nestedJoinCol , sourceColAttr.getRefAttribute(), index, curJoinCols, sourceCol, relationship);
-				stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, null);
+                stmt += joinSelectBuilder(joinCol, nestedJoinCol, sourceColAttr.getRefAttribute(), index, curJoinCols, sourceCol, relationship);
+                stmt += joinBuilder("", curJoinCols, index + 1, joinCol, null);
 
-				stmt += " ) as " + "\"" + joinCol.getName() + "\"";
-				stmt += " on " + "\"" + sourceCol.getName() + "\".\"" + sourceColAttr.getName() + "\" = \"" + joinCol.getName() + "\".\"" + sourceColAttr.getRefAttribute() + "\""; 
-				if (groupByAttr != null) {
-					stmt += " group by " + "\"" + sourceCol.getName() + "\".\"" + groupByAttr + "\" ";
-				}
-				break;
+                stmt += " ) as " + "\"" + joinCol.getName() + "\"";
+                stmt += " on " + "\"" + sourceCol.getName() + "\".\"" + sourceColAttr.getName() + "\" = \"" + joinCol.getName() + "\".\"" + sourceColAttr.getRefAttribute() + "\"";
+                if (groupByAttr != null) {
+                    stmt += " group by " + "\"" + sourceCol.getName() + "\".\"" + groupByAttr + "\" ";
+                }
+                break;
 
-			case ManyToMany:
-				// With getRelationship already checked that getNameOfManyTo... will return a valid string
-				String intermediateColName = sourceCol.getIntermediateCollection(joinCol);
-				// Get infos of intermediate collection that joins sourceCol and joinCol
-				DynCollection intermediateCol = new DynCollectionPostgres(this.schema, intermediateColName, this.con);
-				Attribute intermediateColAttrThatRefersToSourceCol = intermediateCol.getReferenceTo(sourceCol.getName());
-				Attribute intermediateColAttrThatRefersToJoinCol = intermediateCol.getReferenceTo(joinCol.getName());
+            case ManyToMany:
+                // With getRelationship already checked that getNameOfManyTo... will return a valid string
+                String intermediateColName = sourceCol.getIntermediateCollection(joinCol);
+                // Get infos of intermediate collection that joins sourceCol and joinCol
+                DynCollection intermediateCol = new DynCollectionPostgres(this.schema, intermediateColName, this.con);
+                Attribute intermediateColAttrThatRefersToSourceCol = intermediateCol.getReferenceTo(sourceCol.getName());
+                Attribute intermediateColAttrThatRefersToJoinCol = intermediateCol.getReferenceTo(joinCol.getName());
 
-				// Building the statement
-				stmt += " LEFT JOIN (";
-				// select statement
-				stmt += " SELECT ";
-				stmt += "\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\"";
-				stmt += ", json_agg(json_build_object(";
+                // Building the statement
+                stmt += " LEFT JOIN (";
+                // select statement
+                stmt += " SELECT ";
+                stmt += "\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\"";
+                stmt += ", json_agg(json_build_object(";
 
-				int i = 0;
-				for (Attribute curAttr : joinCol.getAttributes().values()) {
-					// remove nested join reference attribute
-					if (nestedJoinCol != null) {
-						Attribute ref = joinCol.getReferenceTo(nestedJoinCol.getName());
-						if (ref != null && curAttr.getName().equals(ref.getName())){
-							continue;
-						}
-					}
-					if (i > 0) {
-						stmt += ", ";
-					}
-					stmt += "'"+ curAttr.getName() + "', ";
-					stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
-					i++;
-				}
+                int i = 0;
+                for (Attribute curAttr : joinCol.getAttributes().values()) {
+                    // remove nested join reference attribute
+                    if (nestedJoinCol != null) {
+                        Attribute ref = joinCol.getReferenceTo(nestedJoinCol.getName());
+                        if (ref != null && curAttr.getName().equals(ref.getName())) {
+                            continue;
+                        }
+                    }
+                    if (i > 0) {
+                        stmt += ", ";
+                    }
+                    stmt += "'" + curAttr.getName() + "', ";
+                    stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
+                    i++;
+                }
 
-				// If there is a nested join collection, add the nestedJoinCol to the select statement
-				if (nestedJoinCol != null) {
-					if (i != 0) {
-						stmt += ", ";
-					}
-					stmt += "'" + nestedJoinCol.getName() + "', ";
-					stmt += nestedJoinCol.getName();
-				}
+                // If there is a nested join collection, add the nestedJoinCol to the select statement
+                if (nestedJoinCol != null) {
+                    if (i != 0) {
+                        stmt += ", ";
+                    }
+                    stmt += "'" + nestedJoinCol.getName() + "', ";
+                    stmt += nestedJoinCol.getName();
+                }
 
-				stmt += ")) as " + joinCol.getName();
-				stmt += " FROM ";
-				stmt += "\"" + this.schema + "\".\"" + intermediateCol.getName() + "\"";
-				stmt += " LEFT JOIN ";
-				stmt += "\"" + this.schema + "\".\"" + joinCol.getName() + "\"";
-				stmt += " ON ";
-				stmt += "\"" + intermediateCol.getName() + "\".\"" + intermediateColAttrThatRefersToJoinCol.getName() + "\" = \"" + joinCol.getName() + "\".\"" + intermediateColAttrThatRefersToJoinCol.getRefAttribute() + "\"";
+                stmt += ")) as " + joinCol.getName();
+                stmt += " FROM ";
+                stmt += "\"" + this.schema + "\".\"" + intermediateCol.getName() + "\"";
+                stmt += " LEFT JOIN ";
+                stmt += "\"" + this.schema + "\".\"" + joinCol.getName() + "\"";
+                stmt += " ON ";
+                stmt += "\"" + intermediateCol.getName() + "\".\"" + intermediateColAttrThatRefersToJoinCol.getName() + "\" = \"" + joinCol.getName() + "\".\"" + intermediateColAttrThatRefersToJoinCol.getRefAttribute() + "\"";
 
-				// add next nested join collection
-				stmt += joinBuilder("", curJoinCols, index + 1, joinCol, null);
+                // add next nested join collection
+                stmt += joinBuilder("", curJoinCols, index + 1, joinCol, null);
 
-				stmt += " group by " + "\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\"";
-				stmt += " ) as " + "\"" + intermediateCol.getName() + "\"";
-				stmt += " ON ";
-				stmt += "\"" + intermediateCol.getName() + "\".\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + intermediateColAttrThatRefersToSourceCol.getRefAttribute() + "\""; 
-				break;
+                stmt += " group by " + "\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\"";
+                stmt += " ) as " + "\"" + intermediateCol.getName() + "\"";
+                stmt += " ON ";
+                stmt += "\"" + intermediateCol.getName() + "\".\"" + intermediateColAttrThatRefersToSourceCol.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + intermediateColAttrThatRefersToSourceCol.getRefAttribute() + "\"";
+                break;
 
-		}
-		return stmt;
+        }
+        return stmt;
 
-	}
+    }
 
-	/*
+    /*
 	 * Buils the select statement part of a joined query	
-	 */
-	private String joinSelectBuilder(DynCollection joinCol, DynCollection nestedJoinCol, String joinAttr, int index, String[] curJoinCols, DynCollection outerCol, CollectionRelationship relationship) throws DynException {
-		String stmt = "SELECT ";
-		stmt += "\"" + joinCol.getName() + "\".\"" + joinAttr + "\"";
-		stmt += relationship == ManyToOne ? ", json_build_object(" : ", json_agg(json_build_object(";
+     */
+    private String joinSelectBuilder(DynCollection joinCol, DynCollection nestedJoinCol, String joinAttr, int index, String[] curJoinCols, DynCollection outerCol, CollectionRelationship relationship) throws DynException {
+        String stmt = "SELECT ";
+        stmt += "\"" + joinCol.getName() + "\".\"" + joinAttr + "\"";
+        stmt += relationship == ManyToOne ? ", json_build_object(" : ", json_agg(json_build_object(";
 
-		int i = 0;
-		for (Attribute curAttr : joinCol.getAttributes().values()) {
-			if (relationship == OneToMany && nestedJoinCol != null) {
-				Attribute ref = joinCol.getReferenceTo(nestedJoinCol.getName());
-				if (curAttr.getName().equals(ref.getName())) {
-					continue;
-				}
-			}
-			if (i > 0) {
-				stmt += ", ";
-			}
-			stmt += "'" + curAttr.getName() + "', ";
-			stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
-			i++;
-		}
+        int i = 0;
+        for (Attribute curAttr : joinCol.getAttributes().values()) {
+            if (relationship == OneToMany && nestedJoinCol != null) {
+                Attribute ref = joinCol.getReferenceTo(nestedJoinCol.getName());
+                if (curAttr.getName().equals(ref.getName())) {
+                    continue;
+                }
+            }
+            if (i > 0) {
+                stmt += ", ";
+            }
+            stmt += "'" + curAttr.getName() + "', ";
+            stmt += "\"" + joinCol.getName() + "\".\"" + curAttr.getName() + "\"";
+            i++;
+        }
 
-		// add nested collection
-		if (nestedJoinCol != null) {
-			if (i != 0) {
-				stmt += ", ";
-			}
-			Attribute nestedJoinColAttr = joinCol.getReferenceTo(nestedJoinCol.getName());
-			// modify key value of json based on relationship between joinCol and nestedJoinCol (nestedJoinColAttr != null -> ManyToOne-Relationship)
-			stmt += nestedJoinColAttr != null ? "'" + nestedJoinColAttr.getName() + "', " : "'" + nestedJoinCol.getName() + "', ";
-			stmt += "\"" + nestedJoinCol.getName() + "\"";
-		}
+        // add nested collection
+        if (nestedJoinCol != null) {
+            if (i != 0) {
+                stmt += ", ";
+            }
+            Attribute nestedJoinColAttr = joinCol.getReferenceTo(nestedJoinCol.getName());
+            // modify key value of json based on relationship between joinCol and nestedJoinCol (nestedJoinColAttr != null -> ManyToOne-Relationship)
+            stmt += nestedJoinColAttr != null ? "'" + nestedJoinColAttr.getName() + "', " : "'" + nestedJoinCol.getName() + "', ";
+            stmt += "\"" + nestedJoinCol.getName() + "\"";
+        }
 
-		stmt += relationship == ManyToOne ? ")" : "))";
-		stmt += " as " + "\"" + joinCol.getName() + "\"";
-		stmt += " FROM " + "\"" + this.schema + "\".\"" + joinCol.getName() + "\"";
+        stmt += relationship == ManyToOne ? ")" : "))";
+        stmt += " as " + "\"" + joinCol.getName() + "\"";
+        stmt += " FROM " + "\"" + this.schema + "\".\"" + joinCol.getName() + "\"";
 
-		if (index == curJoinCols.length - 1 && relationship == OneToMany) {
-			stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + joinAttr + "\""; 
-		}
+        if (index == curJoinCols.length - 1 && relationship == OneToMany) {
+            stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + joinAttr + "\"";
+        }
 
-		return stmt;
-	}
-	
-	
-
+        return stmt;
+    }
 
 }
-
