@@ -853,7 +853,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 this.con.commit();
             } catch (SQLException ex) {
                 // Try fix unique constraint violation
-                if (ex.getMessage().contains("violates unique constraint")) {
+                if (ex.getMessage().contains("violates unique constraint") || ex.getMessage().contains("Unique-Constraint")) {
                     // Get id of existing dataset
                     String selorig = "SELECT id FROM \"" + this.schema + "\".\"" + this.table + "\" WHERE ts=?";
                     this.con.setAutoCommit(true);
