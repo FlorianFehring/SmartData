@@ -868,6 +868,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     // Create update statement
                     if (id > 0) {
                         this.update(json, id);
+                        String upWarn = "Updated set because it allready exists. Set id: >"+id+"<";
+                        this.warnings.add(upWarn);
                     }
                 } else {
                     // Rollback
