@@ -1,9 +1,11 @@
 {
     "elements": {},
     "attributes": {
+        "swac_lang": {},
         "uk-grid": {
             "context": "div"
         },
+        "uk-tooltip": {},
         "uk-accordion": {
             "context": "ul"
         },

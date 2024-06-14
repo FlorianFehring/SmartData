@@ -14,24 +14,7 @@ var SWAC_config = {
         }
     ],
     progressive: {
-        active: false,
-        cachetimeout: 30, // Timeout in days after that a reload should be done or unused pages leave the cache
-        precache: [
-            // List files here that should be available offline for the user after first visit
-            '/css/global.css',
-            '/sites/index.html',
-            '/css/index.css',
-            // basic content (design pictures)
-            '/content/logo.png',
-            // default data
-            '/manifest.json',
-            '/configuration.js',
-            '/data/routes.js'
-        ],
-        // List components here that should be precached
-        components: [
-            'Navigation'
-        ]
+        active: false
     },
     onlinereactions: []
 };

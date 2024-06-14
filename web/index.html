@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" type="text/css" href="/SWAC/css/global.css">
         <link rel="stylesheet" type="text/css" href="/SWAC/css/index.css">
-        
+
         <link rel="stylesheet" type="text/css" href="/SWAC/swac/libs/uikit/css/uikit.min.css">
         <script src="/SWAC/swac/libs/uikit/js/uikit.min.js"></script>
         <script src="/SWAC/swac/swac.js" type="module"></script>
@@ -57,8 +57,19 @@
                 <div class="uk-accordion-content">
                     <p>This SmartData instance grants access to the folowing tables:</p>
                     <div id="smartdata_tables_config" swa="Present FROM smartdata/system/config">
-                        <div id="smartdata_tables_{id}" swa="Present FROM smartdata/storage/getCollections?name={defaultstorage} TEMPLATE table_for_all_datasets"></div>
-                        <br>Access with: <a href="smartdata/records/[tablename]?storage={defaultstorage}&size=100">Template link</a>
+                        <div id="smartdata_tables_{id}" swa="Present FROM smartdata/storage/getCollections?name={defaultstorage}">
+                            <table class="uk-table">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Attributes</th>
+                                </tr>
+                                <tr class="swac_repeatForSet">
+                                    <td><a href="smartdata/records/{name}?storage={defaultstorage}&size=100">{name}</a></td>
+                                    <td>{attributes}</td>
+                                </tr>
+                            </table>
+                            Test: {defaultstorage}
+                        </div>
                     </div>
                 </div>
             </li>
