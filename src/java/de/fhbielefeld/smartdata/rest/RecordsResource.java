@@ -106,6 +106,20 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        if (json == null || json.isEmpty() || json.isBlank()) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("There was no dataset(s) json given.");
+            return rob.toResponse();
+        }
+
+        if (!json.startsWith("{") && !json.startsWith("[")) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("Recived HTTP body does not contain valid json.");
+            Message msg = new Message("Recived HTTP body does not contain valid json. Recived: >" + json + "<", MessageLevel.ERROR);
+            Logger.addMessage(msg);
+            return rob.toResponse();
+        }
+
         Configuration conf = new Configuration();
         try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             List<Object> ids = dynr.create(json);
@@ -233,8 +247,8 @@ public class RecordsResource {
             String json = dynr.get(includes, filters, 1, null, null, false, null, deflatt, geojsonattr, geotransform, new ArrayList<>());
 
             // Deliver text/csv if requested
-            if(requestContext.getAcceptableMediaTypes().contains(new MediaType("text","csv"))) {
-                JSONArray ja = new JSONArray(json); 
+            if (requestContext.getAcceptableMediaTypes().contains(new MediaType("text", "csv"))) {
+                JSONArray ja = new JSONArray(json);
                 String csvString = CDL.toString(ja);
                 return Response.ok(csvString).build();
             }
@@ -389,14 +403,14 @@ public class RecordsResource {
             if (json.equals("{}")) {
                 json = "[]";
             }
-            
+
             // Deliver text/csv if requested
-            if(requestContext.getAcceptableMediaTypes().contains(new MediaType("text","csv"))) {
-                JSONArray ja = new JSONArray(json); 
+            if (requestContext.getAcceptableMediaTypes().contains(new MediaType("text", "csv"))) {
+                JSONArray ja = new JSONArray(json);
                 String csvString = CDL.toString(ja);
                 return Response.ok(csvString).build();
             }
-            
+
             // Convert to utf8
             byte[] u8 = json.getBytes(StandardCharsets.UTF_8);
             if (geojsonattr != null) {
@@ -471,6 +485,20 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
+        if (json == null || json.isEmpty() || json.isBlank()) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("There was no dataset(s) json given.");
+            return rob.toResponse();
+        }
+
+        if (!json.startsWith("{") && !json.startsWith("[")) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("Recived HTTP body does not contain valid json.");
+            Message msg = new Message("Recived HTTP body does not contain valid json. Recived: >" + json + "<", MessageLevel.ERROR);
+            Logger.addMessage(msg);
+            return rob.toResponse();
+        }
+        
         try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, id);
         } catch (DynException ex) {
@@ -517,9 +545,17 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
-        if (json == null || json.isEmpty()) {
-            rob.setStatus(Response.Status.NOT_ACCEPTABLE);
-            rob.addErrorMessage("No data to update.");
+        if (json == null || json.isEmpty() || json.isBlank()) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("There was no dataset(s) json given.");
+            return rob.toResponse();
+        }
+
+        if (!json.startsWith("{") && !json.startsWith("[")) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("Recived HTTP body does not contain valid json.");
+            Message msg = new Message("Recived HTTP body does not contain valid json. Recived: >" + json + "<", MessageLevel.ERROR);
+            Logger.addMessage(msg);
             return rob.toResponse();
         }
 
