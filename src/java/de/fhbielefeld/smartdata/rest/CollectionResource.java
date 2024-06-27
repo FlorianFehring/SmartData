@@ -120,9 +120,7 @@ public class CollectionResource {
             }
             // Check for missing name
             if(!attrdef.containsKey("name") || attrdef.getString("name").isEmpty()) {
-                var resp = Response.Status.CONFLICT;
-                rob.setStatus(resp);
-                
+                rob.setStatus(Response.Status.BAD_REQUEST);
                 rob.addErrorMessage("Name is missing for column.");
                 return rob.toResponse();
             }
@@ -150,6 +148,10 @@ public class CollectionResource {
             }
             if (attrdef.containsKey("type")) {
                 attr.setType(attrdef.getString("type"));
+            } else {
+                rob.setStatus(Response.Status.BAD_REQUEST);
+                rob.addErrorMessage(">type< is missing for column.");
+                return rob.toResponse();
             }
             collectiondef.addAttribute(attr);
         }
