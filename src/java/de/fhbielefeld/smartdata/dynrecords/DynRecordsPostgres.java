@@ -859,17 +859,23 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     this.con.setAutoCommit(true);
                     PreparedStatement selstmt = this.con.prepareStatement(selorig);
                     Attribute curColumn = columns.get("ts");
-                    this.setPlaceholder(selstmt, placeholders.get("ts"), curColumn, json.get("ts"));
-                    ResultSet rs = selstmt.executeQuery();
-                    long id = 0;
-                    while (rs.next()) {
-                        id = rs.getLong("id");
-                    }
-                    // Create update statement
-                    if (id > 0) {
-                        this.update(json, id);
-                        String upWarn = "Updated set because it allready exists. Set id: >"+id+"<";
-                        this.warnings.add(upWarn);
+                    if (curColumn != null) {
+                        this.setPlaceholder(selstmt, placeholders.get("ts"), curColumn, json.get("ts"));
+                        ResultSet rs = selstmt.executeQuery();
+                        long id = 0;
+                        while (rs.next()) {
+                            id = rs.getLong("id");
+                        }
+                        // Create update statement
+                        if (id > 0) {
+                            this.update(json, id);
+                            String upWarn = "Updated set because it allready exists. Set id: >" + id + "<";
+                            this.warnings.add(upWarn);
+                        }
+                    } else {
+                        DynException de = new DynException("Could not create dataset, because a constraint was violated: " + ex.getLocalizedMessage());
+                        de.addSuppressed(ex);
+                        throw de;
                     }
                 } else {
                     // Rollback
@@ -921,6 +927,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             Logger.addDebugMessage(msg);
             DynException de = new DynException(msgtxt);
             de.addSuppressed(ex);
+            ex.printStackTrace();
             throw de;
         } finally {
             commitlock.release();
@@ -1619,87 +1626,72 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
      * @return
      * @throws DynException
      *
-	 * Example: 
-	 *	## Table Definitions
+     * Example: ## Table Definitions
      *
-	 *	### student
+     * ### student
      *
-	 *	| Column     | Data Type    | Constraints |
-	 *	|------------|--------------|-------------|
-	 *	| id         | SERIAL       | PRIMARY KEY |
-	 *	| first_name | VARCHAR(100) |             |
-	 *	| last_name  | VARCHAR(100) |             |
+     * | Column | Data Type | Constraints |
+     * |------------|--------------|-------------| | id | SERIAL | PRIMARY KEY |
+     * | first_name | VARCHAR(100) | | | last_name | VARCHAR(100) | |
      *
-	 *	### enrollment
+     * ### enrollment
      *
-	 *	| Column     | Data Type | Constraints            |
-	 *	|------------|-----------|------------------------|
-	 *	| id         | SERIAL    | PRIMARY KEY            |
-	 *	| student_id | INTEGER   | REFERENCES student(id) |
-	 *	| course_id  | INTEGER   | REFERENCES course(id)  |
-	 *	| grade      | FLOAT     |                        |
+     * | Column | Data Type | Constraints |
+     * |------------|-----------|------------------------| | id | SERIAL |
+     * PRIMARY KEY | | student_id | INTEGER | REFERENCES student(id) | |
+     * course_id | INTEGER | REFERENCES course(id) | | grade | FLOAT | |
      *
-	 *	### course
+     * ### course
      *
-	 *	| Column  | Data Type    | Constraints         |
-	 *	|---------|--------------|---------------------|
-	 *	| id      | SERIAL       | PRIMARY KEY         |
-	 *	| name    | VARCHAR(100) |                     |
-	 *	| year_id | INTEGER      | REFERENCES year(id) |
+     * | Column | Data Type | Constraints |
+     * |---------|--------------|---------------------| | id | SERIAL | PRIMARY
+     * KEY | | name | VARCHAR(100) | | | year_id | INTEGER | REFERENCES year(id)
+     * |
      *
      * Example Query to build
      *
-	 *	SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from 
-	 *		SELECT "student"."club_id","student"."last_name","student"."id","student"."first_name", grade FROM "public"."student" 
-	 * ============== building this stucture in this section
-	 *			LEFT JOIN 
-	 *			(
-	 *				SELECT "grade"."student_id", json_agg(json_build_object('grade', "grade"."grade", 'student_id', "grade"."student_id", 'id', "grade"."id", 'course_id', "course")) as "grade" 
-	 *				FROM "public"."grade" 
-	 *				LEFT JOIN 
-	 *				(
-	 *					SELECT "course"."id", json_build_object('name', "course"."name", 'year_id', "course"."year_id", 'id', "course"."id", 'year_id', "year") as "course" 
-	 *					FROM "public"."course" 
-	 *				) as "course" on "grade"."course_id" = "course"."id" group by "grade"."student_id"
-	 *			) as "grade" on "grade"."student_id" = "student"."id"
-	 * ===============
-	 *	as t
+     * SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json
+     * from SELECT
+     * "student"."club_id","student"."last_name","student"."id","student"."first_name",
+     * grade FROM "public"."student" ============== building this stucture in
+     * this section LEFT JOIN ( SELECT "grade"."student_id",
+     * json_agg(json_build_object('grade', "grade"."grade", 'student_id',
+     * "grade"."student_id", 'id', "grade"."id", 'course_id', "course")) as
+     * "grade" FROM "public"."grade" LEFT JOIN ( SELECT "course"."id",
+     * json_build_object('name', "course"."name", 'year_id', "course"."year_id",
+     * 'id', "course"."id", 'year_id', "year") as "course" FROM
+     * "public"."course" ) as "course" on "grade"."course_id" = "course"."id"
+     * group by "grade"."student_id" ) as "grade" on "grade"."student_id" =
+     * "student"."id" =============== as t
      *
      *
-	 * Query Example in general words
-	 * ============== 
-	 *		LEFT JOIN
-	 *			(SELECT attributeReferencingSourceTable, json_agg(json_build_object('column1', 'joinTable.column1', ..., 'nestedTable1', nestedTable1)) as joinTable from joinTable		
-	 *				LEFT JOIN
-	 *					(SELECT attributeReferencingNestedTable1, json_agg(json_build_object('column1', 'nestedTable1.column1', ... (optional nestedTable2))) as nestedTable1 from nestedTable1
-	 *						GROUP BY groupByAttr (nestedTable1.attributeReferencingNestedTable)
-	 *					) as nestedTable1
-	 *				on nestedTable1.attributeReferecingNestedTable1 = joinTable.attributeReferencingNestedTable1FROMJoinTable GROUP BY groupByAttr (joinTable.attributeReferencingSourceTable)
-	 *			) as joinTable
-	 *		on sourceTable.attributeReferencingJoinTableFROMsourceTable = joinTable.attributeReferencingSourceTable
-	 *	where sourceTbl = 1)
+     * Query Example in general words ============== LEFT JOIN (SELECT
+     * attributeReferencingSourceTable, json_agg(json_build_object('column1',
+     * 'joinTable.column1', ..., 'nestedTable1', nestedTable1)) as joinTable
+     * from joinTable LEFT JOIN (SELECT attributeReferencingNestedTable1,
+     * json_agg(json_build_object('column1', 'nestedTable1.column1', ...
+     * (optional nestedTable2))) as nestedTable1 from nestedTable1 GROUP BY
+     * groupByAttr (nestedTable1.attributeReferencingNestedTable) ) as
+     * nestedTable1 on nestedTable1.attributeReferecingNestedTable1 =
+     * joinTable.attributeReferencingNestedTable1FROMJoinTable GROUP BY
+     * groupByAttr (joinTable.attributeReferencingSourceTable) ) as joinTable on
+     * sourceTable.attributeReferencingJoinTableFROMsourceTable =
+     * joinTable.attributeReferencingSourceTable where sourceTbl = 1)
      * ===============
      *
      *
-	 * # Relationships
-	 * - Important to distinct between the relationships between the joined collections
-	 * - Cases: OneToMany-, ManyToOne-, ManyToMany-Relationship
-	 * - TreeQL-Specification requires to handle each case differently
+     * # Relationships - Important to distinct between the relationships between
+     * the joined collections - Cases: OneToMany-, ManyToOne-,
+     * ManyToMany-Relationship - TreeQL-Specification requires to handle each
+     * case differently
      *
-	 * Example Query of ManyToMany
-	 * SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json FROM (
-	 *		  SELECT student.*, course FROM student
-	 *		============= 
-	 *		  LEFT JOIN (
-	 *			SELECT
-	 *			  student_id,
-	 *			  json_agg(json_build_object('id', courses.course_id, 'course_name', courses.course_name)) AS course
-	 *			FROM student_courses
-	 *			LEFT JOIN course ON course.id = enrollment.course_id
-	 *			GROUP BY student_id
-	 *		  ) AS enrollment ON enrollment.student_id = student.id
-	 *		==============
-	 *		) AS t;
+     * Example Query of ManyToMany SELECT
+     * json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json FROM (
+     * SELECT student.*, course FROM student ============= LEFT JOIN ( SELECT
+     * student_id, json_agg(json_build_object('id', courses.course_id,
+     * 'course_name', courses.course_name)) AS course FROM student_courses LEFT
+     * JOIN course ON course.id = enrollment.course_id GROUP BY student_id ) AS
+     * enrollment ON enrollment.student_id = student.id ============== ) AS t;
      *
      */
     private String joinBuilder(String stmt, String[] curJoinCols, int index, DynCollection sourceCol, String groupByAttr) throws DynException {
