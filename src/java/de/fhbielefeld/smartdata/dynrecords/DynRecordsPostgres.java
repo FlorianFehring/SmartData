@@ -280,7 +280,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                             selectbuilder.append(", ").append(curJoinCols[0]).append(" as ").append(belongToAttr.getName());
                         } else {
                             // hasMany Relation (name of the column)
-                            selectbuilder.append(", ").append(curJoinCols[0]);
+                            selectbuilder.append(", ").append("coalesce(" + curJoinCols[0] + ", '[]'::json) as ").append(curJoinCols[0]);
                         }
                     }
                     frombuilder.append(stmt);
@@ -1717,7 +1717,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 stmt += " ) as " + "\"" + joinCol.getName() + "\"";
                 stmt += " on " + "\"" + joinCol.getName() + "\".\"" + joinColAttr.getName() + "\" = \"" + sourceCol.getName() + "\".\"" + joinColAttr.getRefAttribute() + "\"";
                 if (groupByAttr != null) {
-                    stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + groupByAttr + "\" ";
+                    stmt += " group by " + "\"" + sourceCol.getName() + "\".\"" + groupByAttr + "\" ";
                 }
                 break;
 
@@ -1811,7 +1811,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         for (Attribute curAttr : joinCol.getAttributes().values()) {
             if (relationship == OneToMany && nestedJoinCol != null) {
                 Attribute ref = joinCol.getReferenceTo(nestedJoinCol.getName());
-                if (curAttr.getName().equals(ref.getName())) {
+                if (ref != null && curAttr.getName().equals(ref.getName())) {
                     continue;
                 }
             }
@@ -1831,7 +1831,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             Attribute nestedJoinColAttr = joinCol.getReferenceTo(nestedJoinCol.getName());
             // modify key value of json based on relationship between joinCol and nestedJoinCol (nestedJoinColAttr != null -> ManyToOne-Relationship)
             stmt += nestedJoinColAttr != null ? "'" + nestedJoinColAttr.getName() + "', " : "'" + nestedJoinCol.getName() + "', ";
-            stmt += "\"" + nestedJoinCol.getName() + "\"";
+            stmt += nestedJoinColAttr != null ? "\"" + nestedJoinCol.getName() + "\"" : "coalesce(\"" + nestedJoinCol.getName() + "\", '[]'::json)";
         }
 
         stmt += relationship == ManyToOne ? ")" : "))";
