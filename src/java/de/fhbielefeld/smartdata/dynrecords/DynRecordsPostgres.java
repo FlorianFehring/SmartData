@@ -818,6 +818,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         String pstmtid = this.getPreparedInsert(json);
         String stmt = preparedStatements.get(pstmtid);
+
+        Logger.addDebugMessage(new Message("Build create statement >" + stmt + "<", MessageLevel.INFO));
+        String givenColNames = stmt.substring(stmt.indexOf("(") + 1, stmt.indexOf(")")).replace("\"", "");
         try (PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
             Map<String, Integer> placeholders = preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
@@ -829,12 +832,18 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     ignoredCols.add(jkey);
                     continue;
                 }
-
+                // Remove from expected list
+                givenColNames = givenColNames.replace(jkey, "");
                 int pindex = placeholders.get(jkey);
 
                 // Get column information
                 Attribute curColumn = columns.get(jkey);
+                Logger.addDebugMessage(new Message("Set value >" + curEntry.getValue() + "< for attribute >" + curColumn.getName() + "<", MessageLevel.INFO));
                 this.setPlaceholder(pstmt, pindex, curColumn, curEntry.getValue());
+            }
+            // Check if expectedCols now contains more than only ,
+            if (!givenColNames.matches("[,]*")) {
+                throw new DynException("The attributes >" + givenColNames + "< have no values set.");
             }
             if (!ignoredCols.isEmpty()) {
                 String ignoredColStr = String.join(",", ignoredCols);
@@ -1232,7 +1241,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "point":
-                    System.out.println("WARNING: Support for point type is experimental. Use geometry type instead.");
+                    this.warnings.add("WARNING: Support for point type is experimental. Use geometry type instead.");
                     if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.OTHER);
                     } else {
