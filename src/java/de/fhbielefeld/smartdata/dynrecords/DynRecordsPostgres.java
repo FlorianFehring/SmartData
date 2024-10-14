@@ -87,7 +87,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         if (filters != null) {
             for (Filter curFilter : filters) {
-                stmtId += curFilter.getPrepareCode();
+                if(!curFilter.getPrepareCode().isEmpty())
+                    stmtId += curFilter.getPrepareCode();
             }
         }
         if (order != null) {
@@ -289,9 +290,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             if (filters != null && !filters.isEmpty()) {
-                frombuilder.append(" WHERE ");
                 int i = 0;
                 for (Filter curFilter : filters) {
+                    if(curFilter.getPrepareCode().isEmpty())
+                        continue;
+                    if( i == 0)
+                        frombuilder.append(" WHERE ");
                     if (i > 0) {
                         frombuilder.append(" AND ");
                     }
@@ -432,6 +436,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             PreparedStatement pstmt = this.con.prepareStatement(stmt);
 
             for (Filter curFilter : filters) {
+                if(curFilter.getPrepareCode().isEmpty())
+                    continue;
                 try {
                     Integer placeholderpos = placeholders.get(curFilter.getPrepareCode());
                     curFilter.setFirstPlaceholder(placeholderpos);
@@ -518,6 +524,21 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             de.addSuppressed(ex);
             throw de;
         }
+    }
+
+    public String getHierarchically() {
+
+//        "WITH RECURSIVE hierarchy AS (\n" +
+//"    SELECT id, parent_id, name, ARRAY[id] as path\n" +
+//"    FROM tbl_observedobject\n" +
+//"    WHERE parent_id IS NULL  -- Start with the root nodes\n" +
+//"    UNION ALL\n" +
+//"    SELECT t.id, t.parent_id, t.name, h.path || t.id\n" +
+//"    FROM tbl_observedobject t\n" +
+//"    INNER JOIN hierarchy h ON t.parent_id = h.id\n" +
+//")\n" +
+//"SELECT * FROM hierarchy order by path limit 10 offset 10;"
+        return "";
     }
 
     /**

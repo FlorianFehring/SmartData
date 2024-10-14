@@ -36,14 +36,21 @@ public class EqualsFilter extends Filter {
             // Check if the collection contains such a attribute
             Attribute col = this.collection.getAttribute(this.attribute);
 
-            if (col == null) {
-                throw new FilterException("The Column >" + this.attribute + "< does not exists.");
-            }
             // Second element is the name of the filter
+            if (parts[1].startsWith("neo")) {
+                this.neo = true;
+                this.eqvalue = 0;
+                return;
+            }
             // Check if the filter is negative
             if (parts[1].startsWith("n")) {
                 this.negative = true;
             }
+            
+            if (!this.neo && col == null) {
+                throw new FilterException("The Column >" + this.attribute + "< does not exists.");
+            }
+            
             // Thrid element is the value that should be equal
             switch (col.getType()) {
                 case "text":
@@ -89,6 +96,9 @@ public class EqualsFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
+        if(this.neo) {
+            return "";
+        }
         if (this.negative) {
             return "\"" + this.collection.getName() + "\".\"" +this.attribute + "\"" + " != ?";
         } else {

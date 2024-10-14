@@ -48,6 +48,7 @@ public class FilterParser {
                 break;
             case "eq":
             case "neq":
+            case "neoeq":
                 if(parts.length < 3) {
                     throw new FilterException("n*eq Filter >"+filter+"< is not valid.");
                 } else {
