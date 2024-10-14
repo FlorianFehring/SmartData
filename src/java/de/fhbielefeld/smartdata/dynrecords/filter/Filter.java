@@ -17,6 +17,7 @@ public abstract class Filter {
     protected String attribute;
     protected int firstPlaceholder;
     protected boolean negative;
+    protected boolean neo = false; // Not Exists Or -Filter
     // Noteing warnings for calling methods
     protected List<String> warnings = new ArrayList<>();
 
