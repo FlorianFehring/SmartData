@@ -37,13 +37,13 @@ public class EqualsFilter extends Filter {
             Attribute col = this.collection.getAttribute(this.attribute);
 
             // Second element is the name of the filter
-            if (parts[1].startsWith("neo")) {
+            if (col == null && parts[1].startsWith("neo")) {
                 this.neo = true;
                 this.eqvalue = 0;
                 return;
             }
             // Check if the filter is negative
-            if (parts[1].startsWith("n")) {
+            else if ("neq".equals(parts[1])) {
                 this.negative = true;
             }
             
