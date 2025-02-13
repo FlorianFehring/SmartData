@@ -79,6 +79,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
     @Override
     public String getPreparedQuery(String includes, Collection<Filter> filters, int size, String page, String order, boolean countOnly, String unique, boolean deflatt, String geojsonattr, String geotransform, Collection<String> joins) throws DynException {
+
         // Build statement id string
         String stmtId = "";
         stmtId += this.schema + '_' + this.table;
@@ -108,6 +109,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         if (joins != null) {
             stmtId += joins;
+        }
+        if(unique != null) {
+            stmtId += "uq";
         }
 
         stmtId += countOnly;
@@ -345,25 +349,28 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 newsqlsb.append(unique);
                 newsqlsb.append("\" FROM (");
                 newsqlsb.append(selectbuilder);
-                newsqlsb.append(") as aliastable");
                 selectbuilder = newsqlsb;
             }
 
             if (geojsonattr == null) {
                 selectbuilder.append(frombuilder);
             }
-
+            
+            if (unique != null) {
+                selectbuilder.append(") as aliastable");
+            }
+            
             String prespecsql = selectbuilder.toString();
 
             // Modify select statement for export as json
-            if (unique != null) {
-                StringBuilder newsqlsb = new StringBuilder();
-                newsqlsb.append("SELECT json_agg(t.\"" + unique + "\") from (");
-                newsqlsb.append(selectbuilder.toString());
-                newsqlsb.append(") as t");
-                selectbuilder = newsqlsb;
-            }
-
+            // Seemed to be not used
+//            if (unique != null) {
+//                StringBuilder newsqlsb = new StringBuilder();
+//                newsqlsb.append("SELECT json_agg(t.\"" + unique + "\") from (");
+//                newsqlsb.append(selectbuilder.toString());
+//                newsqlsb.append(") as t");
+//                selectbuilder = newsqlsb;
+//            }
             // Remove null values
             StringBuilder rnullsqlsb = new StringBuilder();
             rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");

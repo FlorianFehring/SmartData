@@ -322,7 +322,7 @@ public class RecordsResource {
             @Parameter(description = "Page no to recive", example = "1") @QueryParam("page") String page,
             @Parameter(description = "Datasets order column and order kind", example = "column[,desc]") @QueryParam("order") String order,
             @Parameter(description = "If datasets should only be counted") @QueryParam("countonly") boolean countonly,
-            @Parameter(description = "Attribute to get uniqe values for (untested)", example = "value") @QueryParam("unique") String unique,
+            @Parameter(description = "Attribute to get uniqe values for", example = "value") @QueryParam("unique") String unique,
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr,
             @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
             @Parameter(description = "Names of join tables, to make natural join.", example = "bindtable,endtable") @QueryParam("join") List<String> joins,
