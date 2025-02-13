@@ -345,9 +345,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             // Modify select statement for unique requests
             if (unique != null) {
                 StringBuilder newsqlsb = new StringBuilder();
-                newsqlsb.append("SELECT DISTINCT \"");
+                newsqlsb.append("SELECT \"");
                 newsqlsb.append(unique);
-                newsqlsb.append("\" FROM (");
+                newsqlsb.append("\", ");
+                newsqlsb.append("COUNT(*) as avail_sets");
+                newsqlsb.append(" FROM (");
                 newsqlsb.append(selectbuilder);
                 selectbuilder = newsqlsb;
             }
@@ -357,7 +359,8 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
             
             if (unique != null) {
-                selectbuilder.append(") as aliastable");
+                selectbuilder.append(") as aliastable GROUP BY ");
+                selectbuilder.append(unique);
             }
             
             String prespecsql = selectbuilder.toString();
