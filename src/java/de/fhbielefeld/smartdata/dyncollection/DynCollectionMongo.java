@@ -36,7 +36,7 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
 
     @Override
     public boolean create(DataCollection table) throws DynException {
-        if(this.exists()) {
+        if (this.exists()) {
             return false;
         }
         this.client.getDatabase(this.src).createCollection(table.getName());
@@ -47,10 +47,10 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
     public boolean addAttributes(List<Attribute> attributes) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
     @Override
     public boolean delAttributes(List<Attribute> attributes) throws DynException {
-        throw new UnsupportedOperationException("Not supported yet."); 
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -67,7 +67,7 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
     public Attribute getReferenceTo(String collection) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
     @Override
     public List<Attribute> getIdentityAttributes() throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -83,7 +83,7 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
         }
         return geoattrs;
     }
-    
+
     @Override
     public void changeAttributeName(String oldname, String newname) throws DynException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -99,23 +99,28 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
         this.client.getDatabase(this.src).getCollection(this.name).drop();
     }
 
-	@Override
-	public List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
+    @Override
+    public List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-	@Override
-	public String getName() {
-		throw new UnsupportedOperationException("Not supported yet."); 
-	}
+    @Override
+    public String getName() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-	@Override
-	public CollectionRelationship getRelationship(DynCollection collection) throws DynException {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
+    @Override
+    public CollectionRelationship getRelationship(DynCollection collection) throws DynException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-	@Override
-	public String getIntermediateCollection(DynCollection collection) throws DynException {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
+    @Override
+    public String getIntermediateCollection(DynCollection collection) throws DynException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public String getReferences() throws DynException {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
 }

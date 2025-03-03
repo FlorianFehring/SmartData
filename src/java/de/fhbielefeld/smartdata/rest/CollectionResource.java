@@ -410,4 +410,60 @@ public class CollectionResource {
         }
         return rob.toResponse();
     }
+    
+    @GET
+    @Path("{collection}/references")
+    @Produces(MediaType.APPLICATION_JSON)
+    @SmartUserAuth
+    @Operation(summary = "Gets a list of all references to or from this collection",
+            description = "Lists all references to or from this collection. Each reference is one object, with from_storage, from_collection, from_attr, to_storage, to_collection and to_attr information.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Objects with attribute informations",
+            content = @Content(
+                    mediaType = "application/json",
+                    example = "{[{ \"from_storage\" : \"mystorage\", \"from_collection\" : \"mycollection\", \"from_attr\": \"myattr\", \"to_storage\" : \"mystorage2\", \"to_collection2\" : \"mycollection\", \"to_attr\": \"myattr2\"} ]}"
+            ))
+    @APIResponse(
+            responseCode = "404",
+            description = "Table does not exists, or the whole schema does not exists.",
+            content = @Content(
+                    mediaType = "application/json",
+                    example = "{\"errors\" : [ { \"Table or schema does not exists\"]}"
+            ))
+    @APIResponse(
+            responseCode = "500",
+            description = "Error mesage",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
+    public Response getReferences(
+            @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
+            @Parameter(description = "Storage name", required = false,
+                    schema = @Schema(type = STRING, defaultValue = "public"),
+                    example = "mystorage") @QueryParam("storage") String storage) {
+
+        if (storage == null) {
+            storage = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
+            // Get attributes
+            rob.add("name", collection);
+            rob.add("storage", storage);
+            rob.add("references", dync.getReferences());
+            rob.setStatus(Response.Status.OK);
+        } catch (DynException ex) {
+            System.out.println(ex.getLocalizedMessage());
+            if (ex.getLocalizedMessage().contains("does not exists")) {
+                rob.setStatus(Response.Status.NOT_FOUND);
+            } else {
+                rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            }
+            rob.addErrorMessage("Could not get attributes information: " + ex.getLocalizedMessage());
+            rob.addException(ex);
+        }
+        return rob.toResponse();
+    }
 }

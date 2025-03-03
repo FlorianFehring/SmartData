@@ -152,4 +152,11 @@ public interface DynCollection extends Dyn {
 	 */
 	public abstract String getIntermediateCollection(DynCollection collection) throws DynException;
 
+        /**
+         * Get all references from or to this collection.
+         * 
+         * @return  Returns a json with objects for each reference.
+         * @throws DynException 
+         */
+        public abstract String getReferences() throws DynException;
 }
