@@ -35,9 +35,9 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         this.connect();
     }
 
-	public String getName() {
-		return this.name;
-	}
+    public String getName() {
+        return this.name;
+    }
 
     /**
      * Create access for collections with reusing existing connection
@@ -56,7 +56,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public boolean exists() throws DynException {
         boolean texists = false;
-        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
+        try (Statement stmt = this.con.createStatement(); ResultSet rs = stmt.executeQuery(
                 "SELECT * FROM information_schema.tables "
                 + "WHERE table_schema = '" + this.schema + "' "
                 + "AND table_name='" + this.name + "'")) {
@@ -110,7 +110,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                         if (curCol.getName().equalsIgnoreCase("id")) {
                             System.err.println("There is an column defined named id, but without beeing a identity column (set: isIdentity: true)");
                         }
-                        if(!curCol.isNullable()) {
+                        if (!curCol.isNullable()) {
                             sql += " NOT NULL";
                         }
                     }
@@ -151,7 +151,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                 sql += ")";
                 commitlock.acquire();
                 this.con.setAutoCommit(true);
-                try ( Statement stmt = this.con.createStatement()) {
+                try (Statement stmt = this.con.createStatement()) {
                     stmt.executeUpdate(sql);
                     this.con.setAutoCommit(false);
                     created = true;
@@ -195,7 +195,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         try {
             commitlock.acquire();
             this.con.setAutoCommit(true);
-            try ( Statement stmt = this.con.createStatement()) {
+            try (Statement stmt = this.con.createStatement()) {
                 stmt.executeUpdate(sql);
             }
             this.con.setAutoCommit(false);
@@ -239,7 +239,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         try {
             commitlock.acquire();
             this.con.setAutoCommit(true);
-            try ( Statement stmt = this.con.createStatement()) {
+            try (Statement stmt = this.con.createStatement()) {
                 stmt.executeUpdate(sql);
             }
             this.con.setAutoCommit(false);
@@ -273,7 +273,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         if (!this.attributes.isEmpty()) {
             return this.attributes;
         }
-        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
+        try (Statement stmt = this.con.createStatement(); ResultSet rs = stmt.executeQuery(
                 "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
                 + "WHERE table_schema = '" + this.schema + "' "
                 + "AND table_name='" + this.name + "'")) {
@@ -305,7 +305,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         }
 
         Attribute column = null;
-        try ( Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
+        try (Statement stmt = this.con.createStatement(); ResultSet rs = stmt.executeQuery(
                 "SELECT column_name, column_default, udt_name, is_nullable, is_identity FROM information_schema.columns "
                 + "WHERE table_schema = '" + this.schema + "' "
                 + "AND table_name='" + this.name + "' "
@@ -371,7 +371,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                         + "AND k.table_schema = '" + this.schema + "' "
                         + "AND k.table_name = '" + this.name + "' "
                         + "AND k.column_name = '" + curCol.getName() + "';";
-                try ( Statement pkstmt = this.con.createStatement();  ResultSet pkrs = pkstmt.executeQuery(pkquery);) {
+                try (Statement pkstmt = this.con.createStatement(); ResultSet pkrs = pkstmt.executeQuery(pkquery);) {
                     if (pkrs.next()) {
                         curCol.setIsIdentity(true);
                     }
@@ -402,7 +402,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     + "WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema='"
                     + this.schema + "' AND tc.table_name='" + this.name
                     + "' and kcu.column_name='" + curCol.getName() + "';";
-            try ( Statement rstmt = this.con.createStatement();  ResultSet rrs = rstmt.executeQuery(rquery)) {
+            try (Statement rstmt = this.con.createStatement(); ResultSet rrs = rstmt.executeQuery(rquery)) {
                 if (rrs.next()) {
                     curCol.setRefName(rrs.getString("constraint_name"));
                     curCol.setRefCollection(rrs.getString("foreign_table_name"));
@@ -413,7 +413,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             // Get enhanced information about reference
             if (curCol.getRefName() != null) {
                 String rtquery = "SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = '" + curCol.getRefName() + "'";
-                try ( Statement rstmt = this.con.createStatement();  ResultSet rrs = rstmt.executeQuery(rtquery)) {
+                try (Statement rstmt = this.con.createStatement(); ResultSet rrs = rstmt.executeQuery(rtquery)) {
                     if (rrs.next()) {
                         String def = rrs.getString("def");
                         // Search onUpdate
@@ -441,7 +441,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                         + "FROM geometry_columns WHERE f_table_schema = '"
                         + this.schema + "' AND f_table_name = '" + this.name
                         + "' AND f_geometry_column = '" + curCol.getName() + "'";
-                try ( Statement sridstmt = this.con.createStatement();  ResultSet sridrs = sridstmt.executeQuery(geoquery)) {
+                try (Statement sridstmt = this.con.createStatement(); ResultSet sridrs = sridstmt.executeQuery(geoquery)) {
                     if (sridrs.next()) {
                         curCol.setSubtype(sridrs.getString("type"));
                         curCol.setSrid(sridrs.getInt("srid"));
@@ -487,7 +487,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public void changeAttributes(List<Attribute> columns) throws DynException {
         for (Attribute curCol : columns) {
-            try ( Statement stmt = this.con.createStatement()) {
+            try (Statement stmt = this.con.createStatement()) {
                 // Update type
                 if (curCol.getType() != null) {
                     stmt.executeUpdate("ALTER TABLE \"" + this.schema + "\".\"" + this.name
@@ -509,7 +509,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
 
     @Override
     public void delete() throws DynException {
-        try ( Statement stmt = this.con.createStatement()) {
+        try (Statement stmt = this.con.createStatement()) {
             stmt.executeUpdate("DROP TABLE IF EXISTS \"" + this.schema + "\".\"" + this.name + "\"");
         } catch (SQLException ex) {
             DynException de = new DynException("Could not delete collection: " + ex.getLocalizedMessage());
@@ -518,96 +518,134 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
         }
     }
 
-	@Override
-	public List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException {
-		List<String> tables = new ArrayList();
-		try (Statement stmt = this.con.createStatement();  ResultSet rs = stmt.executeQuery(
-       			"SELECT DISTINCT conrelid::regclass AS referencing_table\n" +
-				"FROM pg_constraint\n" +
-				"WHERE confrelid = "+ "'"+ this.schema + "." + this.name +"'" + "::regclass\n" +
-				"AND confkey = ARRAY(SELECT attnum FROM pg_attribute WHERE attname = " + "'" + attribute.getName() + "'" + " AND attrelid =  " + "'" + this.schema + "." + this.name + "'" + "::regclass);"         
-			); ) {
-			while (rs.next()) {
-				String referencingTable = rs.getString("referencing_table");
-				if (referencingTable.contains(".")) {
-					/**
-					 * default schema public: referencingTable contains {tablename}
-					 * custom schema: referencintTable contains {schema.tablename}
-					 * in that case we have to split the string to get the tablename
-					 */
-					String[] schemaAndTableName = referencingTable.split("\\.");
-					if (schemaAndTableName.length != 2) {
-						DynException de = new DynException("getRefercingTablesAttribute, error with finding reference table \n");
-						throw de;
-					}
-					referencingTable = schemaAndTableName[1];
-				}
-				tables.add(referencingTable);
-			}
+    @Override
+    public List<String> getRefercingTablesOfAttribute(Attribute attribute) throws DynException {
+        List<String> tables = new ArrayList();
+        try (Statement stmt = this.con.createStatement(); ResultSet rs = stmt.executeQuery(
+                "SELECT DISTINCT conrelid::regclass AS referencing_table\n"
+                + "FROM pg_constraint\n"
+                + "WHERE confrelid = " + "'" + this.schema + "." + this.name + "'" + "::regclass\n"
+                + "AND confkey = ARRAY(SELECT attnum FROM pg_attribute WHERE attname = " + "'" + attribute.getName() + "'" + " AND attrelid =  " + "'" + this.schema + "." + this.name + "'" + "::regclass);"
+        );) {
+            while (rs.next()) {
+                String referencingTable = rs.getString("referencing_table");
+                if (referencingTable.contains(".")) {
+                    /**
+                     * default schema public: referencingTable contains
+                     * {tablename} custom schema: referencintTable contains
+                     * {schema.tablename} in that case we have to split the
+                     * string to get the tablename
+                     */
+                    String[] schemaAndTableName = referencingTable.split("\\.");
+                    if (schemaAndTableName.length != 2) {
+                        DynException de = new DynException("getRefercingTablesAttribute, error with finding reference table \n");
+                        throw de;
+                    }
+                    referencingTable = schemaAndTableName[1];
+                }
+                tables.add(referencingTable);
+            }
 
-		} catch (SQLException ex) {
-			DynException de = new DynException("Could not get referencing tables of attributes\n" + ex.getLocalizedMessage());
-			de.addSuppressed(ex);
-			throw de;
-		}
-		return tables;
-	}
+        } catch (SQLException ex) {
+            DynException de = new DynException("Could not get referencing tables of attributes\n" + ex.getLocalizedMessage());
+            de.addSuppressed(ex);
+            throw de;
+        }
+        return tables;
+    }
 
+    @Override
+    public CollectionRelationship getRelationship(DynCollection collection) throws DynException {
+        // Check OneToMany
+        Attribute attr = this.getReferenceTo(collection.getName());
+        if (attr != null) {
+            return CollectionRelationship.ManyToOne;
+        }
+        // Check ManyToOne
+        attr = collection.getReferenceTo(this.getName());
+        if (attr != null) {
+            return CollectionRelationship.OneToMany;
+        }
+        // Check ManyToMany	
+        String intermediateCollection = this.getIntermediateCollection(collection);
+        if (intermediateCollection != null) {
+            return CollectionRelationship.ManyToMany;
+        }
+        throw new DynException("OneToMany-, ManyToOne,- or ManyToMany-Relationship does not exist for collection > " + collection.getName() + " <.");
+    }
 
-	@Override
-	public CollectionRelationship getRelationship(DynCollection collection) throws DynException {
-		// Check OneToMany
-		Attribute attr = this.getReferenceTo(collection.getName());
-		if (attr != null) {
-			return CollectionRelationship.ManyToOne;
-		}
-		// Check ManyToOne
-		attr = collection.getReferenceTo(this.getName());
-		if (attr != null) {
-			return CollectionRelationship.OneToMany;
-		}
-		// Check ManyToMany	
-		String intermediateCollection = this.getIntermediateCollection(collection);
-		if (intermediateCollection != null) {
-			return CollectionRelationship.ManyToMany;
-		}
-		throw new DynException("OneToMany-, ManyToOne,- or ManyToMany-Relationship does not exist for collection > " + collection.getName() + " <.");
-	}
+    @Override
+    public String getIntermediateCollection(DynCollection collection) throws DynException {
+        String joinCollectionName = null;
+        // Get idenity attributes of source Col
+        List<Attribute> attributes = this.getIdentityAttributes();
+        if (attributes.isEmpty()) {
+            throw new DynException("getNameOfManyToManyRelationshipJoinCollection, no identity attribute for collection > " + this.getName() + " <.");
+        }
+        Attribute identityAttribute = attributes.get(0);
+        // Get all collection that references the source col identity attribute
+        List<String> identityAttributeCols = this.getRefercingTablesOfAttribute(identityAttribute);
 
-	@Override
-	public String getIntermediateCollection(DynCollection collection) throws DynException {
-		String joinCollectionName = null;
-		// Get idenity attributes of source Col
-		List<Attribute> attributes = this.getIdentityAttributes();
-		if (attributes.isEmpty()) {
-			throw new DynException("getNameOfManyToManyRelationshipJoinCollection, no identity attribute for collection > "+ this.getName() + " <.");
-		}
-		Attribute identityAttribute = attributes.get(0);
-		// Get all collection that references the source col identity attribute
-		List<String> identityAttributeCols = this.getRefercingTablesOfAttribute(identityAttribute);
+        // Get idenity attributes of join Col
+        List<Attribute> collectionAttributes = collection.getIdentityAttributes();
+        if (collectionAttributes.isEmpty()) {
+            throw new DynException("getNameOfManyToManyRelationshipJoinCollection, no identity attribute for collection > " + collection.getName() + " <.");
+        }
+        Attribute collectionIdentityAttribute = collectionAttributes.get(0);
+        // Get all collection that references the join col identity attribute
+        List<String> collectionIdentityAttributeCols = collection.getRefercingTablesOfAttribute(collectionIdentityAttribute);
 
-		// Get idenity attributes of join Col
-		List<Attribute> collectionAttributes = collection.getIdentityAttributes();
-		if (collectionAttributes.isEmpty()) {
-			throw new DynException("getNameOfManyToManyRelationshipJoinCollection, no identity attribute for collection > "+ collection.getName() + " <.");
-		}
-		Attribute collectionIdentityAttribute = collectionAttributes.get(0);
-		// Get all collection that references the join col identity attribute
-		List<String> collectionIdentityAttributeCols = collection.getRefercingTablesOfAttribute(collectionIdentityAttribute);
+        // Check if both attributes are referenced from the same collection -> intermediate table
+        for (String col : identityAttributeCols) {
+            for (String collectionCol : collectionIdentityAttributeCols) {
+                if (col.equals(collectionCol)) {
+                    joinCollectionName = col;
+                    break;
+                }
+            }
+            if (joinCollectionName != null) {
+                break;
+            }
+        }
+        return joinCollectionName;
+    }
 
-		
-		// Check if both attributes are referenced from the same collection -> intermediate table
-		for (String col : identityAttributeCols) {
-			for (String collectionCol : collectionIdentityAttributeCols) {
-				if (col.equals(collectionCol)) {
-					joinCollectionName = col;
-					break;
-				}
-			}
-			if (joinCollectionName != null) {
-				break;
-			}
-		}
-		return joinCollectionName;
-	}
+    @Override
+    public String getReferences() throws DynException {
+        String stmtstr = "SELECT \n"
+                + "json_agg("
+                + "json_build_object("
+                + "'from_storage', tc.table_schema, "
+                + "'from_collection', tc.table_name, "
+                + "'from_attr', kcu.column_name, "
+                + "'to_storage', ccu.table_schema, "
+                + "'to_collection', ccu.table_name, "
+                + "'to_attr', ccu.column_name"
+                + ")"
+                + ") AS foreign_keys "
+                + "FROM "
+                + "information_schema.table_constraints AS tc "
+                + "JOIN information_schema.key_column_usage AS kcu "
+                + "ON tc.constraint_name = kcu.constraint_name "
+                + "AND tc.table_schema = kcu.table_schema "
+                + "JOIN information_schema.constraint_column_usage AS ccu "
+                + "ON ccu.constraint_name = tc.constraint_name "
+                + "AND ccu.table_schema = tc.table_schema "
+                + "WHERE "
+                + "tc.constraint_type = 'FOREIGN KEY' "
+                + "AND ccu.table_name = '" + this.name + "' "
+                + "AND ccu.table_schema = '" + this.schema + "';";
+
+        try (Statement stmt = this.con.createStatement(); ResultSet rs = stmt.executeQuery(
+                stmtstr);) {
+            while (rs.next()) {
+                return rs.getString("foreign_keys");
+            }
+        } catch (SQLException ex) {
+            DynException de = new DynException("Could not get refrences: " + ex.getLocalizedMessage());
+            de.addSuppressed(ex);
+            throw de;
+        }
+        return null;
+    }
 }
