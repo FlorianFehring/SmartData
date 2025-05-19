@@ -4,6 +4,7 @@ import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
+import de.fhbielefeld.scl.rest.util.JSONFormatter;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
 import de.fhbielefeld.smartdata.dbo.Attribute;
@@ -30,6 +31,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -326,7 +328,8 @@ public class RecordsResource {
             @Parameter(description = "Name of the geo column that contains geo information, for reciving the data in geojson format") @QueryParam("geojsonattr") String geojsonattr,
             @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
             @Parameter(description = "Names of join tables, to make natural join.", example = "bindtable,endtable") @QueryParam("join") List<String> joins,
-            @Context ContainerRequestContext requestContext) {
+            @Context ContainerRequestContext requestContext,
+            @Context HttpHeaders headers) {
 
         if (storage == null) {
             storage = "public";
@@ -339,7 +342,6 @@ public class RecordsResource {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
         List<Filter> filters = new ArrayList<>();
-
         try (DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
             // Check if there is a request context and user has restricted rights
             if (requestContext != null) {
@@ -394,7 +396,7 @@ public class RecordsResource {
             }
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get identity column.");
+            rob.addErrorMessage("Could not get identity column: " + ex.getClass().getSimpleName() + ": " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
             return rob.toResponse();
         }
 
@@ -447,8 +449,8 @@ public class RecordsResource {
             return rob.toResponse();
         }
         rob.setStatus(Response.Status.OK);
-
-        return rob.toResponseStream();
+        Response stream = rob.toResponseStream();
+        return stream;
     }
 
     @PUT
