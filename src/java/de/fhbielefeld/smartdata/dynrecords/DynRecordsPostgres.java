@@ -864,7 +864,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     continue;
                 }
                 // Remove from expected list
-                givenColNames = givenColNames.replace(jkey, "");
+                givenColNames = givenColNames.replaceAll("\\b" + jkey + "\\b", "");
                 int pindex = placeholders.get(jkey);
 
                 // Get column information
