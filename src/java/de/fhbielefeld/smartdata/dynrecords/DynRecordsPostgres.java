@@ -88,8 +88,9 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         }
         if (filters != null) {
             for (Filter curFilter : filters) {
-                if(!curFilter.getPrepareCode().isEmpty())
+                if (!curFilter.getPrepareCode().isEmpty()) {
                     stmtId += curFilter.getPrepareCode();
+                }
             }
         }
         if (order != null) {
@@ -110,7 +111,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         if (joins != null) {
             stmtId += joins;
         }
-        if(unique != null) {
+        if (unique != null) {
             stmtId += "uq";
         }
 
@@ -296,10 +297,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (filters != null && !filters.isEmpty()) {
                 int i = 0;
                 for (Filter curFilter : filters) {
-                    if(curFilter.getPrepareCode().isEmpty())
+                    if (curFilter.getPrepareCode().isEmpty()) {
                         continue;
-                    if( i == 0)
+                    }
+                    if (i == 0) {
                         frombuilder.append(" WHERE ");
+                    }
                     if (i > 0) {
                         frombuilder.append(" AND ");
                     }
@@ -357,12 +360,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (geojsonattr == null) {
                 selectbuilder.append(frombuilder);
             }
-            
+
             if (unique != null) {
                 selectbuilder.append(") as aliastable GROUP BY ");
                 selectbuilder.append(unique);
             }
-            
+
             String prespecsql = selectbuilder.toString();
 
             // Modify select statement for export as json
@@ -446,15 +449,18 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             PreparedStatement pstmt = this.con.prepareStatement(stmt);
 
             for (Filter curFilter : filters) {
-                if(curFilter.getPrepareCode().isEmpty())
+                if (curFilter.getPrepareCode().isEmpty()) {
                     continue;
+                }
                 try {
                     Integer placeholderpos = placeholders.get(curFilter.getPrepareCode());
                     curFilter.setFirstPlaceholder(placeholderpos);
                     pstmt = curFilter.setFilterValue(pstmt);
                     this.warnings.addAll(curFilter.getWarnings());
                 } catch (FilterException ex) {
-                    this.warnings.add("Filter >" + curFilter.getFiltercode() + "< could not be applied: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", ""));
+                    DynException e = new DynException("FilterException occured: " + ex.getLocalizedMessage());
+                    e.addSuppressed(ex);
+                    throw e;
                 }
             }
 
@@ -506,7 +512,13 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         // Prepare query or get allready prepeared one
         String stmtid = this.getPreparedQuery(includes, filters, size, page, order, countOnly, unique, deflatt, geojsonattr, geotransform, joins);
         // Fill prepared query with data
-        try (PreparedStatement pstmt = this.setQueryClauses(stmtid, filters, size, page); ResultSet rs = pstmt.executeQuery()) {
+        PreparedStatement pstmt;
+        try {
+            pstmt = this.setQueryClauses(stmtid, filters, size, page);
+        } catch (DynException ex) {
+            throw ex;
+        }
+        try (ResultSet rs = pstmt.executeQuery()) {
             String json = "{}";
             if (rs.next()) {
                 String dbjson = rs.getString("json");
@@ -1641,7 +1653,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 //				stmt += joinBuilder("", curJoinCols ,index + 1, joinCol, joinAttr);
 //			}
 //
-////			if (index == curJoinCols.length - 1 && belongTo != null) {
+    ////			if (index == curJoinCols.length - 1 && belongTo != null) {
 ////				stmt += " group by " + "\"" + joinCol.getName() + "\".\"" + joinAttr + "\""; 
 ////			}
 //

@@ -62,14 +62,13 @@ public class LowerThanFilter extends Filter {
                     this.ltvalue = DataConverter.objectToInteger(parts[2]);
                     break;
                 case "timestamp with timezone":
+                case "timestamptz":
                 case "timestamp":
                     this.ltvalue = DataConverter.objectToLocalDateTime(parts[2]);
                     break;
                 default:
-                    Message msg = new Message(
-                            "LowerThanFilter", MessageLevel.WARNING,
+                    throw new FilterException("LowerThanFilter" +
                             "Column type >" + col.getType() + "< is currently not supported.");
-                    Logger.addDebugMessage(msg);
             }
 
         } catch (DynException ex) {
@@ -92,7 +91,9 @@ public class LowerThanFilter extends Filter {
     public PreparedStatement setFilterValue(PreparedStatement pstmt) throws FilterException {
         int pos = this.firstPlaceholder;
         try {
-            if (this.ltvalue.getClass().equals(Integer.class)) {
+            if(this.ltvalue == null) {
+                throw new FilterException("No lt value given. See: " + this.filtercode);
+            } else if (this.ltvalue.getClass().equals(Integer.class)) {
                 pstmt.setInt(pos, (Integer) this.ltvalue);
             } else if (this.ltvalue.getClass().equals(Double.class)) {
                 pstmt.setDouble(pos, (Double) this.ltvalue);

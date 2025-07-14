@@ -101,7 +101,7 @@ public class RecordsResource {
             @Parameter(description = "Storage name",
                     schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
             @Parameter(description = "Dataset in json format", required = true, example = "{\"value\" : 12.4}") String json) {
-
+        long startTime = System.currentTimeMillis();
         if (storage == null) {
             storage = "public";
         }
@@ -152,6 +152,8 @@ public class RecordsResource {
                 Response.ResponseBuilder rb = Response.status(Response.Status.CREATED);
                 String idstr = ids.toString().replace("[", "").replace("]", "").replace(" ", "");
                 rb.entity(idstr);
+                long endTime = System.currentTimeMillis();
+                System.out.println("usedTime_ms: " + (endTime - startTime));
                 return rb.build();
             }
         } catch (DynException ex) {
@@ -197,7 +199,7 @@ public class RecordsResource {
             @Parameter(description = "Coordinate system in which geometry information schould be deliverd. Can be an EPSG code or 'latlon'") @QueryParam("geotransform") String geotransform,
             @Parameter(description = "Package values into datasets") @QueryParam("deflatt") boolean deflatt,
             @Context ContainerRequestContext requestContext) {
-
+        long startTime = System.currentTimeMillis();
         if (storage == null) {
             storage = "public";
         }
@@ -285,6 +287,8 @@ public class RecordsResource {
             return rob.toResponse();
         }
         rob.setStatus(Response.Status.OK);
+        long endTime = System.currentTimeMillis();
+        rob.add("usedTime_ms", endTime - startTime);
 
 //        long finish = System.nanoTime();
 //        double finishDouble = finish - start;
@@ -330,7 +334,7 @@ public class RecordsResource {
             @Parameter(description = "Names of join tables, to make natural join.", example = "bindtable,endtable") @QueryParam("join") List<String> joins,
             @Context ContainerRequestContext requestContext,
             @Context HttpHeaders headers) {
-
+        long startTime = System.currentTimeMillis();
         if (storage == null) {
             storage = "public";
         }
@@ -449,6 +453,8 @@ public class RecordsResource {
             return rob.toResponse();
         }
         rob.setStatus(Response.Status.OK);
+        long endTime = System.currentTimeMillis();
+        rob.add("usedTime_ms", endTime - startTime);
         Response stream = rob.toResponseStream();
         return stream;
     }
@@ -480,7 +486,7 @@ public class RecordsResource {
             @Parameter(description = "json data",
                     schema = @Schema(type = STRING, defaultValue = "public")) String json
     ) {
-
+        long startTime = System.currentTimeMillis();
         if (storage == null) {
             storage = "public";
         }
@@ -500,7 +506,7 @@ public class RecordsResource {
             Logger.addMessage(msg);
             return rob.toResponse();
         }
-        
+
         try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
             dynr.update(json, id);
         } catch (DynException ex) {
@@ -511,6 +517,8 @@ public class RecordsResource {
         }
 
         rob.setStatus(Response.Status.OK);
+        long endTime = System.currentTimeMillis();
+        rob.add("usedTime_ms", endTime - startTime);
         return rob.toResponse();
     }
 
@@ -540,7 +548,7 @@ public class RecordsResource {
             @Parameter(description = "json data",
                     schema = @Schema(type = STRING, defaultValue = "public")) String json
     ) {
-
+        long startTime = System.currentTimeMillis();
         if (storage == null) {
             storage = "public";
         }
@@ -571,6 +579,8 @@ public class RecordsResource {
         }
 
         rob.setStatus(Response.Status.OK);
+        long endTime = System.currentTimeMillis();
+        rob.add("usedTime_ms", endTime - startTime);
         return rob.toResponse();
     }
 

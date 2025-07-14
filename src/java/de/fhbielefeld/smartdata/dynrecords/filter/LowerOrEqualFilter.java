@@ -62,6 +62,7 @@ public class LowerOrEqualFilter extends Filter {
                     this.levalue = DataConverter.objectToInteger(parts[2]);
                     break;
                 case "timestamp with timezone":
+                case "timestamptz":
                 case "timestamp":
                     this.levalue = DataConverter.objectToLocalDateTime(parts[2]);
                     break;

@@ -62,6 +62,7 @@ public class GreaterOrEqualFilter extends Filter {
                     this.gevalue = DataConverter.objectToInteger(parts[2]);
                     break;
                 case "timestamp with timezone":
+                    case "timestamptz":
                 case "timestamp":
                     this.gevalue = DataConverter.objectToLocalDateTime(parts[2]);
                     break;
@@ -70,6 +71,7 @@ public class GreaterOrEqualFilter extends Filter {
                             "GreaterOrEqualFilter", MessageLevel.WARNING,
                             "Column type >" + col.getType() + "< is currently not supported.");
                     Logger.addDebugMessage(msg);
+                    this.gevalue = parts[2];
             }
 
         } catch (DynException ex) {
