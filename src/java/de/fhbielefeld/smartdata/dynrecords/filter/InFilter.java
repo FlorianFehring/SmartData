@@ -73,6 +73,7 @@ public class InFilter extends Filter {
                     }
                     break;
                 case "timestamp with timezone":
+                    case "timestamptz":
                 case "timestamp":
                     this.invalues = new LocalDateTime[this.numberOfPlaceholders];
                     for (int i = 0; i < this.numberOfPlaceholders; i++) {

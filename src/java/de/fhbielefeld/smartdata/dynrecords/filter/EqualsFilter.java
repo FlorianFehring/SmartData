@@ -41,16 +41,15 @@ public class EqualsFilter extends Filter {
                 this.neo = true;
                 this.eqvalue = 0;
                 return;
-            }
-            // Check if the filter is negative
+            } // Check if the filter is negative
             else if ("neq".equals(parts[1])) {
                 this.negative = true;
             }
-            
+
             if (!this.neo && col == null) {
                 throw new FilterException("The Column >" + this.attribute + "< does not exists.");
             }
-            
+
             // Thrid element is the value that should be equal
             switch (col.getType()) {
                 case "text":
@@ -76,6 +75,7 @@ public class EqualsFilter extends Filter {
                     this.eqvalue = DataConverter.objectToInteger(parts[2]);
                     break;
                 case "timestamp with timezone":
+                case "timestamptz":
                 case "timestamp":
                     this.eqvalue = DataConverter.objectToLocalDateTime(parts[2]);
                     break;
@@ -96,13 +96,13 @@ public class EqualsFilter extends Filter {
 
     @Override
     public String getPrepareCode() {
-        if(this.neo) {
+        if (this.neo) {
             return "";
         }
         if (this.negative) {
-            return "\"" + this.collection.getName() + "\".\"" +this.attribute + "\"" + " != ?";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " != ?";
         } else {
-            return "\"" + this.collection.getName() + "\".\"" +this.attribute + "\"" + " = ?";
+            return "\"" + this.collection.getName() + "\".\"" + this.attribute + "\"" + " = ?";
         }
     }
 

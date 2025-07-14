@@ -64,15 +64,15 @@ public class BetweenFilter extends Filter {
                     this.btvalueTo = DataConverter.objectToInteger(parts[3]);
                     break;
                 case "timestamp with timezone":
+                case "timestamptz":
                 case "timestamp":
                     this.btvalueFrom = DataConverter.objectToLocalDateTime(parts[2]);
                     this.btvalueTo = DataConverter.objectToLocalDateTime(parts[3]);
                     break;
                 default:
-                    Message msg = new Message(
-                            "BetweenFilter", MessageLevel.WARNING,
+                    throw new FilterException(
+                            "BetweenFilter" +
                             "Column type >" + col.getType() + "< is currently not supported.");
-                    Logger.addDebugMessage(msg);
             }
 
         } catch (DynException ex) {
