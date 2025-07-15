@@ -863,11 +863,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         String stmt = preparedStatements.get(pstmtid);
 
         Logger.addDebugMessage(new Message("Build create statement >" + stmt + "<", MessageLevel.INFO));
-        String givenColNames = stmt.substring(stmt.indexOf("(") + 1, stmt.indexOf(")")).replace("\"", "");
         try (PreparedStatement pstmt = this.con.prepareStatement(stmt);) {
             Map<String, Integer> placeholders = preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
             List<String> ignoredCols = new ArrayList<>();
+            List<String> setCols = new ArrayList<>();
             for (Map.Entry<String, JsonValue> curEntry : json.entrySet()) {
                 String jkey = curEntry.getKey();
                 // Check if table expects that data
@@ -875,19 +875,25 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     ignoredCols.add(jkey);
                     continue;
                 }
-                // Remove from expected list
-                givenColNames = givenColNames.replaceAll("\\b" + jkey + "\\b", "");
                 int pindex = placeholders.get(jkey);
 
                 // Get column information
                 Attribute curColumn = columns.get(jkey);
                 Logger.addDebugMessage(new Message("Set value >" + curEntry.getValue() + "< for attribute >" + curColumn.getName() + "<", MessageLevel.INFO));
                 this.setPlaceholder(pstmt, pindex, curColumn, curEntry.getValue());
+                setCols.add(jkey);
             }
-            // Check if expectedCols now contains more than only ,
-            if (!givenColNames.matches("[,]*")) {
-                throw new DynException("The attributes >" + givenColNames + "< have no values set.");
+            // Check if all expected columns are set
+            List<String> missingCols = new ArrayList<>();
+            for (String expectedCol : placeholders.keySet()) {
+                if (!setCols.contains(expectedCol)) {
+                    missingCols.add(expectedCol);
+                }
             }
+            if (!missingCols.isEmpty()) {
+                throw new DynException("The attributes >" + String.join(", ", missingCols) + "< have no values set.");
+            }
+            // Check ignored columns
             if (!ignoredCols.isEmpty()) {
                 String ignoredColStr = String.join(",", ignoredCols);
                 String warning = "Table >" + this.table + "< does not expect data for >" + ignoredColStr + "<";
@@ -904,6 +910,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 pstmt.close();
                 this.con.commit();
             } catch (SQLException ex) {
+                this.warnings.add("Exception occured: " + ex.getClass().getSimpleName() + ": " + ex.getLocalizedMessage());
                 // Try fix unique constraint violation
                 if (ex.getMessage().contains("violates unique constraint") || ex.getMessage().contains("Unique-Constraint")) {
                     // Get id of existing dataset
@@ -912,7 +919,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     PreparedStatement selstmt = this.con.prepareStatement(selorig);
                     Attribute curColumn = columns.get("ts");
                     if (curColumn != null) {
-                        this.setPlaceholder(selstmt, placeholders.get("ts"), curColumn, json.get("ts"));
+                        this.setPlaceholder(selstmt, 1, curColumn, json.get("ts"));
                         ResultSet rs = selstmt.executeQuery();
                         long id = 0;
                         while (rs.next()) {
@@ -1108,7 +1115,6 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
     public Long update(JsonObject json, Long id) throws DynException {
         String pstmtid = this.getPreparedUpdate(json, id);
         String stmt = this.preparedStatements.get(pstmtid);
-
         try (PreparedStatement pstmt = this.con.prepareStatement(stmt)) {
             Map<String, Integer> placeholders = this.preparedPlaceholders.get(pstmtid);
             Map<String, Attribute> columns = this.dyncollection.getAttributes();
@@ -1246,6 +1252,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     }
                     break;
                 case "timestamp":
+                case "timestamptz":
                     if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.TIMESTAMP);
                     } else {
