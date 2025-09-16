@@ -68,8 +68,13 @@ public class DynPostgres implements Dyn {
     @Override
     public void close() throws DynException {
         try {
-            if(!this.con.isClosed())
+            if(!this.con.isClosed()) {
+                try {
                 this.con.close();
+                } catch(Exception ex) {
+                    
+                }
+            }
         } catch (SQLException ex) {
             Message msg = new Message("", MessageLevel.ERROR, "Could not close connection: " + ex.getLocalizedMessage());
             Logger.addMessage(msg);
