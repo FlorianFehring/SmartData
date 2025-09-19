@@ -153,7 +153,7 @@ public class RecordsResource {
                 String idstr = ids.toString().replace("[", "").replace("]", "").replace(" ", "");
                 rb.entity(idstr);
                 long endTime = System.currentTimeMillis();
-                System.out.println("usedTime_ms: " + (endTime - startTime));
+//                System.out.println("usedTime_ms: " + (endTime - startTime));
                 return rb.build();
             }
         } catch (DynException ex) {
@@ -451,7 +451,12 @@ public class RecordsResource {
                 rob.addException(ex);
             }
             return rob.toResponse();
+        } catch (Throwable t) {
+            Message msg = new Message("Unkown error occured: " + t.getLocalizedMessage(), MessageLevel.ERROR);
+            Logger.addMessage(msg);
+            throw t;
         }
+
         rob.setStatus(Response.Status.OK);
         long endTime = System.currentTimeMillis();
         rob.add("usedTime_ms", endTime - startTime);
