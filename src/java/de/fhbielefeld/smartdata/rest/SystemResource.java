@@ -2,11 +2,14 @@ package de.fhbielefeld.smartdata.rest;
 
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.LoggerException;
+import de.fhbielefeld.scl.logger.message.Message;
+import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import de.fhbielefeld.smartdata.config.Configuration;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
@@ -16,10 +19,13 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import javax.naming.NamingException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -39,7 +45,7 @@ public class SystemResource {
         // Init logging
         try {
             String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
-            Configuration conf = new Configuration(); 
+            Configuration conf = new Configuration();
             Logger.getInstance("SmartData", moduleName);
             Logger.setDebugMode(Boolean.parseBoolean(conf.getProperty("debugmode")));
         } catch (LoggerException | NamingException ex) {
@@ -155,10 +161,11 @@ public class SystemResource {
             rob.add("httpsSupported", false);
             System.err.println("DEBUG (SystemBean): There is no https support, because of missing method: " + ex.getLocalizedMessage());
         } finally {
-            if(conn != null)
+            if (conn != null) {
                 conn.disconnect();
+            }
         }
-        
+
         // Internet conectivity check
         HttpURLConnection con2 = null;
         try {
@@ -171,8 +178,9 @@ public class SystemResource {
             rob.add("internetConnectivity", false);
             System.err.println("Could not connect to, because of: " + ex.getLocalizedMessage());
         } finally {
-            if(conn != null)
+            if (conn != null) {
                 conn.disconnect();
+            }
         }
 
         rob.add("systemJavaVendor", System.getProperty("java.vendor"));
@@ -187,6 +195,55 @@ public class SystemResource {
         rob.add("systemVersion", System.getProperty("os.version"));
         rob.add("systemArchitecture", System.getProperty("os.arch"));
         rob.setStatus(Response.Status.OK);
+
+        return rob.toResponse();
+    }
+
+    @GET
+    @Path("memorytest")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get heap usage",
+            description = "Returns current heap usage of the JVM.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Heap usage information",
+            content = @Content(
+                    mediaType = "application/json",
+                    example = "{\"usedHeapMB\" : 123, \"maxHeapMB\" : 512}"
+            ))
+    @APIResponse(
+            responseCode = "500",
+            description = "Error message",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \"Could not retrieve heap info: ...\"]}"))
+    public Response memoryTest(@Parameter(description = "If true provoke an OutOfMemoryError") @QueryParam("provokeOutOfMemory") boolean provokeOutOfMemory) {
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        try {
+            Runtime runtime = Runtime.getRuntime();
+            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+            long maxMemory = runtime.maxMemory();
+
+            rob.add("usedHeapMB", usedMemory / (1024 * 1024));
+            rob.add("maxHeapMB", maxMemory / (1024 * 1024));
+            rob.setStatus(Response.Status.OK);
+        } catch (Throwable t) {
+            rob.addErrorMessage("Could not retrieve heap info: " + t.getLocalizedMessage());
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        try {
+            if (provokeOutOfMemory == true) {
+                List<byte[]> memoryHog = new ArrayList<>();
+                while (true) {
+                    memoryHog.add(new byte[1024 * 1024]); // 1 MB
+                }
+            }
+        } catch (Throwable t) {
+            Message msg = new Message("Unkown error occured: " + t.getLocalizedMessage(), MessageLevel.ERROR);
+            Logger.addMessage(msg);
+            throw t;
+        }
 
         return rob.toResponse();
     }
