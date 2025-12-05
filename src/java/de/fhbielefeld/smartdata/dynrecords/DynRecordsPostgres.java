@@ -1057,7 +1057,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (identitycol == null && id != null) {
                 // Autodetect identity column
                 List<Attribute> idcolumns = this.dyncollection.getIdentityAttributes();
-                if (columns.isEmpty()) {
+                if (columns.isEmpty() || idcolumns.get(0) == null) {
                     throw new DynException("There is no identity column in table. Could not update datasets.");
                 }
                 identitycol = idcolumns.get(0).getName();
