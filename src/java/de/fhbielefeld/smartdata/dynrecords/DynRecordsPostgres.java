@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,6 +50,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.sql.Date;
+import java.sql.Time;
 import java.util.Map.Entry;
 
 /**
@@ -1057,7 +1059,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             if (identitycol == null && id != null) {
                 // Autodetect identity column
                 List<Attribute> idcolumns = this.dyncollection.getIdentityAttributes();
-                if (columns.isEmpty() || idcolumns.get(0) == null) {
+                if (columns.isEmpty()) {
                     throw new DynException("There is no identity column in table. Could not update datasets.");
                 }
                 identitycol = idcolumns.get(0).getName();
@@ -1259,6 +1261,15 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                         JsonString jts = (JsonString) value;
                         LocalDateTime ldt = DataConverter.objectToLocalDateTime(jts.getString());
                         pstmt.setTimestamp(pindex, Timestamp.valueOf(ldt));
+                    }
+                    break;
+                case "time":
+                    if (value == null || isEmpty) {
+                        pstmt.setNull(pindex, java.sql.Types.TIME);
+                    } else {
+                        JsonString jtime = (JsonString) value;
+                        LocalTime lt = LocalTime.parse(jtime.getString());
+                        pstmt.setTime(pindex, Time.valueOf(lt));
                     }
                     break;
                 case "date":
