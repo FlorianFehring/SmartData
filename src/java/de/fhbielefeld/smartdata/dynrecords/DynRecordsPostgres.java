@@ -1400,6 +1400,34 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         }
     }
+    
+    @Override
+    public void delete(boolean cascade) throws DynException {
+        String sql;
+        if(cascade) {
+            sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\" CASCADE";
+        } else {
+            sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\"";
+        }
+
+        // Get name of first id column
+        List<Attribute> columns = this.dyncollection.getIdentityAttributes();
+        if (columns.isEmpty()) {
+            throw new DynException("Could not delete from >" + this.schema + "." + this.table + " because there is no identity column.");
+        }
+
+        try (Statement stmt = this.con.createStatement()) {
+            stmt.executeUpdate(sql);
+        } catch (SQLException ex) {
+            String msg = "Could not update dataset: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", "");
+            Message msga = new Message(msg, MessageLevel.ERROR);
+            Logger.addMessage(msga);
+            ex.printStackTrace();
+            DynException de = new DynException(msg);
+            de.addSuppressed(ex);
+            throw de;
+        }
+    }
 
     @Override
     public List<String> getWarnings() {

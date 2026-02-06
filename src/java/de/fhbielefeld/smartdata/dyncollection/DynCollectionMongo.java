@@ -95,7 +95,7 @@ public class DynCollectionMongo extends DynMongo implements DynCollection {
     }
 
     @Override
-    public void delete() throws DynException {
+    public void delete(boolean doCascade) throws DynException {
         this.client.getDatabase(this.src).getCollection(this.name).drop();
     }
 

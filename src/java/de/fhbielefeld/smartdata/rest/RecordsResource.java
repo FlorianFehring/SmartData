@@ -632,4 +632,48 @@ public class RecordsResource {
         rob.setStatus(Response.Status.OK);
         return rob.toResponse();
     }
+
+    @DELETE
+    @Path("{collection}")
+    @SmartUserAuth
+    @Operation(summary = "Deletes a dataset",
+            description = "Deletes a dataset from database.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Number of deleted datasets",
+            content = @Content(
+                    mediaType = "text/plain",
+                    example = "1"
+            ))
+    @APIResponse(
+            responseCode = "500",
+            description = "Error mesage",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\" : [ \" Could not get datasets: Because of ... \"]}"))
+    public Response deleteAll(
+            @Parameter(description = "Collections name", required = true, example = "mycollection")
+            @PathParam("collection") String collection,
+            @Parameter(description = "Storage name",
+                    schema = @Schema(type = STRING, defaultValue = "public")) @QueryParam("storage") String storage,
+            @Parameter(description = "cascade delete") @QueryParam("cascade") boolean doCascade
+    ) {
+
+        if (storage == null) {
+            storage = "public";
+        }
+
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+
+        try (DynRecords dynr = DynFactory.getDynRecords(storage, collection)) {
+            dynr.delete(doCascade);
+        } catch (DynException ex) {
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+            rob.addErrorMessage(ex.getLocalizedMessage());
+            rob.addException(ex);
+            return rob.toResponse();
+        }
+
+        rob.setStatus(Response.Status.OK);
+        return rob.toResponse();
+    }
 }

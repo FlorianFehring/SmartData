@@ -392,7 +392,9 @@ public class CollectionResource {
             @Parameter(description = "Collections name", required = true, example = "mycollection") @PathParam("collection") String collection,
             @Parameter(description = "Storage name", required = false,
                     schema = @Schema(type = STRING, defaultValue = "public"),
-                    example = "myschema") @QueryParam("storage") String storage) {
+                    example = "myschema") @QueryParam("storage") String storage,
+            @Parameter(description = "cascade delete") @QueryParam("cascade") boolean doCascade)
+            {
 
         if (storage == null) {
             storage = "public";
@@ -401,7 +403,7 @@ public class CollectionResource {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
 
         try ( DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
-            dync.delete();
+            dync.delete(doCascade);
             rob.setStatus(Response.Status.OK);
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);

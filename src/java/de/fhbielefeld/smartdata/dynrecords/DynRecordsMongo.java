@@ -65,4 +65,8 @@ public class DynRecordsMongo extends DynMongo implements DynRecords {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
+    @Override
+    public void delete(boolean cascade) throws DynException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
