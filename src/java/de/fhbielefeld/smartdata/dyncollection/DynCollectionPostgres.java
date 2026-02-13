@@ -114,6 +114,20 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                             sql += " NOT NULL";
                         }
                     }
+                    if (curCol.getDefaultValue() != null) {
+
+                        switch (curCol.getType().toUpperCase()) {
+                            case "VARCHAR":
+                            case "TEXT":
+                            case "CHAR":
+                            case "CHARACTER VARYING":
+                                sql += " DEFAULT '" + curCol.getDefaultValue() + "'";
+                                break;
+                            default:
+                                sql += " DEFAULT " + curCol.getDefaultValue();
+                        }
+                    }
+
                     // Create forign key
                     if (curCol.getRefAttribute() != null) {
                         foreignKeys += ",";
@@ -379,7 +393,7 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
             }
             // Get if column is autoincrement
             String defaultvalue = rs.getString("column_default");
-            curCol.setDefaultvalue(defaultvalue);
+            curCol.setDefaultValue(defaultvalue);
             if (defaultvalue != null && defaultvalue.startsWith("nextval(")) {
                 curCol.setIsAutoIncrement(true);
             }
@@ -510,12 +524,12 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
     @Override
     public void delete(boolean doCascade) throws DynException {
         try (Statement stmt = this.con.createStatement()) {
-            if(doCascade){
+            if (doCascade) {
                 stmt.executeUpdate("DROP TABLE IF EXISTS \"" + this.schema + "\".\"" + this.name + "\" CASCADE");
-            }else{
+            } else {
                 stmt.executeUpdate("DROP TABLE IF EXISTS \"" + this.schema + "\".\"" + this.name + "\"");
             }
-            
+
         } catch (SQLException ex) {
             DynException de = new DynException("Could not delete collection: " + ex.getLocalizedMessage());
             de.addSuppressed(ex);
