@@ -184,7 +184,7 @@ public class CollectionResource {
             }
         } catch (DynException ex) {
             rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-            rob.addErrorMessage("Could not get attribute information: " + ex.getLocalizedMessage());
+            rob.addErrorMessage("Could not create collection: " + ex.getLocalizedMessage());
             rob.addException(ex);
         }
         return rob.toResponse();

@@ -171,15 +171,19 @@ public final class DynCollectionPostgres extends DynPostgres implements DynColle
                     created = true;
                 }
             } catch (SQLException ex) {
-                Message msg = new Message("Could not create collection >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                String msgstr = "Could not create collection >" + this.schema + "." + this.name + "<: " + ex.getLocalizedMessage();
+                Message msg = new Message(msgstr, MessageLevel.ERROR);
                 msg.addException(ex);
                 Logger.addMessage(msg);
+                throw new DynException(msgstr);
             } catch (Exception ex) {
-                Message msg = new Message("Could not create collection >" + this.schema
+                String msgstr = "Could not create collection >" + this.schema
                         + "." + this.name + "< an >" + ex.getClass().getSimpleName()
-                        + "< occured: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+                        + "< occured: " + ex.getLocalizedMessage();
+                Message msg = new Message(msgstr, MessageLevel.ERROR);
                 msg.addException(ex);
                 Logger.addMessage(msg);
+                throw new DynException(msgstr);
             } finally {
                 try {
                     this.con.setAutoCommit(true);
