@@ -13,6 +13,7 @@ import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue.ValueType;
 import jakarta.json.stream.JsonParser;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -103,8 +104,19 @@ public class CollectionResource {
                 continue;
             }
             Attribute attr = new Attribute();
-            if (attrdef.containsKey("defaultValue")) {
-                attr.setDefaultvalue(attrdef.getString("defaultValue"));
+            
+            if (attrdef.containsKey("default")) {
+                ValueType valuetype = attrdef.get("default").getValueType();
+
+                if( valuetype == ValueType.STRING){
+                    attr.setDefaultValue(attrdef.getString("default"));
+                }else if(valuetype == ValueType.FALSE || valuetype == ValueType.TRUE){
+                    attr.setDefaultValue(attrdef.getBoolean("default"));
+                }else if(valuetype == ValueType.NUMBER){
+                    attr.setDefaultValue(attrdef.getJsonNumber("default"));
+                }else{
+                     rob.addWarningMessage("Type >"+ valuetype + "< is currently not supported.");
+                }
             }
             if (attrdef.containsKey("dimension")) {
                 attr.setDimension(attrdef.getJsonNumber("dimension").intValue());
