@@ -318,11 +318,14 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             // Adding order by
+            String orderbystmt = null;
             if (orderby != null && !orderby.isEmpty() && countOnly == false) {
                 if (orderByAvailable) {
-                    frombuilder.append(" ORDER BY \"").append(orderby).append("\"");
-                    // Adding orderkind
-                    frombuilder.append(" ").append(orderkind);
+                    orderbystmt = "\"" + orderby + "\" " + orderkind;
+                    if (unique == null) {
+                        frombuilder.append(" ORDER BY ");
+                        frombuilder.append(orderbystmt);
+                    }
                 } else {
                     String warningtxt = "The orderby field >"
                             + orderby + "< is not available in the dataset. Could not"
@@ -388,7 +391,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 //            }
             // Remove null values
             StringBuilder rnullsqlsb = new StringBuilder();
-            rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");
+            rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)");
+            if (orderbystmt != null) {
+                rnullsqlsb.append(" ORDER BY t.");
+                rnullsqlsb.append(orderbystmt);
+            }
+            rnullsqlsb.append("))) AS json from (");
             rnullsqlsb.append(prespecsql);
             rnullsqlsb.append(") t");
             selectbuilder = rnullsqlsb;
