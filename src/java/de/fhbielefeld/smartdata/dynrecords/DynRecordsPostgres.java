@@ -52,6 +52,7 @@ import java.time.LocalDate;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Dynamic data access for postgres databases
@@ -348,11 +349,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             // Modify select statement for unique requests
+            String uniquecols = null;
             if (unique != null) {
+                String[] cols = unique.split(",");
+                uniquecols = Arrays.stream(cols)
+                        .map(String::trim)
+                        .map(c -> "\"" + c + "\"")
+                        .collect(Collectors.joining(", "));
                 StringBuilder newsqlsb = new StringBuilder();
-                newsqlsb.append("SELECT \"");
-                newsqlsb.append(unique);
-                newsqlsb.append("\", ");
+                newsqlsb.append("SELECT ");
+                newsqlsb.append(uniquecols);
+                newsqlsb.append(", ");
                 newsqlsb.append("COUNT(*) as avail_sets");
                 newsqlsb.append(" FROM (");
                 newsqlsb.append(selectbuilder);
@@ -365,7 +372,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
             if (unique != null) {
                 selectbuilder.append(") as aliastable GROUP BY ");
-                selectbuilder.append(unique);
+                selectbuilder.append(uniquecols);
             }
 
             String prespecsql = selectbuilder.toString();
@@ -1400,11 +1407,11 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             throw de;
         }
     }
-    
+
     @Override
     public void delete(boolean cascade) throws DynException {
         String sql;
-        if(cascade) {
+        if (cascade) {
             sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\" CASCADE";
         } else {
             sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\"";
