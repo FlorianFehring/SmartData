@@ -114,7 +114,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             stmtId += joins;
         }
         if (unique != null) {
-            stmtId += "uq";
+            stmtId += "uq" + unique;
         }
 
         stmtId += countOnly;
