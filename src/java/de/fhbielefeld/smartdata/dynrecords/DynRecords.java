@@ -141,4 +141,12 @@ public interface DynRecords extends Dyn {
      * @throws DynException 
      */
     public abstract Long delete(String id) throws DynException;
+    
+    /**
+     * Delete all datasets
+     * 
+     * @param cascade Cascade delete
+     * @throws DynException 
+     */
+    public abstract void delete(boolean cascade) throws DynException;
 }

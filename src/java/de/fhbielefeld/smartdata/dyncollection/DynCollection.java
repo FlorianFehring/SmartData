@@ -117,7 +117,7 @@ public interface DynCollection extends Dyn {
      * 
      * @throws de.fhbielefeld.smartdata.exceptions.DynException
      */
-    public abstract void delete() throws DynException;
+    public abstract void delete(boolean doCascade) throws DynException;
 
 	/**
 	 * Name of the table 

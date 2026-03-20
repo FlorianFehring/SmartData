@@ -52,6 +52,7 @@ import java.time.LocalDate;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Dynamic data access for postgres databases
@@ -114,7 +115,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             stmtId += joins;
         }
         if (unique != null) {
-            stmtId += "uq";
+            stmtId += "uq" + unique;
         }
 
         stmtId += countOnly;
@@ -317,11 +318,14 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             // Adding order by
+            String orderbystmt = null;
             if (orderby != null && !orderby.isEmpty() && countOnly == false) {
                 if (orderByAvailable) {
-                    frombuilder.append(" ORDER BY \"").append(orderby).append("\"");
-                    // Adding orderkind
-                    frombuilder.append(" ").append(orderkind);
+                    orderbystmt = "\"" + orderby + "\" " + orderkind;
+                    if (unique == null) {
+                        frombuilder.append(" ORDER BY ");
+                        frombuilder.append(orderbystmt);
+                    }
                 } else {
                     String warningtxt = "The orderby field >"
                             + orderby + "< is not available in the dataset. Could not"
@@ -348,11 +352,17 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             }
 
             // Modify select statement for unique requests
+            String uniquecols = null;
             if (unique != null) {
+                String[] cols = unique.split(",");
+                uniquecols = Arrays.stream(cols)
+                        .map(String::trim)
+                        .map(c -> "\"" + c + "\"")
+                        .collect(Collectors.joining(", "));
                 StringBuilder newsqlsb = new StringBuilder();
-                newsqlsb.append("SELECT \"");
-                newsqlsb.append(unique);
-                newsqlsb.append("\", ");
+                newsqlsb.append("SELECT ");
+                newsqlsb.append(uniquecols);
+                newsqlsb.append(", ");
                 newsqlsb.append("COUNT(*) as avail_sets");
                 newsqlsb.append(" FROM (");
                 newsqlsb.append(selectbuilder);
@@ -365,7 +375,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 
             if (unique != null) {
                 selectbuilder.append(") as aliastable GROUP BY ");
-                selectbuilder.append(unique);
+                selectbuilder.append(uniquecols);
             }
 
             String prespecsql = selectbuilder.toString();
@@ -381,7 +391,12 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 //            }
             // Remove null values
             StringBuilder rnullsqlsb = new StringBuilder();
-            rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)))) AS json from (");
+            rnullsqlsb.append("SELECT json_strip_nulls(array_to_json(array_agg(row_to_json(t)");
+            if (orderbystmt != null) {
+                rnullsqlsb.append(" ORDER BY t.");
+                rnullsqlsb.append(orderbystmt);
+            }
+            rnullsqlsb.append("))) AS json from (");
             rnullsqlsb.append(prespecsql);
             rnullsqlsb.append(") t");
             selectbuilder = rnullsqlsb;
@@ -1390,6 +1405,34 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
         try (Statement stmt = this.con.createStatement()) {
             stmt.executeUpdate(sql);
             return null;
+        } catch (SQLException ex) {
+            String msg = "Could not update dataset: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", "");
+            Message msga = new Message(msg, MessageLevel.ERROR);
+            Logger.addMessage(msga);
+            ex.printStackTrace();
+            DynException de = new DynException(msg);
+            de.addSuppressed(ex);
+            throw de;
+        }
+    }
+
+    @Override
+    public void delete(boolean cascade) throws DynException {
+        String sql;
+        if (cascade) {
+            sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\" CASCADE";
+        } else {
+            sql = "DELETE FROM \"" + this.schema + "\".\"" + this.table + "\"";
+        }
+
+        // Get name of first id column
+        List<Attribute> columns = this.dyncollection.getIdentityAttributes();
+        if (columns.isEmpty()) {
+            throw new DynException("Could not delete from >" + this.schema + "." + this.table + " because there is no identity column.");
+        }
+
+        try (Statement stmt = this.con.createStatement()) {
+            stmt.executeUpdate(sql);
         } catch (SQLException ex) {
             String msg = "Could not update dataset: " + ex.getLocalizedMessage().replaceAll("[\\r\\n]", "");
             Message msga = new Message(msg, MessageLevel.ERROR);

@@ -10,12 +10,44 @@
 <project name="SmartData" default="default" basedir=".">
     <description>Builds, tests, and runs the project SmartData.</description>
     <import file="nbproject/build-impl.xml"/>
+    
     <!--
-
+    Target to remove jakartaee.jar from WEB-INF/lib after WAR creation.
+    This prevents Payara from trying to activate CDI when it's not needed.
+    -->
+    <target name="-post-dist">
+        <echo message="Removing jakartaee.jar from WAR file to prevent CDI activation..."/>
+        
+        <!-- Create temporary directory for WAR extraction -->
+        <tempfile property="temp.dir" destdir="${java.io.tmpdir}" prefix="war-"/>
+        <mkdir dir="${temp.dir}"/>
+        
+        <!-- Unzip the WAR file -->
+        <unzip src="${dist.dir}/${war.name}" dest="${temp.dir}"/>
+        
+        <!-- Delete jakartaee.jar from WEB-INF/lib -->
+        <delete failonerror="false">
+            <fileset dir="${temp.dir}/WEB-INF/lib">
+                <include name="jakartaee-*.jar"/>
+                <include name="jakarta.jakartaee-api-*.jar"/>
+                <include name="jakartaee-api-*.jar"/>
+            </fileset>
+        </delete>
+        
+        <!-- Re-package the WAR without jakartaee.jar -->
+        <delete file="${dist.dir}/${war.name}"/>
+        <zip destfile="${dist.dir}/${war.name}" basedir="${temp.dir}"/>
+        
+        <!-- Clean up temporary directory -->
+        <delete dir="${temp.dir}"/>
+        
+        <echo message="Successfully removed jakartaee.jar from ${war.name}"/>
+    </target>
+    
+    <!--
     There exist several targets which are by default empty and which can be 
     used for execution of your tasks. These targets are usually executed 
     before and after some main targets. They are: 
-
       -pre-init:                 called before initialization of project properties 
       -post-init:                called after initialization of project properties 
       -pre-compile:              called before javac compilation 
@@ -31,41 +63,31 @@
       -post-clean:               called after cleaning build products 
       -pre-run-deploy:           called before deploying
       -post-run-deploy:          called after deploying
-
     Example of pluging an obfuscator after the compilation could look like 
-
         <target name="-post-compile">
             <obfuscate>
                 <fileset dir="${build.classes.dir}"/>
             </obfuscate>
         </target>
-
     For list of available properties check the imported 
     nbproject/build-impl.xml file. 
-
-
     Other way how to customize the build is by overriding existing main targets.
     The target of interest are: 
-
       init-macrodef-javac:    defines macro for javac compilation
       init-macrodef-junit:   defines macro for junit execution
       init-macrodef-debug:    defines macro for class debugging
       do-dist:                archive building
       run:                    execution of project 
       javadoc-build:          javadoc generation 
-
     Example of overriding the target for project execution could look like 
-
         <target name="run" depends="<PROJNAME>-impl.jar">
             <exec dir="bin" executable="launcher.exe">
                 <arg file="${dist.jar}"/>
             </exec>
         </target>
-
     Notice that overridden target depends on jar target and not only on 
     compile target as regular run target does. Again, for list of available 
     properties which you can use check the target you are overriding in 
     nbproject/build-impl.xml file. 
-
     -->
 </project>

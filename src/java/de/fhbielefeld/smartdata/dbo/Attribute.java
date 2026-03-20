@@ -17,7 +17,7 @@ public class Attribute {
     private Integer dimension;
     private boolean isNullable = true;
     private boolean isIdentity = false;
-    private String defaultvalue = null;
+    private Object defaultvalue = null;
     private boolean isAutoIncrement = false;
     private String refName = null;
     private String refCollection = null;
@@ -91,11 +91,11 @@ public class Attribute {
         this.isIdentity = isIdentity;
     }
 
-    public String getDefaultvalue() {
+    public Object getDefaultValue() {
         return defaultvalue;
     }
 
-    public void setDefaultvalue(String defaultvalue) {
+    public void setDefaultValue(Object defaultvalue) {
         this.defaultvalue = defaultvalue;
     }
 
