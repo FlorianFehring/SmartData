@@ -47,10 +47,10 @@ import jakarta.json.stream.JsonParser;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.sql.Date;
 import java.sql.Time;
+import java.util.Base64;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -1210,7 +1210,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 case "text":
                 case "varchar":
                 case "bpchar":
-                    if (value == null) {
+                    if (value == null || isEmpty) {
                         pstmt.setNull(pindex, java.sql.Types.VARCHAR);
                     } else if (value.getValueType() == ValueType.NUMBER) {
                         pstmt.setString(pindex, value.toString());
@@ -1334,26 +1334,24 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
 //                case "cirlce":
                 case "bytea":
                     if (value == null || isEmpty) {
-                        pstmt.setNull(pindex, java.sql.Types.BLOB);
-                    } else {
-                        JsonString jbytea = (JsonString) value;
-                        String sbytea = jbytea.getString();
-
-                        // Handle encoded media (from html elements like canvas)
-                        byte bytes[];
-                        String[] basecode = sbytea.split(";base64,", 2);
-                        if (basecode.length > 1) {
-                            String encodedImg = basecode[1];
-                            bytes = java.util.Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
-                            InputStream targetStream = new ByteArrayInputStream(bytes);
-                            pstmt.setBinaryStream(pindex, targetStream);
-                        } else {
-                            Message msg = new Message(
-                                    "Write to database does not support type >" + col.getType() + "< without base64 encodeing.", MessageLevel.WARNING);
-                            Logger.addDebugMessage(msg);
-                            this.warnings.add("Could not save value for >" + col.getName() + "<: Please provide binary data in base64 encoded form.");
-                        }
+                        pstmt.setNull(pindex, java.sql.Types.BINARY);
+                        break;
                     }
+
+                    JsonString jbytea = (JsonString) value;
+                    String sbytea = jbytea.getString();
+                    byte[] bytes;
+                    // Prüfen auf data-URL Prefix
+                    if (sbytea.contains(";base64,")) {
+                        String encodedImg = sbytea.split(";base64,", 2)[1];
+                        bytes = Base64.getMimeDecoder().decode(encodedImg);
+                    } else {
+                        // Reines Base64 ohne Prefix
+                        bytes = Base64.getMimeDecoder().decode(sbytea);
+                    }
+
+                    InputStream targetStream = new ByteArrayInputStream(bytes);
+                    pstmt.setBinaryStream(pindex, targetStream);
                     break;
                 default:
                     Message msg = new Message(
