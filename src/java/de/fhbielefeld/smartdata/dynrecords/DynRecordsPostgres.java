@@ -664,6 +664,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                 pstmtid += curKey;
                 // Check if table expects that data
                 if (!columns.containsKey(curKey)) {
+                    System.out.println("Data recived for not existing column: >" + curKey + "<");
                     continue;
                 }
                 // Get definition for current column
@@ -1208,6 +1209,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
             switch (col.getType()) {
                 case "text":
                 case "varchar":
+                case "bpchar":
                     if (value == null) {
                         pstmt.setNull(pindex, java.sql.Types.VARCHAR);
                     } else if (value.getValueType() == ValueType.NUMBER) {
@@ -1355,7 +1357,7 @@ public final class DynRecordsPostgres extends DynPostgres implements DynRecords 
                     break;
                 default:
                     Message msg = new Message(
-                            "Write to database does not support type >" + col.getType() + "<", MessageLevel.ERROR);
+                            "Write to database does not support type >" + col.getType() + "< of column >" + col.getName() + "<", MessageLevel.ERROR);
                     Logger.addMessage(msg);
                     this.warnings.add("Could not save value for >" + col.getName() + "<: Datatype >" + col.getType() + "< is not supported.");
             }
