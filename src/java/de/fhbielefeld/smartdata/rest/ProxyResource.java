@@ -235,9 +235,13 @@ public class ProxyResource {
 
         List<Filter> filters = new ArrayList<>();
         try (DynCollection dync = DynFactory.getDynCollection(storage, collection)) {
-            Filter filter = new EqualsFilter(dync);
-            filter.parse("ckey,eq," + key);
-            filters.add(filter);
+            Filter keyFilter = new EqualsFilter(dync);
+            keyFilter.parse("ckey,eq," + key);
+            filters.add(keyFilter);
+
+            Filter activeFilter = new EqualsFilter(dync);
+            activeFilter.parse("active,eq,true");
+            filters.add(activeFilter);
         } catch (DynException | FilterException ex) {
             logAiConfigurationError(ex);
             return null;
