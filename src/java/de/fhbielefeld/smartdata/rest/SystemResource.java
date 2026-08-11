@@ -84,11 +84,26 @@ public class SystemResource {
         rob.add("filename", conf.getFileName());
         rob.add("propsloaded", conf.isPropsloaded());
         for (Entry<Object, Object> curEntry : conf.getAllProperties()) {
-            rob.add(curEntry.getKey().toString(), curEntry.getValue().toString());
+            String key = curEntry.getKey().toString();
+            String value = isSecretProperty(key) ? "********" : curEntry.getValue().toString();
+            rob.add(key, value);
         }
         rob.setStatus(Response.Status.OK);
 
         return rob.toResponse();
+    }
+
+    /**
+     * Checks whether a configuration property must be masked in API output.
+     *
+     * @param key Configuration property name
+     * @return True when the value contains credentials
+     */
+    private boolean isSecretProperty(String key) {
+        String normalized = key == null ? "" : key.toLowerCase();
+        return normalized.contains("password") || normalized.contains("apikey")
+                || normalized.contains("api.key") || normalized.contains("secret")
+                || normalized.contains("token") || normalized.contains("credential");
     }
 
     @GET
